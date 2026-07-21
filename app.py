@@ -977,7 +977,7 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
+        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         text = response.text.strip()
         
         # Clean up markdown tags if present
@@ -1250,13 +1250,14 @@ Nhiệm vụ:
 2. Nếu thành phần là bảng (table) hoặc đoạn văn bản tiêu chuẩn, hãy áp dụng class từ SUB-TEMPLATE. Nếu là thiết kế đặc thù (khác với template), bạn phải viết HTML/CSS tuỳ chỉnh để GIỮ NGUYÊN GIAO DIỆN Y HỆT THIẾT KẾ GỐC (bao gồm màu nền, viền, font).
 3. Mục tiêu: Giao diện cuối cùng phải giống thiết kế Figma 100% về mặt thị giác.
 4. QUY TẮC CLASS ĐẶC BIỆT: Thẻ <p> hoặc div (box) nằm ở vị trí CUỐI CÙNG trong một khối (container) bắt buộc phải có thêm class "no-pd" để tránh khoảng trống thừa (giống như trong template). Các đoạn văn bản bắt đầu bằng ký tự "*" hoặc "※" bắt buộc phải dùng thẻ <p class="mark-p">. ĐẶC BIỆT LƯU Ý: Vì CSS của class "mark-p" đã tự động hiển thị dấu "※" (qua pseudo-element ::before), bạn BẮT BUỘC PHẢI XÓA BỎ dấu "*" hoặc "※" đó ra khỏi nội dung HTML (ví dụ: thay vì viết <p class="mark-p">* Ghi chú...</p>, bạn PHẢI viết là <p class="mark-p">Ghi chú...</p>). TUY NHIÊN, đối với TẤT CẢ CÁC THẺ (kể cả mark-p), nếu màu chữ (color), kích thước (font-size) hoặc khoảng cách trên Figma KHÁC với định dạng mặc định của template, bạn PHẢI tạo class riêng hoặc viết thêm rule CSS cho nó vào file .css để ghi đè, đảm bảo nó giống thiết kế Figma 100%.
+5. QUY TẮC CLASS THEO QUY ĐỊNH (BẮT BUỘC): TUYỆT ĐỐI KHÔNG sử dụng các class định vị tuyệt đối dạng `fg-*` của Figma ở mã nguồn đầu ra. Tất cả các class trong HTML mới PHẢI được đặt tên theo đúng cấu trúc và tên class quy định trong các file mẫu `ai_templates` (như: `content-box`, `con-box`, `banner-box`, `txt-box`, `title`, `txt`, `txt-en`, `h4-tit01`, `con-p`, `no-pd`, `con-box02`, `h5-tit01`, `con-box03`, `h6-tit01`, `table-wrap`, `scrollbox`, `table`...). Đối với các thành phần đặc thù không khớp hoàn toàn với mẫu, hãy đặt tên class mới có ý nghĩa ngữ nghĩa tiếng Anh rõ ràng (như `tab-container`, `tab-item`, `active`, `content-wrap`...) thay vì giữ lại các tên class dạng `fg-*` của Figma.
 
 Trả về JSON chứa "html" và "css" (không bọc trong markdown):
 {{
   "html": "toàn bộ nội dung HTML đã tái cấu trúc",
   "css": "toàn bộ CSS đã tái cấu trúc"
 }}"""
-                    response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
+                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
                     text = response.text.strip()
                     import json as _json
                     if '```json' in text:
@@ -1348,12 +1349,52 @@ body { background-color: #f8fafc; }
         html_content = html_content.replace('href="style.css"', f'href="{menu_slug}.css"')
         html_content = html_content.replace('src="script.js"', f'src="{menu_slug}.js"')
 
+        # Check if CSS has content
+        has_css = bool(css_content and css_content.strip())
+        
+        # Check if JS has content and is not just the default placeholder
+        default_placeholders = [
+            "console.log('Dynamic figma page compiled.');",
+            "console.error('Figma compilation failed.');"
+        ]
+        has_js = bool(js_content and js_content.strip() and js_content.strip() not in default_placeholders)
+
+        if not has_css:
+            # Remove link tag referencing this CSS
+            import re
+            html_content = re.sub(rf'<link\s+[^>]*href=["\']{re.escape(menu_slug)}\.css["\'][^>]*>', '', html_content)
+            html_content = re.sub(rf'<link\s+[^>]*href=["\']style\.css["\'][^>]*>', '', html_content)
+            
+        if not has_js:
+            # Remove script tag referencing this JS
+            import re
+            html_content = re.sub(rf'<script\s+[^>]*src=["\']{re.escape(menu_slug)}\.js["\'][^>]*>\s*</script>', '', html_content)
+            html_content = re.sub(rf'<script\s+[^>]*src=["\']script\.js["\'][^>]*>\s*</script>', '', html_content)
+
         with open(os.path.join(target_dir, f'{menu_slug}.html'), 'w', encoding='utf-8') as f:
             f.write(html_content)
-        with open(os.path.join(target_dir, f'{menu_slug}.css'), 'w', encoding='utf-8') as f:
-            f.write(css_content)
-        with open(os.path.join(target_dir, f'{menu_slug}.js'), 'w', encoding='utf-8') as f:
-            f.write(js_content)
+            
+        if has_css:
+            with open(os.path.join(target_dir, f'{menu_slug}.css'), 'w', encoding='utf-8') as f:
+                f.write(css_content)
+        else:
+            try:
+                css_file = os.path.join(target_dir, f'{menu_slug}.css')
+                if os.path.exists(css_file):
+                    os.remove(css_file)
+            except Exception:
+                pass
+
+        if has_js:
+            with open(os.path.join(target_dir, f'{menu_slug}.js'), 'w', encoding='utf-8') as f:
+                f.write(js_content)
+        else:
+            try:
+                js_file = os.path.join(target_dir, f'{menu_slug}.js')
+                if os.path.exists(js_file):
+                    os.remove(js_file)
+            except Exception:
+                pass
 
         sites = load_data()
         updated_site = next((s for s in sites if s['id'] == site_id), None)
@@ -1795,7 +1836,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
 
-        response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
+        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         text = response.text.strip()
 
         import json as _json
