@@ -977,7 +977,7 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+        response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
         text = response.text.strip()
         
         # Clean up markdown tags if present
@@ -1256,7 +1256,7 @@ Trả về JSON chứa "html" và "css" (không bọc trong markdown):
   "html": "toàn bộ nội dung HTML đã tái cấu trúc",
   "css": "toàn bộ CSS đã tái cấu trúc"
 }}"""
-                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                    response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
                     text = response.text.strip()
                     import json as _json
                     if '```json' in text:
@@ -1348,54 +1348,12 @@ body { background-color: #f8fafc; }
         html_content = html_content.replace('href="style.css"', f'href="{menu_slug}.css"')
         html_content = html_content.replace('src="script.js"', f'src="{menu_slug}.js"')
 
-        # Check if CSS has content
-        has_css = bool(css_content and css_content.strip())
-        
-        # Check if JS has content and is not just the default placeholder
-        default_placeholders = [
-            "console.log('Dynamic figma page compiled.');",
-            "console.error('Figma compilation failed.');"
-        ]
-        has_js = bool(js_content and js_content.strip() and js_content.strip() not in default_placeholders)
-
-        if not has_css:
-            # Remove link tag referencing this CSS
-            import re
-            html_content = re.sub(rf'<link\s+[^>]*href=["\']{re.escape(menu_slug)}\.css["\'][^>]*>', '', html_content)
-            html_content = re.sub(rf'<link\s+[^>]*href=["\']style\.css["\'][^>]*>', '', html_content)
-            
-        if not has_js:
-            # Remove script tag referencing this JS
-            import re
-            html_content = re.sub(rf'<script\s+[^>]*src=["\']{re.escape(menu_slug)}\.js["\'][^>]*>\s*</script>', '', html_content)
-            html_content = re.sub(rf'<script\s+[^>]*src=["\']script\.js["\'][^>]*>\s*</script>', '', html_content)
-
         with open(os.path.join(target_dir, f'{menu_slug}.html'), 'w', encoding='utf-8') as f:
             f.write(html_content)
-            
-        if has_css:
-            with open(os.path.join(target_dir, f'{menu_slug}.css'), 'w', encoding='utf-8') as f:
-                f.write(css_content)
-        else:
-            # Clean up existing CSS file if it exists
-            try:
-                css_file = os.path.join(target_dir, f'{menu_slug}.css')
-                if os.path.exists(css_file):
-                    os.remove(css_file)
-            except Exception:
-                pass
-
-        if has_js:
-            with open(os.path.join(target_dir, f'{menu_slug}.js'), 'w', encoding='utf-8') as f:
-                f.write(js_content)
-        else:
-            # Clean up existing JS file if it exists
-            try:
-                js_file = os.path.join(target_dir, f'{menu_slug}.js')
-                if os.path.exists(js_file):
-                    os.remove(js_file)
-            except Exception:
-                pass
+        with open(os.path.join(target_dir, f'{menu_slug}.css'), 'w', encoding='utf-8') as f:
+            f.write(css_content)
+        with open(os.path.join(target_dir, f'{menu_slug}.js'), 'w', encoding='utf-8') as f:
+            f.write(js_content)
 
         sites = load_data()
         updated_site = next((s for s in sites if s['id'] == site_id), None)
