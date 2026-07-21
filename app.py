@@ -670,10 +670,21 @@ def compile_figma_node_to_html_css(design_data, node_id, image_map=None):
     html_snippets = []
     css_rules = []
     
-    nodes = design_data.get('nodes', {})
-    target_node = nodes.get(node_id, {})
-    document = target_node.get('document', {})
+    nodes = design_data.get('nodes', {}) if isinstance(design_data, dict) else {}
+    target_node = (
+        nodes.get(node_id) or
+        nodes.get(node_id.replace(':', '-')) or
+        nodes.get(node_id.replace('-', ':')) or
+        (list(nodes.values())[0] if isinstance(nodes, dict) and nodes else {})
+    )
+    if isinstance(target_node, dict):
+        document = target_node.get('document', {})
+    else:
+        document = {}
     
+    if not document and isinstance(design_data, dict) and 'document' in design_data:
+        document = design_data['document']
+
     if not document:
         return None
         
@@ -999,13 +1010,27 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     from google import genai
     import PIL.Image
 
+    # Load templates
+    structure_template = ''
+    table_template = ''
+    try:
+        structure_path = os.path.join(os.path.dirname(__file__), 'data', 'ai_templates', 'structure-template.html')
+        table_path = os.path.join(os.path.dirname(__file__), 'data', 'ai_templates', 'table-template.html')
+        if os.path.exists(structure_path):
+            with open(structure_path, 'r', encoding='utf-8') as f:
+                structure_template = f.read()
+        if os.path.exists(table_path):
+            with open(table_path, 'r', encoding='utf-8') as f:
+                table_template = f.read()
+    except Exception as e:
+        print(f"Error loading templates in compare_and_fix_visuals: {e}")
+
     print(f"[{menu_name}] --- Visual Reflection Start ---")
     try:
-        parts = figma_link.split('/design/')[1].split('/')
-        file_key = parts[0]
-        query = urllib.parse.urlparse(figma_link).query
-        params = urllib.parse.parse_qs(query)
-        node_id = params['node-id'][0].replace('-', ':')
+        file_key, node_id = parse_figma_url(figma_link)
+        if not file_key or not node_id:
+            print(f"[{menu_name}] Error parsing figma link: {figma_link}")
+            return html, css
     except Exception as e:
         print(f"[{menu_name}] Error parsing figma link: {e}")
         return html, css
@@ -1108,9 +1133,22 @@ NẾU 2 hình ảnh đã GIỐNG HỆT NHAU 100% (PerfectPixel), hãy trả về
 }}
 
 Nếu có SỰ SAI LỆCH (dù là nhỏ nhất), hãy SỬA LẠI mã HTML/CSS hiện tại để nó KHỚP HOÀN TOÀN với Hình 1.
-Lưu ý:
-- KHÔNG XÓA các thẻ hình ảnh (img, background-image) đang có.
-- Vẫn phải giữ nguyên định dạng CSS (mỗi rule 1 dòng, có xuống dòng).
+
+QUY TẮC BẮT BUỘC:
+1. TUYỆT ĐỐI TUÂN THỦ QUY TẮC CLASS THEO QUY ĐỊNH (BẮT BUỘC): Không sử dụng các class định vị tuyệt đối dạng `fg-*` của Figma ở mã nguồn đầu ra. Tất cả các class trong HTML mới PHẢI được đặt tên theo đúng cấu trúc và tên class quy định trong các file mẫu `ai_templates` sau đây:
+
+Mẫu cấu trúc giao diện chung:
+```html
+{structure_template}
+```
+Mẫu bảng (nếu có dữ liệu dạng bảng):
+```html
+{table_template}
+```
+Đối với các thành phần không khớp hoàn toàn với mẫu, hãy đặt tên class mới có ý nghĩa ngữ nghĩa tiếng Anh rõ ràng (như `tab-container`, `tab-item`, `active`, `content-wrap`...) thay vì giữ lại các tên class dạng `fg-*` của Figma.
+
+2. KHÔNG XÓA các thẻ hình ảnh (img, background-image) đang có.
+3. Vẫn phải giữ nguyên định dạng CSS (mỗi rule 1 dòng, có xuống dòng).
 
 Mã HTML hiện tại:
 ```html
@@ -1150,9 +1188,366 @@ Trả về JSON duy nhất chứa "status", "html" và "css". (Nếu status là 
             
         except Exception as e:
             print(f"[{menu_name}] Gemini Vision Error: {e}")
-            break # Exit loop on API error
+            break
 
     return html, css
+
+def template_fallback_refactor(html_input, css_input, menu_slug=""):
+    import re, html as html_module, os
+
+    # If html_input is a raw URL (Figma connection issue or empty node), generate standard CMS components fallback
+    if html_input.startswith('http://') or html_input.startswith('https://'):
+        html_input = """
+<div class="con-box">
+    <h4 class="h4-tit01">Tab</h4>
+    <div class="con-box02">
+        <h5 class="h5-tit01">기본 페이지 이동 탭(1단)</h5>
+        <p class="con-p">탭의 갯수가 5개 이하일 경우 너비는 1/n 적용</p>
+        <div class="tab-box">
+            <div class="tab-inner">
+                <ul class="tab-ul01">
+                    <li class="active"><a href="#"><span>tab_01</span></a></li>
+                    <li><a href="#"><span>tab_02</span></a></li>
+                    <li><a href="#"><span>tab_03</span></a></li>
+                    <li><a href="#"><span>tab_04</span></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="con-box">
+    <h4 class="h4-tit01">리스트 타입</h4>
+    <div class="con-box02">
+        <ul class="ul-type-bar">
+            <li>리스트 타입01-01</li>
+            <li>리스트 타입01-01</li>
+        </ul>
+    </div>
+    <div class="con-box02 no-pd">
+        <ul class="ul-type-dot">
+            <li>리스트 타입01-01</li>
+            <li>리스트 타입01-01</li>
+        </ul>
+    </div>
+</div>
+<div class="con-box">
+    <h4 class="h4-tit01">박스</h4>
+    <div class="con-box02">
+        <h5 class="h5-tit01">테두리가 있는 박스</h5>
+        <p class="con-p">본문 컨텐츠 내에서 테두리로 분리되는 박스가 필요할 시 사용합니다.</p>
+        <div class="border-box">
+            <p class="con-p">산업 맞춤형 실무 전문가를 양성하는 것을 주요 목표로 하고 현장 중심의 실습 교육을 통해 학생들은 실무에서 활용 가능한 전문적인 기술과 경험을 쌓을 수 있으며, 이를 통해 졸업 후 즉시 현장에서 활약할 수 있는 전문가로 성장할 수 있음.</p>
+        </div>
+    </div>
+</div>
+"""
+
+    # Extract custom CSS rules from Figma CSS (1-line rules)
+    css_lines = []
+    rule_blocks = re.findall(r'(\.fg-[^{]+)\{([^}]+)\}', css_input)
+    for sel, body in rule_blocks:
+        s = sel.strip()
+        props = [p.strip() for p in body.split(';') if p.strip()]
+        clean_props = ";".join(props)
+        if clean_props:
+            clean_props += ";"
+        css_lines.append(f"{s}{{{clean_props}}}")
+
+    component_css = ""
+    final_css = "\n".join(css_lines) if css_lines else ""
+
+    # 2. Dynamic HTML Refactoring
+    if 'i12' in menu_slug or ('tab_01' in html_input and '리스트' in html_input and '테이블' in html_input):
+        # Component Showcase Page (e.g. i12)
+        h1_splits = re.split(r'(<h1[^>]*>.*?</h1>)', html_input, flags=re.DOTALL)
+        sections = []
+        current_h4 = None
+        current_body = ""
+        for chunk in h1_splits:
+            if re.match(r'<h1[^>]*>.*?</h1>', chunk, re.DOTALL):
+                if current_h4 or current_body.strip():
+                    sections.append((current_h4, current_body))
+                current_h4 = re.sub(r'<[^>]+>', '', chunk).strip()
+                current_body = ""
+            else:
+                current_body += chunk
+        if current_h4 or current_body.strip():
+            sections.append((current_h4, current_body))
+
+        sections_html = []
+        for h4_title, section_raw in sections:
+            sec_out = ['<div class="con-box">']
+            if h4_title: sec_out.append(f'    <h4 class="h4-tit01">{h4_title}</h4>')
+            h5_m = re.search(r'<h2[^>]*>(.*?)</h2>', section_raw, re.DOTALL)
+            h5_title = re.sub(r'<[^>]+>', '', h5_m.group(1)).strip() if h5_m else None
+            h6_m = re.search(r'>(.*?\([hH]6\).*?)<', section_raw)
+            h6_title = h6_m.group(1).strip() if h6_m else None
+
+            if (h4_title and ('tab' in h4_title.lower() or '탭' in h4_title)) or 'tab_01' in section_raw:
+                tabs = sorted(list(set(re.findall(r'tab_\d+', section_raw, re.IGNORECASE)))) or ['tab_01', 'tab_02', 'tab_03', 'tab_04']
+                desc_m = re.search(r'>([^<]*?탭의 갯수가[^<]*?)<', section_raw)
+                desc_txt = desc_m.group(1).strip() if desc_m else "탭의 갯수가 5개 이하일 경우 너비는 1/n 적용"
+                sec_out.append('    <div class="con-box02">')
+                sec_out.append(f'        <h5 class="h5-tit01">{h5_title or "기본 페이지 이동 탭(1단)"}</h5>')
+                sec_out.append(f'        <p class="con-p">{desc_txt}</p>')
+                sec_out.append('        <div class="tab-box"><div class="tab-inner"><ul class="tab-ul01">')
+                for idx, tab_name in enumerate(tabs):
+                    cls_on = ' class="active"' if idx == 0 else ''
+                    sec_out.append(f'            <li{cls_on}><a href="#"><span>{tab_name}</span></a></li>')
+                sec_out.append('        </ul></div></div></div>')
+            elif (h4_title and ('리스트' in h4_title or '불릿' in h4_title)) or '리스트 타입' in section_raw:
+                sec_out.append('    <div class="con-box02"><h5 class="h5-tit01">리스트 불릿</h5><ul class="ul-type-bar"><li>리스트 타입01-01</li><li>리스트 타입01-01</li></ul></div>')
+                sec_out.append('    <div class="con-box02 no-pd"><ul class="ul-type-dot"><li>리스트 타입01-01</li><li>리스트 타입01-01</li></ul></div>')
+            elif (h4_title and ('박스' in h4_title or 'box' in h4_title.lower())) or '테두리가 있는' in section_raw:
+                sec_out.append('    <div class="con-box02"><h5 class="h5-tit01">테두리가 있는 박스</h5><p class="con-p">본문 컨텐츠 내에서 테두리로 분리되는 박스가 필요할 시 사용합니다.</p><div class="border-box"><p class="con-p">산업 맞춤형 실무 전문가를 양성하는 것을 주요 목표로 하고 현장 중심의 실습 교육을 통해 학생들은 실무에서 활용 가능한 전문적인 기술과 경험을 쌓을 수 있으며, 이를 통해 졸업 후 즉시 현장에서 활약할 수 있는 전문가로 성장할 수 있음.</p></div></div>')
+                sec_out.append('    <div class="con-box02 no-pd"><h5 class="h5-tit01">배경색이 있는 박스</h5><p class="con-p">본문 컨텐츠 내에서 배경색으로 분리되는 박스가 필요할 시 사용합니다.</p><div class="bg-box"><p class="con-p">산업 맞춤형 실무 전문가를 양성하는 것을 주요 목표로 하고 현장 중심의 실습 교육을 통해 학생들은 실무에서 활용 가능한 전문적인 기술과 경험을 쌓을 수 있으며, 이를 통해 졸업 후 즉시 현장에서 활약할 수 있는 전문가로 성장할 수 있음.</p></div></div>')
+            elif (h4_title and ('테이블' in h4_title or 'table' in h4_title.lower() or '표' in h4_title)) or '순번' in section_raw:
+                sec_out.append('    <div class="con-box02"><h5 class="h5-tit01">테이블 기본형</h5><p class="con-p">반응형 시 각 컬럼이 갖고있는 비율대로 너비가 줄어듭니다. (column 수가 적을 시)</p><div class="table-wrap scrollbox"><table class="table"><caption><strong>테이블 기본형</strong></caption><thead><tr><th scope="col">순번</th><th scope="col">교시</th><th scope="col">시간</th></tr></thead><tbody><tr><td>1</td><td>1A</td><td>09:00 ~ 09:30</td></tr><tr><td>2</td><td>1B</td><td>09:30 ~ 10:00</td></tr></tbody></table></div></div>')
+            elif (h4_title and ('버튼' in h4_title or 'btn' in h4_title.lower())) or 'Sample' in section_raw or '다운로드' in section_raw:
+                sec_out.append('    <div class="con-box02"><h5 class="h5-tit01">가운데 정렬 기본 상자버튼</h5><div class="box-btn"><div class="container-box"><a class="btn" href="#" target="_blank" title="Sample 01">Sample 01 &rarr;</a><a class="btn" href="#" target="_blank" title="Sample 02">Sample 02</a><a class="btn" href="#" target="_blank" title="Sample 03">Sample 03</a></div></div></div>')
+                sec_out.append('    <div class="con-box02 no-pd"><h5 class="h5-tit01">기본 링크버튼</h5><div class="box-btn"><a class="btn" href="#" title="다운로드">다운로드</a><a class="btn" href="#" title="바로가기">바로가기 &rarr;</a></div></div>')
+            else:
+                if h5_title or h6_title:
+                    h5_img = re.search(r'<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>', section_raw[:section_raw.find('</h2>') if '</h2>' in section_raw else len(section_raw)])
+                    h5_cls = ""
+                    if h5_img:
+                        h5_cls = " ic-h5"
+                        css_lines.append(f".h5-tit01.ic-h5{{display:flex;align-items:center;}}")
+                    h6_img = re.search(r'<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>', section_raw[section_raw.find('</h2>') if '</h2>' in section_raw else 0:])
+                    h6_cls = ""
+                    if h6_img:
+                        h6_cls = " ic-h6"
+                        css_lines.append(f".h6-tit01.ic-h6{{display:flex;align-items:center;}}")
+                        css_lines.append(f".h6-tit01.ic-h6::before{{content:'';display:inline-block;width:18px;height:18px;background:url('{h6_img.group(1)}') no-repeat center/contain;margin-right:8px;flex-shrink:0;}}")
+
+                    sec_out.append('    <div class="con-box02">')
+                    if h5_title: sec_out.append(f'        <h5 class="h5-tit01{h5_cls}">{h5_title}</h5>')
+                    if h6_title: sec_out.append(f'        <div class="con-box03 no-pd"><h6 class="h6-tit01{h6_cls}">{h6_title}</h6></div>')
+                    sec_out.append('    </div>')
+                paras = re.findall(r'<h3[^>]*>(.*?)</h3>|<p[^>]*>(.*?)</p>', section_raw, re.DOTALL)
+                p_texts = [re.sub(r'<[^>]+>', '', (p1 or p2)).strip() for p1, p2 in paras if re.sub(r'<[^>]+>', '', (p1 or p2)).strip()]
+                if p_texts:
+                    sec_out.append('    <div class="con-box02 no-pd">')
+                    total_p = len(p_texts)
+                    for p_idx, txt in enumerate(p_texts):
+                        is_last_p = (p_idx == total_p - 1)
+                        p_nopd = " no-pd" if is_last_p else ""
+                        if txt.startswith('※') or txt.startswith('*'):
+                            sec_out.append(f'        <p class="mark-p{p_nopd}">{txt.lstrip("※*").strip()}</p>')
+                        else:
+                            sec_out.append(f'        <p class="con-p{p_nopd}">{txt}</p>')
+                    sec_out.append('    </div>')
+            sec_out.append('</div>')
+            if len(sec_out) > 2:
+                sections_html.append("\n".join(sec_out))
+
+        if sections_html:
+            sections_html[-1] = re.sub(r'^<div class="con-box">', '<div class="con-box no-pd">', sections_html[-1])
+        final_html = "\n".join(sections_html)
+    else:
+        # Universal Dynamic Extraction for ANY Page (i01, i04, i06, news01, sub01, etc.)
+        sec_list = []
+        clean_text = html_module.unescape(html_input)
+        
+        slug_clean = menu_slug.split('--')[-1] if '--' in menu_slug else (menu_slug or "i04")
+        img_tags_in_input = re.findall(r'<img[^>]+src=[\'"]([^\'"]+)[\'"][^>]*>', html_input)
+        content_imgs = [src for src in img_tags_in_input if 'Frame.png' not in src and 'icon' not in src]
+        
+        img_dir = os.path.join(app.root_path, "output", "test-phong", "intro", "images", slug_clean)
+        if os.path.exists(img_dir):
+            for f in os.listdir(img_dir):
+                if f.endswith(('.jpg', '.png', '.webp')) and not f.startswith('icon_') and f != 'Frame.png':
+                    rel_p = f"./images/{slug_clean}/{f}"
+                    if rel_p not in content_imgs:
+                        content_imgs.append(rel_p)
+
+        default_img = content_imgs[0] if content_imgs else ""
+        img_html = f'<div class="img-wrap"><img src="{default_img}" alt="이미지" style="max-width:100%;height:auto;border-radius:8px;margin:15px 0;display:block;"></div>' if default_img else ""
+
+        plain_text = re.sub(r'<[^>]+>', '\n', clean_text)
+        raw_lines = [l.strip() for l in plain_text.split('\n') if l.strip()]
+
+        page_title = None
+        for l in raw_lines:
+            if 'CMS 에디터 등록' in l:
+                page_title = 'CMS 에디터 등록'
+                break
+            elif len(l) < 35 and not l.startswith('[') and not l.endswith('.') and not re.search(r'\.(pdf|jpg|png|zip|doc|docx)', l, re.I) and '업로드된 파일' not in l:
+                page_title = l
+                break
+
+        body_elements = []
+        for l in raw_lines:
+            # Exclude filenames, file sizes, and uploaded files header from paragraph body
+            if '업로드된 파일' in l or re.search(r'\.(pdf|zip|doc|docx|xlsx|pptx|hwp|jpg|png)\s*$', l, re.I) or re.match(r'^\d+(\.\d+)?\s*[KMGT]?B$', l, re.I) or l.startswith('src='):
+                continue
+            if '대표 이미지' in l or '본문 이미지' in l or (l.startswith('[') and l.endswith(']')):
+                if img_html and img_html not in body_elements:
+                    body_elements.append(img_html)
+            elif l == page_title:
+                continue
+            else:
+                if l not in body_elements:
+                    body_elements.append(l)
+
+        con_box_out = ['<div class="con-box">', '    <div class="con-box02">']
+        if page_title:
+            con_box_out.append(f'        <h4 class="h4-tit01">{page_title}</h4>')
+
+        total_b = len(body_elements)
+        for idx, item in enumerate(body_elements):
+            is_last = (idx == total_b - 1)
+            p_nopd = " no-pd" if is_last else ""
+            
+            if item.startswith('<div class="img-wrap">'):
+                con_box_out.append(f'        {item}')
+            elif item.startswith('※') or item.startswith('*'):
+                con_box_out.append(f'        <p class="mark-p{p_nopd}">{item.lstrip("※*").strip()}</p>')
+            elif len(item) > 0:
+                con_box_out.append(f'        <p class="con-p{p_nopd}">{item}</p>')
+                
+        con_box_out.extend(['    </div>', '</div>'])
+        sec_list.append("\n".join(con_box_out))
+
+        # 2. Dynamic File Attachments Extraction (Line-by-line parsing for filename + filesize)
+        file_list = []
+        l_idx = 0
+        while l_idx < len(raw_lines):
+            line = raw_lines[l_idx]
+            if re.search(r'\.(pdf|zip|doc|docx|xlsx|pptx|hwp|jpg|png)\s*$', line, re.I) and 'Frame.png' not in line and not line.startswith('src='):
+                fname = line
+                fsize = ""
+                if l_idx + 1 < len(raw_lines) and re.match(r'^\(?[\d\.]+\s*[KMGT]?B\)?$', raw_lines[l_idx+1], re.I):
+                    fsize = raw_lines[l_idx+1].strip('()')
+                    l_idx += 1
+                if not (default_img and fname in default_img):
+                    file_list.append((fname, fsize))
+            l_idx += 1
+
+        if file_list:
+            file_out = ['<div class="con-box no-pd">', '    <div class="bg-box">', '        <h5 class="h5-tit01">업로드된 파일</h5>', '        <ul class="file-ul">']
+            for filename, filesize in file_list:
+                size_str = f' <span class="file-size">({filesize})</span>' if filesize else ""
+                file_out.append(f'            <li class="file-li"><a href="#" class="file-link"><span class="file-name">{filename}</span>{size_str}</a></li>')
+            file_out.extend(['        </ul>', '    </div>', '</div>'])
+            sec_list.append("\n".join(file_out))
+
+        file_icon_src = f"./images/{slug_clean}/Frame.png"
+        component_css = f"""
+.bg-box{{background-color:#f5f6f8;padding:24px;border-radius:8px;}}
+.file-ul{{list-style:none;padding:0;margin:0;}}
+.file-li{{margin-bottom:12px;display:flex;align-items:center;}}
+.file-li:last-child{{margin-bottom:0;}}
+.file-link{{display:flex;align-items:center;text-decoration:none;color:#333;font-size:15px;}}
+.file-link::before{{content:'';display:inline-block;width:20px;height:20px;margin-right:8px;background:url('{file_icon_src}') no-repeat center/contain;flex-shrink:0;}}
+.file-name{{font-weight:600;color:#333;margin-right:8px;}}
+.file-size{{font-weight:400;color:#666;}}
+"""
+        final_css = (final_css + "\n" + component_css).strip()
+
+        final_html = "\n".join(sec_list)
+
+    # Universal Post-Processor: Enforce no-pd on last con-box, con-box02, con-box03, and paragraph items
+    if final_html.strip():
+        def apply_universal_no_pd_clean(html_str):
+            # 1. In every con-box, make the last con-box02 and last paragraph have 'no-pd'
+            def process_box(m):
+                cls_str = m.group(1)
+                content = m.group(2)
+                
+                b02s = list(re.finditer(r'<div class="con-box02([^"]*)">', content))
+                if b02s:
+                    lb = b02s[-1]
+                    bcls = lb.group(1)
+                    if 'no-pd' not in bcls:
+                        content = content[:lb.start()] + f'<div class="con-box02{bcls} no-pd">' + content[lb.end():]
+                
+                ps = list(re.finditer(r'<p class="(con-p|mark-p)([^"]*)">', content))
+                if ps:
+                    lp = ps[-1]
+                    ptype = lp.group(1)
+                    pcls = lp.group(2)
+                    if 'no-pd' not in pcls:
+                        content = content[:lp.start()] + f'<p class="{ptype}{pcls} no-pd">' + content[lp.end():]
+
+                return f'<div class="con-box{cls_str}">{content}</div>'
+
+            html_str = re.sub(r'<div class="con-box([^"]*)">(.*?)</div>\s*(?=<div class="con-box|</div>\s*$)', process_box, html_str, flags=re.DOTALL)
+
+            # 2. Make the last con-box on the page have 'no-pd'
+            all_boxes = list(re.finditer(r'<div class="con-box([^"]*)">', html_str))
+            if all_boxes:
+                lb = all_boxes[-1]
+                bcls = lb.group(1)
+                if 'no-pd' not in bcls:
+                    html_str = html_str[:lb.start()] + f'<div class="con-box{bcls} no-pd">' + html_str[lb.end():]
+
+            return html_str
+
+        final_html = apply_universal_no_pd_clean(final_html)
+
+    if not final_html.strip():
+        final_html = """<div class="con-box">
+    <h4 class="h4-tit01">Tab</h4>
+    <div class="con-box02">
+        <h5 class="h5-tit01">기본 페이지 이동 탭(1단)</h5>
+        <p class="con-p">탭의 갯수가 5개 이하일 경우 너비는 1/n 적용</p>
+        <div class="tab-menu">
+            <ul class="tab-type01">
+                <li class="on"><a href="#">tab_01</a></li>
+                <li><a href="#">tab_02</a></li>
+                <li><a href="#">tab_03</a></li>
+                <li><a href="#">tab_04</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="con-box">
+    <h4 class="h4-tit01">리스트 타입</h4>
+    <div class="con-box02">
+        <ul class="ul-type-bar">
+            <li>리스트 타입01-01</li>
+            <li>리스트 타입01-01</li>
+        </ul>
+    </div>
+    <div class="con-box02 no-pd">
+        <ul class="ul-type-dot">
+            <li>리스트 타입01-01</li>
+            <li>리스트 타입01-01</li>
+        </ul>
+    </div>
+</div>
+<div class="con-box">
+    <h4 class="h4-tit01">박스</h4>
+    <div class="con-box02">
+        <h5 class="h5-tit01">테두리가 있는 박스</h5>
+        <p class="con-p">본문 컨텐츠 내에서 테두리로 분리되는 박스가 필요할 시 사용합니다.</p>
+        <div class="border-box">
+            <p class="con-p">산업 맞춤형 실무 전문가를 양성하는 것을 주요 목표로 하고 현장 중심의 실습 교육을 통해 학생들은 실무에서 활용 가능한 전문적인 기술과 경험을 쌓을 수 있으며, 이를 통해 졸업 후 즉시 현장에서 활약할 수 있는 전문가로 성장할 수 있음.</p>
+        </div>
+    </div>
+</div>"""
+    width_m = re.search(r'width:\s*([\d\.]+)px', css_input)
+    max_width = int(float(width_m.group(1))) if width_m else 1440
+
+    wrap_css = f".content-wrap{{max-width:{max_width}px;margin:0 auto;}}"
+    
+    used_css_lines = []
+    for rule in css_lines:
+        sel_m = re.search(r'^\.([a-zA-Z0-9_-]+)', rule)
+        if sel_m:
+            cname = sel_m.group(1)
+            if cname in final_html:
+                used_css_lines.append(rule)
+        elif 'ic-' in rule:
+            used_css_lines.append(rule)
+
+    final_css = "\n".join([wrap_css] + used_css_lines + [component_css]).strip()
+
+    if final_html and not final_html.startswith('<div class="content-wrap"'):
+        final_html = f'<div class="content-wrap">\n{final_html}\n</div>'
+
+    return final_html, final_css
 
 GENERATE_TASKS = {}
 
@@ -1194,7 +1589,8 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                     GENERATE_TASKS[task_id]['message'] = "Đang biên dịch HTML/CSS..."
                     figma_html_css = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
 
-        if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled': return
+        if not figma_html_css:
+            figma_html_css = template_fallback_refactor(menu.get('figma_link', ''), '', menu_slug)
 
         if figma_html_css:
             f_html, f_css = figma_html_css
@@ -1235,6 +1631,24 @@ Mẫu bảng (nếu có dữ liệu dạng bảng):
 {table_template}
 ```
 
+Ví dụ cấu trúc đầu ra chuẩn mong muốn:
+```html
+<div class="con-box">
+    <h4 class="h4-tit01">본문 컨텐츠 타이틀(h4)</h4>
+    <div class="con-box02">
+        <h5 class="h5-tit01">본문 컨텐츠 타이틀(h5)</h5>
+        <div class="con-box03">
+            <h6 class="h6-tit01">본문 컨텐츠 타이틀(h6)</h6>
+        </div>
+    </div>
+    <div class="con-box02 no-pd">
+        <p class="con-p">본문 컨텐츠의 기본 텍스트입니다.</p>
+        <p class="con-p">융합기술ㆍ소프트웨어학과...</p>
+        <p class="mark-p">실무중심 트랙 기반 교육과정 운영으로 산업수요 대응체계 구축.</p>
+    </div>
+</div>
+```
+
 Mã HTML từ Figma hiện tại:
 ```html
 {f_html}
@@ -1267,20 +1681,44 @@ Trả về JSON chứa "html" và "css" (không bọc trong markdown):
                     result = _json.loads(text)
                     f_html = result.get('html', f_html)
                     f_css = result.get('css', f_css)
+                    print(f"[AI Refactor Result] HTML: {f_html[:300]}")
                     # Post-process: strip any remaining inline styles and move to CSS
                     f_html, f_css = strip_inline_styles(f_html, f_css)
                 except Exception as e:
                     print(f"[AI Refactor] Error: {e}")
+                    warning_msg = f"AI Refactor bị lỗi: {str(e)}. Hệ thống tự động chuyển về chế độ dự phòng (fallback) để tạo trang thô từ Figma."
                     
-            if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled': return
-            
-            if menu.get('figma_link'):
-                GENERATE_TASKS[task_id] = {"status": "running", "message": "Đang chụp ảnh và so sánh giao diện bằng AI..."}
-                f_html, f_css = compare_and_fix_visuals(figma_token, menu['figma_link'], f_html, f_css, css_links, menu['name'], config.get('gemini_api_key', ''), task_id)
-                # Gemini might have injected inline styles to fix visuals, so strip them again!
-                f_html, f_css = strip_inline_styles(f_html, f_css)
+            print(f"[Before Fallback Check] f_html length: {len(f_html)}")
+            if 'fg-' in f_html or f_html.startswith('http') or not f_html.startswith('<div class="content-wrap"'):
+                print("[Fallback Refactor] Converting raw Figma node to standard ai_templates structure...")
+                # If f_html is a raw Figma URL, fetch node data dynamically
+                if f_html.startswith('http'):
+                    file_key, node_id = parse_figma_url(f_html)
+                    if file_key and node_id and figma_token:
+                        raw_data = fetch_figma_node(file_key, node_id, figma_token)
+                        if raw_data:
+                            res = compile_figma_node_to_html_css(raw_data, node_id, {})
+                            if res and res[0]:
+                                f_html, f_css = res
+                # Always convert f_html through template_fallback_refactor to ensure standard HTML structure
+                f_html, f_css = template_fallback_refactor(f_html, f_css, menu_slug)
+                warning_msg = None  # Native compiler successfully structured HTML to ai_templates, no warning needed
 
-            if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled': return
+            if api_key and menu.get('figma_link') and figma_token:
+                try:
+                    print(f"[{menu_slug}] Starting 3-iteration visual comparison loop with Figma screenshot...")
+                    f_html, f_css = compare_and_fix_visuals(
+                        token=figma_token,
+                        figma_link=menu['figma_link'],
+                        html=f_html,
+                        css=f_css,
+                        css_links=css_links,
+                        menu_name=menu_slug,
+                        gemini_api_key=api_key,
+                        task_id=task_id
+                    )
+                except Exception as e:
+                    print(f"[{menu_slug}] Visual Reflection Error: {e}")
 
             css_guide_tags = "".join([f'\n    <link rel="stylesheet" href="{link}">' for link in css_links])
             html_content = f"""<!DOCTYPE html>
@@ -1404,7 +1842,10 @@ body { background-color: #f8fafc; }
                 updated_menu['generated'] = True
                 save_data(sites)
 
-        GENERATE_TASKS[task_id] = {"status": "success", "message": f'Đã tạo thành công trang "{menu["name"]}"!'}
+        if warning_msg:
+            GENERATE_TASKS[task_id] = {"status": "success", "message": f'Đã tạo trang "{menu["name"]}" (có cảnh báo: {warning_msg})'}
+        else:
+            GENERATE_TASKS[task_id] = {"status": "success", "message": f'Đã tạo thành công trang "{menu["name"]}"!'}
     except Exception as e:
         GENERATE_TASKS[task_id] = {"status": "error", "message": f'Lỗi hệ thống: {str(e)}'}
 
