@@ -977,7 +977,7 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
+        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         text = response.text.strip()
         
         # Clean up markdown tags if present
@@ -1256,7 +1256,7 @@ Trả về JSON chứa "html" và "css" (không bọc trong markdown):
   "html": "toàn bộ nội dung HTML đã tái cấu trúc",
   "css": "toàn bộ CSS đã tái cấu trúc"
 }}"""
-                    response = client.models.generate_content(model='gemini-3.1-flash-lite', contents=prompt)
+                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
                     text = response.text.strip()
                     import json as _json
                     if '```json' in text:
