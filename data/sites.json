@@ -1,0 +1,211 @@
+[
+    {
+        "id": "phong01",
+        "name": "phong01",
+        "url": "https://temp.jiniworks.com/_fox",
+        "username": "admin",
+        "password": "temp$#@!",
+        "menus": [
+            {
+                "name": "i02",
+                "folder": "intro",
+                "slug": "i02",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2503&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i01",
+                "folder": "intro",
+                "slug": "i01",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2536&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "intro01",
+                "folder": "intro",
+                "slug": "intro01",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=1543-8470&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "intro02",
+                "folder": "",
+                "slug": "intro02",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=335-2494&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "news01",
+                "folder": "news",
+                "slug": "news01",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=334-4893&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "news02",
+                "folder": "news",
+                "slug": "news02",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=335-2499&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "new03",
+                "folder": "news",
+                "slug": "new03",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=427-4699&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "File Upload Box",
+                "folder": "",
+                "slug": "file-upload",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/NAMSEOUL?node-id=427-4855",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "Duplicate Check Box",
+                "folder": "",
+                "slug": "dup-check",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/NAMSEOUL?node-id=427-4968",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "Attachment Card",
+                "folder": "",
+                "slug": "attachment-card",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/NAMSEOUL?node-id=427-4715",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "test01",
+                "folder": "intro",
+                "slug": "test01",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=427-5773&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            }
+        ],
+        "folders": [
+            "intro",
+            "news"
+        ]
+    },
+    {
+        "id": "test-site",
+        "name": "Test Site",
+        "url": "http://test-site.com",
+        "username": "",
+        "password": "",
+        "menus": [
+            {
+                "name": "Giới thiệu",
+                "folder": "intro",
+                "slug": "intro01",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=293-4415&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            }
+        ],
+        "folders": [
+            "intro",
+            "news"
+        ]
+    },
+    {
+        "id": "test-phong",
+        "name": "demo test-phong",
+        "url": "https://demo.jiniworks.com/_fox",
+        "username": "webadmin",
+        "password": "12andvina#$",
+        "menus": [
+            {
+                "name": "i12",
+                "folder": "intro",
+                "slug": "i12",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2486&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "intro01",
+                "folder": "about",
+                "slug": "intro01",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2486&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i06",
+                "folder": "news",
+                "slug": "i06",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=28-2521&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i05",
+                "folder": "intro",
+                "slug": "i05",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=492-5281&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i04",
+                "folder": "intro",
+                "slug": "i04",
+                "figma_link": "https://www.figma.com/design/K4KYVqieP1tWktkqZ7vnT6/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EA%B4%80?node-id=492-5281&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i03",
+                "folder": "intro",
+                "slug": "i03",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-550&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "test01",
+                "folder": "intro",
+                "slug": "test01",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=28-2504&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i02",
+                "folder": "intro",
+                "slug": "i02",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2550&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            },
+            {
+                "name": "i01",
+                "folder": "intro",
+                "slug": "i01",
+                "figma_link": "https://www.figma.com/design/UWSJjhyYk8mp6Jcztkhd6S/%EB%82%A8%EC%84%9C%EC%9A%B8%EB%8C%80%ED%95%99%EA%B5%90_%EC%9C%B5%ED%95%A9%EA%B8%B0%EC%88%A0%EC%86%8C%ED%94%84%ED%8A%B8%EC%9B%A8%EC%96%B4%ED%95%99%EA%B3%BC--Copy-?node-id=38-2486&m=dev",
+                "layout": "sub-template",
+                "generated": true
+            }
+        ],
+        "folders": [
+            "intro",
+            "news",
+            "about"
+        ],
+        "css_guide": "https://demo.jiniworks.com/_res/_common/css/cms.css\r\nhttps://demo.jiniworks.com/_res/kookmin/_share/css/cms-common.css\r\nhttps://demo.jiniworks.com/_res/kookmin/test-phong/css/cms-common.css"
+    }
+]

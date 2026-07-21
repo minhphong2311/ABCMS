@@ -1,0 +1,414 @@
+import asyncio
+import sys
+from playwright.async_api import async_playwright
+import os
+import traceback
+
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+
+async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False, slow_mo=200)
+        context = await browser.new_context(viewport={'width': 1400, 'height': 900}, ignore_https_errors=True)
+        page = await context.new_page()
+        page.on('dialog', lambda dialog: asyncio.create_task(dialog.accept()))
+
+        try:
+            # STEP 1: LOGIN
+            print(f'[{slug}] Logging in to CMS: {site_url}')
+            await page.goto(site_url)
+            await page.wait_for_selector('input[name="userId"]', timeout=15000)
+            await page.fill('input[name="userId"]', username)
+            await page.fill('input[name="userPassword"]', password)
+            await page.click('button[type="submit"]')
+            await page.wait_for_load_state('networkidle')
+            await asyncio.sleep(2)
+
+            # Verify login succeeded
+            current_url = page.url
+            if 'login' in current_url.lower():
+                # Check for lockout message
+                body = await page.evaluate('document.body.innerText')
+                raise Exception(f'Login failed! Still on login page: {current_url}. Body snippet: {body[:200]}')
+
+            # STEP 2: NAVIGATE TO PAGE MANAGER
+            target_url = f'{site_url}/index.do?siteId={site_id}#!/page'
+            print(f'[{slug}] Navigating to: {target_url}')
+            try:
+                await page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
+            except Exception:
+                await page.evaluate('window.location.hash = \"!/page\";')
+            await page.wait_for_load_state('networkidle')
+            await asyncio.sleep(3)
+
+            try:
+                await page.wait_for_function('() => !!document.querySelector(\".jstree-anchor\")', timeout=30000)
+            except Exception as e:
+                print(f'[{slug}] Folder tree not found! URL: {page.url}')
+                raise e
+
+            # Click "페이지" tab to ensure page list is active
+            print(f'[{slug}] Selecting "페이지" (Page) tab...')
+            await page.evaluate('''() => {
+                const tabs = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading, a'));
+                const pageTab = tabs.find(x => (x.innerText || x.textContent || '').trim().includes('페이지'));
+                if (pageTab) pageTab.click();
+            }''')
+            await asyncio.sleep(2)
+
+            # STEP 3: SELECT FOLDER
+            if folder:
+                folder_anchor_id = f'/{site_id}/{folder}_anchor'
+                print(f'[{slug}] Selecting folder: {folder}')
+                try:
+                    # Wait up to 8 seconds for the folder anchor to render in the DOM
+                    await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=8000)
+                    folder_el = True
+                except Exception:
+                    folder_el = False
+
+                if not folder_el:
+                    print(f'[{slug}] Folder not found in tree. Creating folder...')
+                    await page.evaluate(f'window.angular.element(document.body).injector().get(\"pageService\").addFolder(\"{site_id}\", \"/{site_id}\", \"{folder}\")')
+                    await asyncio.sleep(3)
+                    print(f'[{slug}] Reloading page to sync tree...')
+                    await page.reload(wait_until='domcontentloaded')
+                    await page.wait_for_load_state('networkidle')
+                    await page.wait_for_function('() => !!document.querySelector(\".jstree-anchor\")', timeout=20000)
+                    
+                    # Re-select "페이지" tab
+                    await page.evaluate('''() => {
+                        const tabs = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading, a'));
+                        const pageTab = tabs.find(x => (x.innerText || x.textContent || '').trim().includes('페이지'));
+                        if (pageTab) pageTab.click();
+                    }''')
+                    await asyncio.sleep(2)
+                    await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
+
+                await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
+                await asyncio.sleep(2)
+
+            # STEP 4: CHECK PAGE EXISTS
+            print(f'[{slug}] Checking if {slug}.jsp exists...')
+            page_exists = await page.evaluate(f'''() => {{
+                return new Promise((resolve) => {{
+                    let n = 0;
+                    const check = () => {{
+                        n++;
+                        const els = Array.from(document.querySelectorAll('.page-list, [ng-controller]'));
+                        for (const el of els) {{
+                            const s = window.angular && window.angular.element(el).scope();
+                            if (s) {{
+                                const list = s.list || (s.pg && s.pg.list) || (s.pg && s.pg.pageList);
+                                if (list && list.length > 0) {{
+                                    return resolve(!!list.find(i => i && i.filename === '{slug}.jsp'));
+                                }}
+                            }}
+                        }}
+                        if (n > 60) return resolve(false);
+                        setTimeout(check, 100);
+                    }};
+                    check();
+                }});
+            }}''')
+            print(f'[{slug}] page_exists={page_exists}')
+
+            editor_page = None
+
+            if page_exists:
+                # PAGE EXISTS: select page by physically clicking the card and then click the "Biên tập" button on the toolbar
+                print(f'[{slug}] Page exists. Selecting page card in DOM...')
+                card_click_res = await page.evaluate(f'''(slug) => {{
+                    const cardEl = Array.from(document.querySelectorAll('*')).find(el => {{
+                        const s = window.angular && window.angular.element(el).scope();
+                        return s && s.item && s.item.filename === slug + '.jsp';
+                    }});
+                    if (cardEl) {{
+                        cardEl.click();
+                        return 'clicked card';
+                    }}
+                    return 'card not found';
+                }}''', slug)
+                print(f'[{slug}] Card click result: {card_click_res}')
+                await asyncio.sleep(1.5)
+
+                print(f'[{slug}] Clicking the "Biên tập" (Edit) button on the toolbar...')
+                new_pages = []
+                def on_page(p):
+                    new_pages.append(p)
+                context.on('page', on_page)
+
+                await page.evaluate('''() => {
+                    const anchors = Array.from(document.querySelectorAll("a, button"));
+                    const editBtn = anchors.find(a => 
+                        (a.getAttribute('data-original-title') || '').includes('Biên tập') || 
+                        (a.getAttribute('data-original-title') || '').includes('에디터') || 
+                        a.textContent.includes('Biên tập') ||
+                        a.textContent.includes('에디터')
+                    );
+                    if (editBtn) editBtn.click();
+                }''')
+
+                # Wait up to 3 seconds for a new page to open
+                for _ in range(30):
+                    if new_pages:
+                        break
+                    await asyncio.sleep(0.1)
+
+                if new_pages:
+                    editor_page = new_pages[0]
+                    print(f'[{slug}] Editor tab (new page): {editor_page.url}')
+                else:
+                    editor_page = page
+                    print(f'[{slug}] Editor (same tab): {editor_page.url}')
+
+                try:
+                    context.remove_listener('page', on_page)
+                except Exception:
+                    pass
+            else:
+                # PAGE NOT EXISTS: create page, click save+edit -> same tab editor
+                print(f'[{slug}] Creating new page...')
+                await page.evaluate('''() => {
+                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('Thêm')));
+                    if (btn) btn.click();
+                }''')
+                await page.wait_for_selector('.modal-dialog, .modal-content', timeout=10000)
+                await asyncio.sleep(2)
+
+                # Fill form: Title and Filename
+                await page.evaluate(f'''(slug) => {{
+                    const set = (sel, val) => {{
+                        const el = document.querySelector(sel);
+                        if (!el) return;
+                        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+                        setter.call(el, val);
+                        el.dispatchEvent(new Event('input', {{bubbles:true}}));
+                        el.dispatchEvent(new Event('change', {{bubbles:true}}));
+                    }};
+                    set('input[name="title"]', slug);
+                    set('input[name="filename"]', slug);
+                    set('input[ng-model="pg.data.filename"]', slug);
+                }}''', slug)
+                await asyncio.sleep(1)
+
+                # Select HTML Header and Layout template
+                await page.evaluate(f'''() => {{
+                    const headEl = document.querySelector('[name="headTemplate"]');
+                    if (headEl) {{
+                        const s = window.angular.element(headEl).scope();
+                        const item = s.pg.headTemplateList.find(t => t.filename === 'common.jsp' && t.siteId === '{site_id}') || s.pg.headTemplateList.find(t => t.filename === 'common.jsp');
+                        if (item) window.angular.element(headEl).controller('uiSelect').select(item);
+                    }}
+                    const layoutEl = document.querySelector('[name="layoutTemplate"]');
+                    if (layoutEl) {{
+                        const s = window.angular.element(layoutEl).scope();
+                        const item = s.pg.layoutTemplateList.find(t => t.filename === '{layout}.jsp' && t.siteId === '{site_id}') || s.pg.layoutTemplateList.find(t => t.filename === '{layout}.jsp');
+                        if (item) window.angular.element(layoutEl).controller('uiSelect').select(item);
+                    }}
+                }}''')
+                await asyncio.sleep(1)
+
+                # Force ng-if conditions on ALL scopes containing pg
+                print(f'[{slug}] Forcing STATIC + hasMainContent on all pg scopes...')
+                await page.evaluate('''() => {
+                    // Try every angular element's scope
+                    Array.from(document.querySelectorAll('[ng-controller], .modal, .modal-content, .modal-dialog, form')).forEach(el => {
+                        try {
+                            const s = window.angular && window.angular.element(el).scope();
+                            if (s && s.pg) {
+                                s.pg.hasMainContent = true;
+                                if (!s.pg.data) s.pg.data = {};
+                                s.pg.data.pageKind = 'STATIC';
+                                s.$apply();
+                            }
+                        } catch(e) {}
+                    });
+
+                    // Also try $rootScope broadcast
+                    try {
+                        const rs = window.angular.element(document.body).scope().$root;
+                        if (rs && rs.pg) {
+                            rs.pg.hasMainContent = true;
+                            if (!rs.pg.data) rs.pg.data = {};
+                            rs.pg.data.pageKind = 'STATIC';
+                            rs.$apply();
+                        }
+                    } catch(e) {}
+                }''')
+                await asyncio.sleep(1)
+
+                # Use try/except to wait for button and click it
+                try:
+                    await page.wait_for_function(
+                        '''() => !!document.querySelector('button[ng-click*="content-edit"]') || Array.from(document.querySelectorAll('button')).some(b=>b.innerText&&b.innerText.includes("저장 후 편집"))''',
+                        timeout=8000
+                    )
+                    print(f'[{slug}] Button appeared! Clicking...')
+                    clicked = await page.evaluate('''() => {
+                        // Try by ng-click
+                        let btn = document.querySelector('button[ng-click*="content-edit"]');
+                        if (!btn) btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && b.innerText.includes("저장 후 편집"));
+                        if (btn) { btn.click(); return 'clicked: ' + btn.getAttribute('ng-click'); }
+                        return 'not found';
+                    }''')
+                    print(f'[{slug}] Click result: {clicked}')
+                except Exception as e:
+                    print(f'[{slug}] Button never appeared ({e}). Calling pg.save() directly...')
+                    await page.evaluate('''() => {
+                        // Search all scopes for pg.save
+                        const els = Array.from(document.querySelectorAll('[ng-controller], .modal, form'));
+                        for (const el of els) {
+                            try {
+                                const s = window.angular && window.angular.element(el).scope();
+                                if (s && s.pg && typeof s.pg.save === 'function') {
+                                    s.pg.saveMode = 'content-edit';
+                                    s.$apply();
+                                    s.pg.save();
+                                    return 'called pg.save()';
+                                }
+                            } catch(e) {}
+                        }
+                        return 'pg.save not found';
+                    }''')
+
+                # Editor opens in SAME TAB after save - wait for modal to close
+                print(f'[{slug}] Waiting for modal to close and editor to load...')
+                try:
+                    await page.wait_for_function(
+                        """() => !document.querySelector('.modal-backdrop') && !document.querySelector('.modal.in, .modal.show')""",
+                        timeout=15000
+                    )
+                except Exception:
+                    pass
+                await asyncio.sleep(1)
+
+                # The editor is in the same tab
+                editor_page = page
+                print(f'[{slug}] Editor should be in same tab: {page.url}')
+
+            if editor_page is None:
+                raise Exception('Could not open editor tab!')
+
+            # STEP 6: WAIT FOR EDITOR
+            print(f'[{slug}] Editor tab URL: {editor_page.url}')
+            try:
+                await editor_page.wait_for_load_state('domcontentloaded', timeout=15000)
+            except Exception:
+                pass
+            await editor_page.wait_for_function(f'''() => {{
+                try {{
+                    return Array.from(document.querySelectorAll('*')).some(el => {{
+                        const s = window.angular && window.angular.element(el).scope();
+                        return s && s.editor && s.editor.item && s.editor.item.filename === '{slug}.jsp';
+                    }});
+                }} catch(e) {{ return false; }}
+            }}''', timeout=25000)
+            print(f'[{slug}] Editor ready!')
+
+            # STEP 7: HTML
+            print(f'[{slug}] Injecting HTML...')
+            try:
+                await editor_page.wait_for_selector('.fr-command[data-cmd=\"html\"]', timeout=15000)
+                await editor_page.locator('.fr-command[data-cmd=\"html\"]').first.click(force=True)
+                await asyncio.sleep(1)
+                await editor_page.evaluate('''(html) => {
+                    const cm = document.querySelector('.fr-box .CodeMirror') || document.querySelector('.tab-pane.active .CodeMirror');
+                    if (cm && cm.CodeMirror) { cm.CodeMirror.setValue(html); return; }
+                    const ta = document.querySelector('textarea.fr-code');
+                    if (ta) { ta.value = html; ta.dispatchEvent(new Event('input',{bubbles:true})); }
+                }''', html_content)
+                await asyncio.sleep(1)
+                # Also set via Angular scope
+                await editor_page.evaluate('''(html) => {
+                    Array.from(document.querySelectorAll('*')).some(el => {
+                        const s = window.angular && window.angular.element(el).scope();
+                        if (s && s.editor && s.editor.item) { s.$apply(() => { s.editor.item.contentText = html; }); return true; }
+                    });
+                }''', html_content)
+                await editor_page.locator('.fr-command[data-cmd=\"html\"]').first.click(force=True)
+                await asyncio.sleep(1)
+            except Exception as e:
+                print(f'[{slug}] HTML inject error: {e}')
+
+            # STEP 8: CSS
+            print(f'[{slug}] Switching to CSS tab...')
+            await editor_page.evaluate('''() => {
+                const t = Array.from(document.querySelectorAll('a,.nav-tabs li a,uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
+                if (t) t.click();
+            }''')
+            await asyncio.sleep(1)
+            await editor_page.evaluate('''(css) => {
+                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
+                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
+                Array.from(document.querySelectorAll('*')).some(el => {
+                    const s = window.angular && window.angular.element(el).scope();
+                    if (s && s.editor && s.editor.item) {
+                        s.$apply(() => {
+                            s.editor.item.cssText = css;
+                            if (s.editor.cssTabList && s.editor.cssTabList[0]) {
+                                s.editor.cssTabList[0].text = css;
+                                s.editor.cssTabList[0].modified = true;
+                            }
+                        });
+                        return true;
+                    }
+                });
+            }''', css_content)
+            await asyncio.sleep(1)
+
+            # STEP 9: JS
+            print(f'[{slug}] Switching to JS tab...')
+            await editor_page.evaluate('''() => {
+                const t = Array.from(document.querySelectorAll('a,.nav-tabs li a,uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
+                if (t) t.click();
+            }''')
+            await asyncio.sleep(1)
+            await editor_page.evaluate('''(js) => {
+                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
+                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
+                Array.from(document.querySelectorAll('*')).some(el => {
+                    const s = window.angular && window.angular.element(el).scope();
+                    if (s && s.editor && s.editor.item) {
+                        s.$apply(() => {
+                            s.editor.item.jsText = js;
+                            if (s.editor.jsTabList && s.editor.jsTabList[0]) {
+                                s.editor.jsTabList[0].text = js;
+                                s.editor.jsTabList[0].modified = true;
+                            }
+                        });
+                        return true;
+                    }
+                });
+            }''', js_content)
+            await asyncio.sleep(1)
+
+            # STEP 10: SAVE
+            print(f'[{slug}] Saving...')
+            await editor_page.evaluate('''() => {
+                const btn = Array.from(document.querySelectorAll('button,a')).find(b => b.innerText && b.innerText.trim() === '저장' && b.offsetParent);
+                if (btn) { btn.click(); return; }
+                Array.from(document.querySelectorAll('*')).some(el => {
+                    const s = window.angular && window.angular.element(el).scope();
+                    if (s && s.editor && typeof s.editor.save === 'function') { s.editor.save(); return true; }
+                });
+            }''')
+            await asyncio.sleep(8)
+
+            print(f'[{slug}] Deploy completed!')
+            return {'success': True, 'message': 'Deploy thanh cong!'}
+
+        except Exception as e:
+            print(f'[{slug}] ERROR: {e}')
+            traceback.print_exc()
+            print(f'[{slug}] Keeping browser open 60s...')
+            await asyncio.sleep(60)
+            return {'success': False, 'message': f'Loi deploy: {str(e)}'}
+
+
+def run_deploy(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
+    return asyncio.run(deploy_to_cms_task(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content))
