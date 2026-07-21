@@ -977,7 +977,7 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
         text = response.text.strip()
         
         # Clean up markdown tags if present
@@ -1131,7 +1131,7 @@ Trả về JSON duy nhất chứa "status", "html" và "css". (Nếu status là 
         
         try:
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-3.5-flash',
                 contents=[prompt, target_pil, render_pil]
             )
             text = response.text.strip()
@@ -1257,7 +1257,7 @@ Trả về JSON chứa "html" và "css" (không bọc trong markdown):
   "html": "toàn bộ nội dung HTML đã tái cấu trúc",
   "css": "toàn bộ CSS đã tái cấu trúc"
 }}"""
-                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                    response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
                     text = response.text.strip()
                     import json as _json
                     if '```json' in text:
@@ -1836,7 +1836,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
 
-        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
         text = response.text.strip()
 
         import json as _json
