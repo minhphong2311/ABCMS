@@ -631,7 +631,7 @@ function createListElement(nodes, parentId) {
         nodes.forEach(node => {
             const li = document.createElement('li');
             li.className = 'list-group-item border-0';
-            li.style.padding = '4px 0 4px 4px';
+            li.style.padding = '0';
             li.dataset.id = node.id;
             
             // Item row
@@ -712,7 +712,7 @@ function showInlineAdd(parentId) {
     
     const li = document.createElement('li');
     li.className = 'list-group-item border-0';
-    li.style.padding = '4px 0 4px 4px';
+    li.style.padding = '0';
     li.dataset.id = newId;
     
     li.innerHTML = `
