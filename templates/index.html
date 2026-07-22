@@ -23,13 +23,24 @@
     {% for site in sites %}
     
     {# Calculate menu statistics using Jinja2 namespace #}
-    {% set ns = namespace(gen=0) %}
+    {% set parent_ids = [] %}
     {% for m in site.menus %}
-      {% if m.generated %}
-        {% set ns.gen = ns.gen + 1 %}
+      {% if m.parent_id %}
+        {% set _ = parent_ids.append(m.parent_id) %}
       {% endif %}
     {% endfor %}
-    {% set total = site.menus | length %}
+    
+    {% set ns = namespace(gen=0, total=0) %}
+    {% for m in site.menus %}
+      {% if m.id not in parent_ids %}
+        {% set ns.total = ns.total + 1 %}
+        {% if m.generated %}
+          {% set ns.gen = ns.gen + 1 %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    
+    {% set total = ns.total %}
     {% set gen = ns.gen %}
     {% set ungen = total - gen %}
     {% set pct = ((gen / total) * 100) | round | int if total > 0 else 0 %}
@@ -80,7 +91,13 @@
         </div>
         
         <!-- Footer -->
-        <div class="site-card-footer justify-content-end">
+        <div class="site-card-footer justify-content-between">
+          <div class="footer-left">
+            <!-- Add Menu directly from list -->
+            <button type="button" class="footer-action-btn" title="Add Menu" data-id="{{ site.id }}" onclick="openAddMenuModal(this)">
+              <i class="fas fa-bars"></i>
+            </button>
+          </div>
           <div class="footer-right">
             <!-- Go to site details / management -->
             <a href="/site/{{ site.id }}" class="footer-action-btn" title="Manage Site / Setup Menu">
@@ -248,6 +265,37 @@
   </div>
 </div>
 
+<!-- Manage Menu Modal -->
+<div class="modal fade" id="manageMenuModal" tabindex="-1" aria-labelledby="manageMenuModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="manageMenuModalLabel">Manage Menus</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-4 bg-white">
+        <div class="d-flex justify-content-between mb-3">
+          <div>
+            <button class="btn btn-success btn-sm" onclick="triggerExcelUpload()"><i class="fas fa-file-excel"></i> Import Excel</button>
+            <input type="file" id="excelFileInput" style="display: none;" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showInlineAdd(null)"><i class="fas fa-plus"></i> Add Menu</button>
+        </div>
+        
+        <div id="menu-tree-container" class="bg-white" style="min-height: 200px;">
+            <!-- Tree will be rendered here -->
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveMenuTree()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block style %}
@@ -329,7 +377,7 @@
     display: flex;
     align-items: center;
 }
-.footer-right {
+.footer-right, .footer-left {
     display: flex;
     align-items: center;
     gap: 1px;
@@ -361,6 +409,69 @@
 .footer-action-btn.delete-btn:hover {
     color: #d9534f;
     background: #fdf2f2;
+}
+.tree-action-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-left: 4px;
+    background: #fff;
+    border: 1px solid;
+    transition: all 0.2s;
+}
+.tree-btn-add {
+    border-color: #3498db;
+    color: #3498db;
+}
+.tree-btn-add:hover {
+    background-color: #3498db;
+    color: white;
+}
+.tree-btn-delete {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+.tree-btn-delete:hover {
+    background-color: #f39c12;
+    color: white;
+}
+.tree-btn-edit {
+    border-color: #2ecc71;
+    color: #2ecc71;
+}
+.tree-btn-edit:hover {
+    background-color: #2ecc71;
+    color: white;
+}
+.tree-caret-btn {
+    width: 24px;
+    height: 24px;
+    background-color: #34495e;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.tree-move-btn {
+    width: 24px;
+    height: 24px;
+    background-color: transparent;
+    color: #7f8c8d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px dashed #bdc3c7;
+    cursor: move;
+    font-size: 12px;
 }
 </style>
 {% endblock %}
@@ -426,6 +537,20 @@ function openEditSiteModal(btnElement) {
     $('#editSiteModal').modal('show');
 }
 
+function openAddMenuModal(btnElement) {
+    const siteId = btnElement.getAttribute('data-id');
+    document.getElementById('addMenuForm').action = `/site/${siteId}/add-menu`;
+    
+    // Clear the form fields
+    document.getElementById('add_menu_folder').value = '';
+    document.getElementById('add_menu_name').value = '';
+    document.getElementById('add_menu_slug').value = '';
+    document.getElementById('add_menu_figma_link').value = '';
+    document.getElementById('add_menu_layout').value = 'sub-template';
+
+    $('#addMenuModal').modal('show');
+}
+
 function confirmDeleteSite(event, formElement) {
     event.preventDefault(); // Stop form submission
     
@@ -442,6 +567,387 @@ function confirmDeleteSite(event, formElement) {
         if (result.isConfirmed) {
             formElement.submit(); // Submit form programmatically
         }
+    });
+}
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+let currentSiteId = null;
+let currentMenus = [];
+let sortables = [];
+let expandedMenuIds = new Set();
+
+function openAddMenuModal(btnElement) {
+    currentSiteId = btnElement.getAttribute('data-id');
+    $('#manageMenuModal').modal('show');
+    fetchMenus();
+}
+
+function fetchMenus() {
+    $('#menu-tree-container').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
+    fetch(`/api/site/${currentSiteId}/menus`)
+        .then(r => r.json())
+        .then(data => {
+            currentMenus = data.menus || [];
+            renderTree();
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire('Error', 'Failed to fetch menus', 'error');
+        });
+}
+
+function buildTree(menus, parentId = null) {
+    return menus.filter(m => m.parent_id === parentId)
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map(m => {
+                    return { ...m, children: buildTree(menus, m.id) };
+                });
+}
+
+function renderTree() {
+    const tree = buildTree(currentMenus, null);
+    const container = document.getElementById('menu-tree-container');
+    container.innerHTML = '';
+    
+    // Destroy old sortables
+    sortables.forEach(s => s.destroy());
+    sortables = [];
+    
+    const rootUl = createListElement(tree, null);
+    container.appendChild(rootUl);
+}
+
+function createListElement(nodes, parentId) {
+    const ul = document.createElement('ul');
+    ul.className = 'list-group menu-list';
+    ul.dataset.parentId = parentId || '';
+    
+    if (nodes.length === 0 && parentId === null) {
+        ul.innerHTML = '<div class="text-muted text-center py-3">No menus yet. Click "Add Menu".</div>';
+    } else {
+        nodes.forEach(node => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item border-0';
+            li.style.padding = '4px 0 4px 4px';
+            li.dataset.id = node.id;
+            
+            // Item row
+            const row = document.createElement('div');
+            row.className = 'd-flex align-items-center bg-light border rounded p-2 mb-1 menu-row';
+            
+            const isExpanded = expandedMenuIds.has(node.id);
+            const caretIcon = isExpanded ? 'fa-chevron-down' : 'fa-chevron-right';
+            
+            row.innerHTML = `
+                <div class="mr-2 tree-caret-btn" onclick="toggleChildren('${node.id}')"><i class="fas ${caretIcon}"></i></div>
+                <div class="mr-2 tree-move-btn"><i class="fas fa-arrows-alt"></i></div>
+                <div class="flex-grow-1 font-weight-bold text-primary">${node.name} <span class="text-muted ml-2 font-weight-normal" style="font-size: 0.85em;">${node.slug}</span></div>
+                <div class="actions">
+                    <button class="btn btn-sm tree-action-btn tree-btn-add" onclick="showInlineAdd('${node.id}')" title="Add Child"><i class="fas fa-plus"></i></button>
+                    <button class="btn btn-sm tree-action-btn tree-btn-delete" onclick="deleteMenu('${node.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-sm tree-action-btn tree-btn-edit" onclick="showInlineEdit('${node.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                </div>
+            `;
+            li.appendChild(row);
+            
+            // Children ul
+            const childUl = createListElement(node.children, node.id);
+            childUl.id = `children-${node.id}`;
+            childUl.style.marginLeft = '20px';
+            childUl.style.display = expandedMenuIds.has(node.id) ? 'block' : 'none';
+            li.appendChild(childUl);
+            
+            ul.appendChild(li);
+        });
+    }
+    
+    // Initialize Sortable
+    sortables.push(new Sortable(ul, {
+        group: 'nested',
+        animation: 150,
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        onEnd: function (evt) {
+            updateDataFromDOM();
+        }
+    }));
+    
+    return ul;
+}
+
+function toggleChildren(id) {
+    const $children = $(`#children-${id}`);
+    $children.toggle();
+    
+    // Toggle the caret icon
+    const icon = document.querySelector(`li[data-id="${id}"] > .menu-row .tree-caret-btn i`);
+    if ($children.is(':visible')) {
+        expandedMenuIds.add(id);
+        if (icon) icon.className = 'fas fa-chevron-down';
+    } else {
+        expandedMenuIds.delete(id);
+        if (icon) icon.className = 'fas fa-chevron-right';
+    }
+}
+
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+function showInlineAdd(parentId) {
+    const newId = generateUUID();
+    const isRoot = parentId === null;
+    const targetUl = isRoot ? document.querySelector('#menu-tree-container > ul') : document.getElementById(`children-${parentId}`);
+    
+    // Remove "No menus yet" if root
+    if (isRoot && targetUl.innerText.includes('No menus yet')) {
+        targetUl.innerHTML = '';
+    }
+    
+    const li = document.createElement('li');
+    li.className = 'list-group-item border-0';
+    li.style.padding = '4px 0 4px 4px';
+    li.dataset.id = newId;
+    
+    li.innerHTML = `
+        <div class="d-flex align-items-center bg-white border border-primary rounded p-2 mb-1 shadow-sm">
+            <div class="mr-2 tree-caret-btn" style="opacity: 0; cursor: default;"><i class="fas fa-chevron-down"></i></div>
+            <div class="mr-2 tree-move-btn" style="opacity: 0.5; cursor: not-allowed;"><i class="fas fa-arrows-alt"></i></div>
+            <input type="text" class="form-control form-control-sm mr-2" placeholder="Name" id="inline-name-${newId}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineAdd('${newId}', '${parentId || ''}')">
+            <input type="text" class="form-control form-control-sm mr-2" placeholder="Slug" id="inline-slug-${newId}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineAdd('${newId}', '${parentId || ''}')">
+            <button class="btn btn-sm btn-primary py-0 px-2 mr-1" onclick="saveInlineAdd('${newId}', '${parentId || ''}')"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-secondary py-0 px-2" onclick="cancelInlineAdd(this)"><i class="fas fa-times"></i></button>
+        </div>
+    `;
+    
+    targetUl.appendChild(li);
+    $(`#children-${parentId}`).show();
+    $(`#inline-name-${newId}`).focus();
+}
+
+function cancelInlineAdd(btn) {
+    $(btn).closest('li').remove();
+}
+
+function makeUniqueSlug(slug, excludeId) {
+    let newSlug = slug;
+    let counter = 2;
+    const existingSlugs = currentMenus.filter(m => m.id !== excludeId).map(m => m.slug);
+    while (existingSlugs.includes(newSlug)) {
+        newSlug = slug + '-' + counter;
+        counter++;
+    }
+    return newSlug;
+}
+
+async function saveInlineAdd
+(id, parentId) {
+    const name = $(`#inline-name-${id}`).val();
+    let slug = $(`#inline-slug-${id}`).val();
+    if (!name) return;
+    
+    if (!slug) {
+        // Show loading state
+        const btn = document.querySelector(`#inline-name-${id}`).parentElement.querySelector('.btn-primary');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        try {
+            const res = await fetch('/api/generate-slug', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: name})
+            });
+            const data = await res.json();
+            slug = data.slug || ('auto-' + Date.now());
+        } catch(e) {
+            slug = 'auto-' + Date.now();
+        }
+    }
+    slug = makeUniqueSlug(slug, id);
+    
+    slug = makeUniqueSlug(slug, id);
+    currentMenus.push({
+        id: id,
+        parent_id: parentId === '' ? null : parentId,
+        name: name,
+        slug: slug,
+        order: 9999 // Put at end, will be sorted
+    });
+    
+    if (parentId !== '') {
+        expandedMenuIds.add(parentId);
+    }
+    
+    renderTree();
+    updateDataFromDOM(); // Sync orders
+}
+
+function showInlineEdit(id) {
+    const menu = currentMenus.find(m => m.id === id);
+    if(!menu) return;
+    
+    const li = document.querySelector(`li[data-id="${id}"]`);
+    if (li.querySelector('.edit-row')) return; // Prevent multiple edit rows
+    
+    const row = li.querySelector('.menu-row');
+    row.style.display = 'none';
+    
+    const editDiv = document.createElement('div');
+    editDiv.className = 'd-flex align-items-center bg-white border border-info rounded p-2 mb-1 shadow-sm edit-row';
+    editDiv.innerHTML = `
+        <div class="mr-2 tree-caret-btn" style="opacity: 0; cursor: default;"><i class="fas fa-chevron-down"></i></div>
+        <div class="mr-2 tree-move-btn" style="opacity: 0.5; cursor: not-allowed;"><i class="fas fa-arrows-alt"></i></div>
+        <input type="text" class="form-control form-control-sm mr-2" value="${menu.name}" id="edit-name-${id}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
+        <input type="text" class="form-control form-control-sm mr-2" value="${menu.slug}" id="edit-slug-${id}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
+        <button class="btn btn-sm btn-info py-0 px-2 mr-1" onclick="saveInlineEdit('${id}')"><i class="fas fa-check text-white"></i></button>
+        <button class="btn btn-sm btn-secondary py-0 px-2" onclick="cancelInlineEdit('${id}')"><i class="fas fa-times"></i></button>
+    `;
+    li.insertBefore(editDiv, row);
+}
+
+function cancelInlineEdit(id) {
+    const li = document.querySelector(`li[data-id="${id}"]`);
+    const row = li.querySelector('.menu-row');
+    const editDiv = li.querySelector('.edit-row');
+    if(editDiv) editDiv.remove();
+    row.style.display = 'flex';
+}
+
+async function saveInlineEdit(id) {
+    const menu = currentMenus.find(m => m.id === id);
+    if(!menu) return;
+    
+    const name = $(`#edit-name-${id}`).val();
+    let slug = $(`#edit-slug-${id}`).val();
+    if (!name) return;
+    
+    if (!slug) {
+        // Show loading state
+        const btn = document.querySelector(`#edit-name-${id}`).parentElement.querySelector('.btn-info');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        try {
+            const res = await fetch('/api/generate-slug', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: name})
+            });
+            const data = await res.json();
+            slug = data.slug || ('auto-' + Date.now());
+        } catch(e) {
+            slug = 'auto-' + Date.now();
+        }
+    }
+    slug = makeUniqueSlug(slug, id);
+    
+    slug = makeUniqueSlug(slug, id);
+    menu.name = name;
+    menu.slug = slug;
+    renderTree();
+}
+
+function deleteMenu(id) {
+    Swal.fire({
+        title: 'Delete this menu?',
+        text: 'All child menus will also be deleted.',
+        icon: 'warning',
+        showCancelButton: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Remove node and all children
+            const idsToRemove = new Set([id]);
+            let toCheck = [id];
+            while(toCheck.length > 0) {
+                const curr = toCheck.pop();
+                const children = currentMenus.filter(m => m.parent_id === curr);
+                children.forEach(c => {
+                    idsToRemove.add(c.id);
+                    toCheck.push(c.id);
+                });
+            }
+            
+            currentMenus = currentMenus.filter(m => !idsToRemove.has(m.id));
+            renderTree();
+        }
+    });
+}
+
+function updateDataFromDOM() {
+    const uls = document.querySelectorAll('.menu-list');
+    uls.forEach(ul => {
+        const parentId = ul.dataset.parentId || null;
+        const lis = ul.children;
+        Array.from(lis).forEach((li, index) => {
+            const id = li.dataset.id;
+            if (id) {
+                const menu = currentMenus.find(m => m.id === id);
+                if (menu) {
+                    menu.parent_id = parentId;
+                    menu.order = index;
+                }
+            }
+        });
+    });
+}
+
+function saveMenuTree() {
+    updateDataFromDOM();
+    fetch(`/api/site/${currentSiteId}/menus/save`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(currentMenus)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            Swal.fire('Saved!', 'Menu hierarchy saved successfully.', 'success').then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Error', data.error || 'Failed to save', 'error');
+        }
+    });
+}
+
+function triggerExcelUpload() {
+    document.getElementById('excelFileInput').click();
+}
+
+function handleExcelUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    Swal.fire({title: 'Uploading...', allowOutsideClick: false});
+    Swal.showLoading();
+    
+    fetch(`/api/site/${currentSiteId}/menus/upload-excel`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            Swal.fire('Success', data.message, 'success');
+            fetchMenus(); // Reload
+        } else {
+            Swal.fire('Error', data.error || 'Failed', 'error');
+        }
+    })
+    .finally(() => {
+        event.target.value = '';
     });
 }
 </script>

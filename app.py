@@ -12,11 +12,38 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), 'data', 'sites.json')
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output')
 
 # Helper function to load data
+import uuid
+
 def load_data():
     if not os.path.exists(DATA_FILE):
         os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump([], f)
+        return []
+    try:
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            sites = json.load(f)
+            # Migration to hierarchical menus
+            needs_save = False
+            for site in sites:
+                if 'menus' in site:
+                    for idx, menu in enumerate(site['menus']):
+                        if 'id' not in menu:
+                            menu['id'] = str(uuid.uuid4())
+                            needs_save = True
+                        if 'parent_id' not in menu:
+                            menu['parent_id'] = None
+                            needs_save = True
+                        if 'order' not in menu:
+                            menu['order'] = idx
+                            needs_save = True
+            
+            if needs_save:
+                with open(DATA_FILE, 'w', encoding='utf-8') as f_out:
+                    json.dump(sites, f_out, ensure_ascii=False, indent=4)
+                    
+            return sites
+    except Exception:
         return []
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -31,6 +58,56 @@ def save_data(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'data', 'config.json')
+
+
+
+
+
+def make_unique_slug(slug, existing_slugs):
+    new_slug = slug
+    counter = 2
+    while new_slug in existing_slugs:
+        new_slug = f"{slug}-{counter}"
+        counter += 1
+    return new_slug
+
+def generate_slug_for_text(text):
+    if not text: return ''
+    config = get_config()
+    api_key = config.get('gemini_api_key', '').strip()
+    if not api_key:
+        import urllib.parse
+        return urllib.parse.quote(text).lower()
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        import re
+        prompt = f'''Translate this EXACTLY to a short URL slug (lowercase english words, hyphen separated).
+Output NO other words, NO markdown, NO explanations.
+Example 1:
+Input: 부동산AI융합학과
+Output: real-estate-ai
+Example 2:
+Input: 회사 소개
+Output: about-us
+Example 3:
+Input: {text}
+Output:'''
+        response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
+        slug = response.text.strip().lower()
+        slug = re.sub(r'[^a-z0-9\-]+', '', slug)
+        return slug
+    except Exception as e:
+        print('Error auto generating slug:', e)
+        import urllib.parse
+        return urllib.parse.quote(text).lower()
+
+@app.route('/api/generate-slug', methods=['POST'])
+def generate_slug():
+    data = request.json
+    text = data.get('text', '').strip()
+    slug = generate_slug_for_text(text)
+    return jsonify({'slug': slug})
 
 def get_config():
     if not os.path.exists(CONFIG_FILE):
@@ -105,6 +182,180 @@ def edit_site(site_id):
     save_data(sites)
     flash(f'Successfully updated site "{name}"!', 'success')
     return redirect(url_for('index'))
+
+
+@app.route('/api/site/<site_id>/menus', methods=['GET'])
+def api_get_menus(site_id):
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'error': 'Site not found'}), 404
+    
+    menus = site.get('menus', [])
+    return jsonify({'menus': menus})
+
+def assign_folders_from_roots(menus):
+    menu_dict = {m['id']: m for m in menus if 'id' in m}
+    for m in menus:
+        if 'id' not in m: continue
+        current = m
+        visited = set()
+        while current.get('parent_id') and current['parent_id'] in menu_dict:
+            if current['id'] in visited: break
+            visited.add(current['id'])
+            current = menu_dict[current['parent_id']]
+        m['folder'] = current.get('slug', '')
+
+@app.route('/api/site/<site_id>/menus/save', methods=['POST'])
+def api_save_menus(site_id):
+    menus_data = request.json
+    if not isinstance(menus_data, list):
+        return jsonify({'error': 'Invalid format, expected a list of menus'}), 400
+        
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'error': 'Site not found'}), 404
+        
+    # Find deleted menus to clean up files
+    old_menus = {m['id']: m for m in site.get('menus', []) if 'id' in m}
+    new_menus = {m['id'] for m in menus_data if 'id' in m}
+    deleted_ids = set(old_menus.keys()) - new_menus
+    
+    for m_id in deleted_ids:
+        menu = old_menus[m_id]
+        menu_param = f"{menu.get('folder', '')}_{menu['slug']}" if menu.get('folder') else menu['slug']
+        delete_menu_files(site_id, menu_param)
+
+    # Overwrite the menus
+    assign_folders_from_roots(menus_data)
+    site['menus'] = menus_data
+    save_data(sites)
+    return jsonify({'success': True, 'message': 'Menus saved successfully'})
+
+@app.route('/api/site/<site_id>/menus/upload-excel', methods=['POST'])
+def api_upload_menus_excel(site_id):
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'error': 'Site not found'}), 404
+
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(file, data_only=True)
+        sheet = wb.active
+        
+        # We assume columns: ID, Parent ID, Name, Slug, Figma Link
+        # Actually a very simple parsing logic:
+        # Just grab rows and map to basic fields. 
+        # For a robust tree, user might provide flat list. We will just try to detect header.
+        new_menus = []
+        
+        headers = []
+        for i, row in enumerate(sheet.iter_rows(values_only=True)):
+            if i == 0:
+                headers = [str(c).lower().strip() if c else '' for c in row]
+                continue
+            
+            # Simple row mapping
+            # ID | Parent ID | Name | Slug | Figma Link
+            menu_item = {
+                'id': str(uuid.uuid4()),
+                'parent_id': None,
+                'name': f'Menu {i}',
+                'slug': '',
+                'figma_link': '',
+                'layout': 'sub-template',
+                'order': i,
+                'generated': False
+            }
+            
+            # Very basic extraction if headers match loosely
+            for idx, col_name in enumerate(headers):
+                if idx >= len(row): continue
+                val = row[idx]
+                if val is None: val = ''
+                val = str(val).strip()
+                
+                if 'id' == col_name or 'menu id' in col_name or 'code' in col_name:
+                    menu_item['id'] = val if val else menu_item['id']
+                elif 'parent' in col_name:
+                    menu_item['parent_id'] = val if val else None
+                elif 'name' in col_name or 'title' in col_name:
+                    menu_item['name'] = val if val else menu_item['name']
+                elif 'slug' in col_name or 'url' in col_name:
+                    menu_item['slug'] = val if val else menu_item['slug']
+                elif 'figma' in col_name or 'link' in col_name:
+                    menu_item['figma_link'] = val
+                    
+            new_menus.append(menu_item)
+            
+        # Batch generate missing slugs
+        missing_slug_menus = [m for m in new_menus if not m['slug']]
+        if missing_slug_menus:
+            import json
+            input_dict = {m['id']: m['name'] for m in missing_slug_menus}
+            
+            config = get_config()
+            api_key = config.get('gemini_api_key', '').strip()
+            if api_key:
+                try:
+                    from google import genai
+                    import re
+                    client = genai.Client(api_key=api_key)
+                    prompt = 'Translate these EXACTLY to short URL slugs (lowercase english words, hyphen separated).\nOutput NO other words, NO markdown, NO explanations. Just a valid JSON object where keys are the same and values are the generated slugs. Max 3 words per slug.\nExample Input: {"1": "부동산AI융합학과", "2": "회사 소개"}\nExample Output: {"1": "real-estate-ai", "2": "about-us"}\n\nInput: ' + json.dumps(input_dict, ensure_ascii=False) + '\nOutput:'
+                    response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
+                    output_text = response.text.strip()
+                    if output_text.startswith('```'):
+                        output_text = re.sub(r'^```[a-z]*\n|\n```$', '', output_text).strip()
+                    
+                    slug_dict = json.loads(output_text)
+                    existing_slugs = {m['slug'] for m in site.get('menus', []) if m.get('slug')}
+                    for m in new_menus:
+                        if m.get('slug'): existing_slugs.add(m['slug'])
+
+                    for m in missing_slug_menus:
+                        if m['id'] in slug_dict:
+                            slug = slug_dict[m['id']].lower()
+                            slug = re.sub(r'[^a-z0-9\-]+', '', slug)
+                            slug = make_unique_slug(slug, existing_slugs)
+                            m['slug'] = slug
+                            existing_slugs.add(slug)
+                except Exception as e:
+                    print("Batch slug generation failed:", e)
+
+            # Fallback for any still missing
+            import time
+            base_time = int(time.time() * 1000)
+            for idx, m in enumerate(missing_slug_menus):
+                if not m['slug']:
+                    m['slug'] = 'auto-' + str(base_time + idx)
+
+        # Merge logic: update existing if ID matches, else append
+
+        existing_menus_dict = {m['id']: m for m in site.get('menus', []) if 'id' in m}
+        
+        for m in new_menus:
+            if m['id'] in existing_menus_dict:
+                # update
+                existing_menus_dict[m['id']].update(m)
+            else:
+                existing_menus_dict[m['id']] = m
+                
+        # Rebuild list
+        site['menus'] = list(existing_menus_dict.values())
+        assign_folders_from_roots(site['menus'])
+        save_data(sites)
+        
+        return jsonify({'success': True, 'message': f'Uploaded {len(new_menus)} menus'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/delete-site/<site_id>', methods=['POST'])
 def delete_site(site_id):
@@ -212,8 +463,8 @@ def edit_folder(site_id, old_folder):
     # Update folder references for all pages
     for menu in site.get('menus', []):
         if menu.get('folder', '') == old_folder:
-            menu['folder'] = new_folder
-
+            pass
+            
     save_data(sites)
 
     # Rename physical directory on disk
@@ -308,7 +559,18 @@ def add_menu(site_id):
         flash('Site not found!', 'danger')
         return redirect(url_for('index'))
 
+    if not menu_slug and menu_name:
+        menu_slug = generate_slug_for_text(menu_name)
+        if not menu_slug:
+            import time
+            menu_slug = 'auto-' + str(int(time.time() * 1000))
+    
+    # Ensure uniqueness
+    existing_slugs = {m['slug'] for m in site['menus'] if m.get('slug')}
+    menu_slug = make_unique_slug(menu_slug, existing_slugs)
+
     # Check if folder + slug composite exists in site menus
+
     if any(m.get('folder', '') == folder and m['slug'] == menu_slug for m in site['menus']):
         flash(f'Path "{folder}" and slug "{menu_slug}" already exists!', 'danger')
         return redirect(url_for('site_detail', site_id=site_id))
@@ -893,6 +1155,36 @@ def compile_figma_node_to_html_css(design_data, node_id, image_map=None):
     css_result = "\n".join(css_rules)
     return html_result, css_result
 
+def delete_menu_files(site_id, menu_param):
+    base_dir = os.path.dirname(__file__)
+    output_dir = os.path.join(base_dir, 'output', site_id)
+    if not os.path.exists(output_dir):
+        # Fallback to general output if site-specific dir isn't used
+        output_dir = os.path.join(base_dir, 'output')
+        
+    files_to_delete = [
+        f'temp_render_{menu_param}.html',
+        f'temp_render_{menu_param}.png',
+        f'temp_target_{menu_param}.png'
+    ]
+    for f in files_to_delete:
+        path1 = os.path.join(output_dir, f)
+        if os.path.exists(path1):
+            try:
+                os.remove(path1)
+                print(f"Deleted {path1}")
+            except Exception as e:
+                print(f"Failed to delete {path1}: {e}")
+                
+        # Also try site-specific subfolder just in case
+        path2 = os.path.join(base_dir, 'output', site_id, f)
+        if os.path.exists(path2):
+            try:
+                os.remove(path2)
+                print(f"Deleted {path2}")
+            except Exception as e:
+                pass
+
 def parse_folder_slug(param):
     if '--' in param:
         parts = param.split('--', 1)
@@ -971,7 +1263,7 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+        response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
         text = response.text.strip()
         
         # Clean up markdown tags if present
@@ -1126,7 +1418,7 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
         
         try:
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-flash-latest',
                 contents=[prompt, target_pil, render_pil]
             )
             text = response.text.strip()
@@ -1285,7 +1577,6 @@ def edit_menu(site_id, menu_param):
         return redirect(url_for('site_detail', site_id=site_id))
     
     menu['name'] = new_name
-    menu['folder'] = new_folder
     menu['slug'] = new_slug
     menu['figma_link'] = new_figma
     menu['layout'] = new_layout
@@ -1305,6 +1596,9 @@ def delete_menu(site_id, menu_param):
     folder, menu_slug = parse_folder_slug(menu_param)
     site['menus'] = [m for m in site['menus'] if not (m.get('folder', '') == folder and m['slug'] == menu_slug)]
     save_data(sites)
+    
+    # Delete temp files
+    delete_menu_files(site_id, menu_param)
     flash('Successfully deleted page!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
 
@@ -1515,7 +1809,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
 
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+        response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
         text = response.text.strip()
 
         import json as _json
