@@ -1185,6 +1185,35 @@ def delete_menu_files(site_id, menu_param):
             except Exception as e:
                 pass
 
+    # Also delete generated code files (.html, .css, .js)
+    folder, slug = parse_folder_slug(menu_param)
+    
+    # Target directory where the files are
+    if folder:
+        target_dir = os.path.join(base_dir, 'output', site_id, folder)
+    else:
+        target_dir = os.path.join(base_dir, 'output', site_id)
+        
+    code_files = [f'{slug}.html', f'{slug}.css', f'{slug}.js']
+    for f in code_files:
+        p = os.path.join(target_dir, f)
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+                print(f"Deleted {p}")
+            except Exception:
+                pass
+
+    # If this menu itself was a root folder, delete its folder directory!
+    folder_dir = os.path.join(base_dir, 'output', site_id, slug)
+    if os.path.isdir(folder_dir):
+        import shutil
+        try:
+            shutil.rmtree(folder_dir)
+            print(f"Deleted folder {folder_dir}")
+        except Exception as e:
+            print(f"Failed to delete folder {folder_dir}: {e}")
+
 def parse_folder_slug(param):
     if '--' in param:
         parts = param.split('--', 1)
