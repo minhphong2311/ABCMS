@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+
+{% block title %}Site List{% endblock %}
+
+
+{% block content %}
+<!-- Search bar & Add button -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="input-group" style="max-width: 400px;">
+    <div class="input-group-prepend">
+      <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+    </div>
+    <input type="text" id="siteSearchInput" class="form-control border-left-0" placeholder="Search Site by name or ID..." onkeyup="filterSites()">
+  </div>
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSiteModal">
+    <i class="fas fa-plus mr-1"></i> Add Site
+  </button>
+</div>
+
+<!-- Site Cards Grid -->
+<div class="row" id="siteCardsContainer">
+  {% if sites %}
+    {% for site in sites %}
+    
+    {# Calculate menu statistics using Jinja2 namespace #}
+    {% set ns = namespace(gen=0) %}
+    {% for m in site.menus %}
+      {% if m.generated %}
+        {% set ns.gen = ns.gen + 1 %}
+      {% endif %}
+    {% endfor %}
+    {% set total = site.menus | length %}
+    {% set gen = ns.gen %}
+    {% set ungen = total - gen %}
+    {% set pct = ((gen / total) * 100) | round | int if total > 0 else 0 %}
+    {% set total_folders = site.folders | length if site.folders else 0 %}
+
+    <div class="col-lg-6 col-xl-4 mb-4 site-box-wrapper" data-site-id="{{ site.id }}" data-site-name="{{ site.name }}">
+      <div class="site-card">
+        <!-- Header -->
+        <div class="site-card-header">
+          <div class="header-left">
+            <i class="fas fa-desktop monitor-icon mr-2"></i>
+            <span class="site-id-badge">{{ site.id }}</span>
+            <span class="site-name-title">{{ site.name }}</span>
+          </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="site-card-body">
+          <!-- Total Pages -->
+          <div class="stat-row mb-3 d-flex align-items-center justify-content-between">
+            <div class="stat-main d-flex align-items-baseline">
+              <span class="stat-number mr-2" style="font-size: 24px; font-weight: 700; color: #333;">{{ total }}</span>
+              <span class="stat-label text-muted text-xs">Total Pages</span>
+            </div>
+            <div class="stat-percent text-muted font-weight-bold" style="font-size: 13px;">
+              {{ pct }}% Complete
+            </div>
+          </div>
+          
+          <!-- Menu generated vs ungenerated statistics -->
+          <div class="row text-center border-top pt-2">
+            <div class="col-6 border-right">
+              <div class="text-success font-weight-bold" style="font-size: 20px;">{{ gen }}</div>
+              <small class="text-muted"><i class="fas fa-check-circle mr-1"></i>Files generated</small>
+            </div>
+            <div class="col-6">
+              <div class="text-danger font-weight-bold" style="font-size: 20px;">{{ ungen }}</div>
+              <small class="text-muted"><i class="fas fa-exclamation-circle mr-1"></i>Files not generated</small>
+            </div>
+          </div>
+          
+          <!-- Progress bar -->
+          <div class="mt-3">
+            <div class="progress progress-xs" style="height: 6px;">
+              <div class="progress-bar {% if pct == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ pct }}%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="site-card-footer justify-content-end">
+          <div class="footer-right">
+            <!-- Go to site details / management -->
+            <a href="/site/{{ site.id }}" class="footer-action-btn" title="Manage Site / Setup Menu">
+              <i class="fas fa-cog"></i>
+            </a>
+            <!-- Go to live site URL -->
+            <a href="{{ site.url }}" target="_blank" class="footer-action-btn" title="Visit Site Homepage">
+              <i class="fas fa-home"></i>
+            </a>
+            <!-- Edit Site metadata -->
+            <button type="button" class="footer-action-btn" title="Edit Site Info"
+                    data-id="{{ site.id }}"
+                    data-name="{{ site.name }}"
+                    data-url="{{ site.url }}"
+                    data-username="{{ site.username }}"
+                    data-password="{{ site.password }}"
+                    data-css_guide="{{ site.get('css_guide', '') }}"
+                    data-project="{{ site.get('project', '') }}"
+                    data-js_guide="{{ site.get('js_guide', '') }}"
+                    onclick="openEditSiteModal(this)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <!-- Delete Site (SweetAlert2) -->
+            <form action="/delete-site/{{ site.id }}" method="POST" class="d-inline" onsubmit="confirmDeleteSite(event, this)">
+              <button type="submit" class="footer-action-btn delete-btn" title="Delete Site">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="col-12" id="noSitesMessage">
+      <div class="card py-5 text-center text-muted">
+        <i class="fas fa-cubes fa-3x mb-3 text-light"></i>
+        <h5>No sites created yet. Please add a new site above!</h5>
+      </div>
+    </div>
+  {% endif %}
+  
+  <!-- Dynamic Search No Results message -->
+  <div class="col-12" id="noSearchResults" style="display: none;">
+    <div class="card py-5 text-center text-muted">
+      <i class="fas fa-search fa-3x mb-3 text-light"></i>
+      <h5>No sites match the search keyword.</h5>
+    </div>
+  </div>
+</div>
+
+<!-- Add Site Modal -->
+<div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form action="/add-site" method="POST">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="addSiteModalLabel">Resistration</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="site_id">Site ID <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="site_id" name="site_id" required placeholder="Example: demo"></div>
+            
+            <div class="col-md-2 col-form-label"><label for="name">Site Name <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="name" name="name" required placeholder="Example: Demo Site"></div>
+          </div>
+          
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="url">Cms Url <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-10"><input type="url" class="form-control" id="url" name="url" required placeholder="Example: https://demo.example.com"></div>
+          </div>
+          
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="css_guide">Css</label></div>
+            <div class="col-md-10"><textarea class="form-control" id="css_guide" name="css_guide" rows="3" placeholder="Example: /css/style.css, ..."></textarea></div>
+          </div>
+          
+          <div class="row form-group mb-4">
+            <div class="col-md-2 col-form-label"><label for="js_guide">Js</label></div>
+            <div class="col-md-10"><textarea class="form-control" id="js_guide" name="js_guide" rows="3" placeholder="Example: /js/script.js, ..."></textarea></div>
+          </div>
+          
+          <div class="d-flex align-items-center mb-3">
+            <span class="text-muted font-weight-bold" style="font-size: 0.9rem;">System Login</span>
+            <div style="flex-grow: 1; height: 1px; background-color: #dee2e6; margin-left: 10px;"></div>
+          </div>
+          
+          <div class="row form-group mb-2">
+            <div class="col-md-2 col-form-label"><label for="username">Admin</label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="username" name="username" placeholder="Example: admin"></div>
+            
+            <div class="col-md-2 col-form-label"><label for="password">Password</label></div>
+            <div class="col-md-4"><input type="password" class="form-control" id="password" name="password" placeholder="Example: ********"></div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Site Modal -->
+<div class="modal fade" id="editSiteModal" tabindex="-1" aria-labelledby="editSiteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form id="editSiteForm" method="POST">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="editSiteModalLabel">Edit site</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="edit_site_id">Site ID <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="edit_site_id" disabled></div>
+            
+            <div class="col-md-2 col-form-label"><label for="edit_name">Site Name <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="edit_name" name="name" required></div>
+          </div>
+          
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="edit_url">Cms Url <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-10"><input type="url" class="form-control" id="edit_url" name="url" required></div>
+          </div>
+          
+          <div class="row form-group mb-3">
+            <div class="col-md-2 col-form-label"><label for="edit_css_guide">Css</label></div>
+            <div class="col-md-10"><textarea class="form-control" id="edit_css_guide" name="css_guide" rows="3"></textarea></div>
+          </div>
+          
+          <div class="row form-group mb-4">
+            <div class="col-md-2 col-form-label"><label for="edit_js_guide">Js</label></div>
+            <div class="col-md-10"><textarea class="form-control" id="edit_js_guide" name="js_guide" rows="3"></textarea></div>
+          </div>
+          
+          <div class="d-flex align-items-center mb-3">
+            <span class="text-muted font-weight-bold" style="font-size: 0.9rem;">System Login</span>
+            <div style="flex-grow: 1; height: 1px; background-color: #dee2e6; margin-left: 10px;"></div>
+          </div>
+          
+          <div class="row form-group mb-2">
+            <div class="col-md-2 col-form-label"><label for="edit_username">Admin</label></div>
+            <div class="col-md-4"><input type="text" class="form-control" id="edit_username" name="username"></div>
+            
+            <div class="col-md-2 col-form-label"><label for="edit_password">Password</label></div>
+            <div class="col-md-4"><input type="password" class="form-control" id="edit_password" name="password"></div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.min.css">
+<style>
+/* Host dashboard Site Card styling */
+.site-card {
+    background: #ffffff;
+    border: 1.5px solid #00aeef;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.site-card-header {
+    border-bottom: 1.5px solid #8cc63f;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+}
+.monitor-icon {
+    font-size: 16px;
+    color: #555;
+}
+.site-id-badge {
+    font-family: monospace;
+    font-weight: bold;
+    color: #555;
+    background: #eeeeee;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
+    font-size: 14px;
+}
+.site-name-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #222;
+}
+
+.site-card-body {
+    padding: 15px;
+    background: #ffffff;
+}
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.stat-main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+.stat-number {
+    font-size: 26px;
+    font-weight: bold;
+    color: #005cbf;
+}
+.stat-label {
+    font-size: 13px;
+    color: #666;
+}
+.stat-percent {
+    font-size: 13px;
+}
+
+.site-card-footer {
+    border-top: 1px solid #eee;
+    padding: 8px 15px;
+    background: #fdfdfd;
+    display: flex;
+    align-items: center;
+}
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+}
+.footer-action-btn {
+    border: none;
+    background: none;
+    color: #666;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    border-right: 1px solid #ddd;
+}
+.footer-action-btn:last-child {
+    border-right: none;
+}
+.footer-action-btn:hover {
+    background: #f5f5f5;
+    color: #007bff;
+}
+.footer-action-btn.delete-btn:hover {
+    color: #d9534f;
+    background: #fdf2f2;
+}
+</style>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+<script>
+function filterSites() {
+    const query = document.getElementById('siteSearchInput').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.site-box-wrapper');
+    const noSitesMessage = document.getElementById('noSitesMessage');
+    const noResults = document.getElementById('noSearchResults');
+    
+    let totalCards = cards.length;
+    let visibleCards = 0;
+    
+    cards.forEach(card => {
+        const siteId = card.getAttribute('data-site-id').toLowerCase();
+        const siteName = card.getAttribute('data-site-name').toLowerCase();
+        
+        if (siteId.includes(query) || siteName.includes(query)) {
+            card.style.setProperty('display', 'block', 'important');
+            visibleCards++;
+        } else {
+            card.style.setProperty('display', 'none', 'important');
+        }
+    });
+    
+    if (noSitesMessage) {
+        if (query !== '') {
+            noSitesMessage.style.display = 'none';
+        } else if (totalCards === 0) {
+            noSitesMessage.style.display = 'block';
+        }
+    }
+    
+    if (visibleCards > 0 || totalCards === 0) {
+        noResults.style.display = 'none';
+    } else {
+        noResults.style.display = 'block';
+    }
+}
+
+function openEditSiteModal(btnElement) {
+    const siteId = btnElement.getAttribute('data-id');
+    const name = btnElement.getAttribute('data-name');
+    const url = btnElement.getAttribute('data-url');
+    const username = btnElement.getAttribute('data-username');
+    const password = btnElement.getAttribute('data-password');
+    const cssGuide = btnElement.getAttribute('data-css_guide');
+    const project = btnElement.getAttribute('data-project');
+    const jsGuide = btnElement.getAttribute('data-js_guide');
+    
+    document.getElementById('edit_site_id').value = siteId;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_url').value = url;
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_password').value = password;
+    document.getElementById('edit_css_guide').value = cssGuide;
+    document.getElementById('edit_js_guide').value = jsGuide;
+    
+    document.getElementById('editSiteForm').action = `/edit-site/${siteId}`;
+    $('#editSiteModal').modal('show');
+}
+
+function confirmDeleteSite(event, formElement) {
+    event.preventDefault(); // Stop form submission
+    
+    Swal.fire({
+        title: 'Confirm Delete Site?',
+        text: 'Are you sure you want to delete this site? All data and generated code will be completely deleted.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            formElement.submit(); // Submit form programmatically
+        }
+    });
+}
+</script>
+{% endblock %}
