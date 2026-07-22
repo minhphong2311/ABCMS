@@ -1,80 +1,89 @@
 # ABCMS - CMS Page Deployer & Builder
 
-**ABCMS** là một ứng dụng web và công cụ tự động hóa quy trình triển khai (deploy) giao diện (HTML, CSS, JS) lên hệ thống quản trị nội dung (CMS). 
+**ABCMS** is a web application and automation tool designed to streamline the deployment of frontend code (HTML, CSS, JS) directly into Content Management Systems (CMS).
 
-Ứng dụng giúp lập trình viên kiểm thử, thiết kế và tự động đẩy mã nguồn từ môi trường cục bộ lên hệ thống CMS mà không cần phải sao chép - dán (copy-paste) thủ công thông qua giao diện quản trị phức tạp của CMS.
-
----
-
-## 🌟 Tính năng chính
-
-1. **Quản lý danh sách Site CMS**:
-   - Thêm, sửa, xóa thông tin cấu hình các website mục tiêu (Site ID, Name, URL, Tài khoản/Mật khẩu CMS).
-   - Hỗ trợ lưu trữ các hướng dẫn tùy biến CSS (`css_guide`) cho từng site.
-
-2. **Xây dựng & Thiết kế giao diện (Builder)**:
-   - Giao diện quản lý menu, trang (pages), và cấu trúc thư mục của dự án trực quan.
-   - Hỗ trợ cấu hình các thành phần HTML, CSS và JavaScript riêng biệt cho từng trang hoặc layout.
-
-3. **Tự động hóa triển khai (Automation Deploy with Playwright)**:
-   - Đăng nhập tự động vào CMS bằng thông tin tài khoản đã cấu hình.
-   - Điều hướng trực tiếp đến trang Quản lý trang (Page Manager).
-   - Tự động tạo thư mục mới trên cây thư mục CMS nếu chưa tồn tại.
-   - Kiểm tra trang (JSP/HTML) đã tồn tại hay chưa:
-     - **Nếu chưa tồn tại**: Tự động tạo mới trang, chọn Layout mẫu và cấu hình tiêu đề/tên tệp tin.
-     - **Nếu đã tồn tại**: Chọn trang cần chỉnh sửa và mở trình biên tập (Editor).
-   - Tự động điền nội dung HTML, CSS và JS vào các trình biên tập mã nguồn trong CMS (ví dụ: Froala Editor, CodeMirror hoặc Editor tích hợp của hệ thống CMS).
-   - Lưu và hoàn tất triển khai hoàn toàn tự động.
+It helps developers preview designs and automatically push source code from their local environment to the target CMS, eliminating the need for manual copy-pasting through complex CMS admin interfaces.
 
 ---
 
-## 📁 Cấu trúc thư mục dự án
+## 🚀 Key Features
+
+1. **CMS Site Management**:
+   - Add, edit, and delete target website configurations (Site ID, Name, URL, Credentials).
+   - Support for custom CSS guidelines (`css_guide`) per site.
+
+2. **Visual Builder & Page Management**:
+   - Intuitive drag-and-drop interface for managing nested menus, pages, and directory structures.
+   - Configure individual HTML, CSS, and JavaScript settings for each page or layout.
+
+3. **AI-Powered Automation**:
+   - **Smart Slug Generation**: Integrates with Google's Gemini API (`gemini-flash-latest`) to automatically translate and summarize Korean menu titles into short, SEO-friendly English URL slugs (e.g., `부동산AI융합학과` -> `real-estate-ai`).
+   - **Batch Excel Import**: Upload Excel files of site structures, and the AI will batch translate hundreds of missing slugs in just a few seconds.
+   - **Auto-Deduplication**: Ensures globally unique URLs by automatically appending numeric suffixes (e.g., `-2`, `-3`) to identically named pages.
+   - **Auto-Folder Assignment**: Intelligently derives folder structures by cascading root slugs down to descendant nodes.
+
+4. **Playwright Automation (Auto Deploy)**:
+   - Automated headless/headed login to the CMS.
+   - Direct navigation to the Page Manager.
+   - Automated folder creation on the CMS tree.
+   - Verifies if a page (JSP/HTML) exists:
+     - **If new**: Creates the page, selects the template layout, and configures titles/files.
+     - **If existing**: Selects the target page and opens the editor.
+   - Injects HTML, CSS, and JS code into the CMS editors (e.g., Froala, CodeMirror).
+   - Automatically saves and finalizes the deployment.
+
+---
+
+## 📂 Project Structure
 
 ```text
-├── app.py                # Server Flask chính, quản lý giao diện web builder cục bộ
-├── automation.py         # Kịch bản tự động hóa Playwright đăng nhập và cập nhật code lên CMS
-├── check_cms.py          # Script kiểm tra kết nối và cấu trúc DOM của CMS mục tiêu
-├── check_folders.py      # Script phụ trợ kiểm tra cấu trúc thư mục
-├── inspect_*.py          # Các script debug giao diện, trang, Figma phục vụ phát triển
-├── test_deploy.py        # File test tiến trình deploy
-├── data/                 # Thư mục chứa cấu hình dữ liệu (sites, config, cache)
-│   ├── sites.json        # Danh sách các site CMS được quản lý
-│   └── config.json       # Cấu hình cài đặt chung của hệ thống
-├── templates/            # Giao diện HTML hiển thị của Flask app (Jinja2 templates)
-└── .gitignore            # Cấu hình bỏ qua các file logs, ảnh debug và cache khi đẩy lên Git
+├── app.py                # Main Flask server running the web builder dashboard
+├── automation.py         # Playwright script for CMS login and code deployment
+├── check_cms.py          # Script to inspect CMS DOM structure and connectivity
+├── check_folders.py      # Helper script for folder validation
+├── inspect_*.py          # Debugging scripts for UI, pages, and Figma
+├── test_deploy.py        # Sandbox script for testing deployment workflows
+├── data/                 # Local JSON database and configurations
+│   ├── sites.json        # Managed CMS site list
+│   └── config.json       # Global system settings (including Gemini API keys)
+├── templates/            # Flask Jinja2 HTML templates
+└── .gitignore            # Git exclusion rules
 ```
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Chạy ứng dụng
+## 🛠️ Installation & Setup
 
-### 1. Yêu cầu hệ thống
+### 1. Prerequisites
 - Python 3.8+
-- Node.js (nếu có các tool/plugin hỗ trợ đi kèm)
 
-### 2. Cài đặt các thư viện cần thiết
-Mở terminal và chạy lệnh:
+### 2. Install Dependencies
+Open your terminal and run:
 ```bash
-pip install flask playwright asyncio
+pip install flask playwright asyncio google-genai openpyxl requests
 playwright install chromium
 ```
 
-### 3. Khởi chạy Web Dashboard Builder cục bộ
-Chạy server Flask:
+### 3. Launch the Web Dashboard
+Start the local Flask server:
 ```bash
 python app.py
 ```
-Sau đó truy cập trình duyệt tại địa chỉ: [http://localhost:5000](http://localhost:5000)
+Then navigate to [http://localhost:5000](http://localhost:5000) in your web browser.
 
-### 4. Triển khai tự động (Command Line)
-Bạn có thể chạy kiểm tra deploy bằng cách chạy trực tiếp các script test:
+### 4. Configuration
+Ensure you have set up your API keys in the dashboard's settings panel (e.g., Gemini API Key) to enable AI features.
+
+### 5. Automated Deployment (CLI)
+You can test the deployment workflow directly via the CLI:
 ```bash
 python test_deploy.py
 ```
 
 ---
 
-## 🛠️ Công nghệ sử dụng
-- **Backend**: Python, Flask (phục vụ giao diện điều khiển).
-- **Automation**: Playwright (điều khiển trình duyệt Chromium không đầu / có đầu để tương tác trực tiếp với CMS).
-- **Database**: Dạng tệp tin JSON đơn giản lưu trong thư mục `data/` giúp dễ dàng đồng bộ và nhẹ nhàng.
+## 💻 Tech Stack
+- **Backend**: Python, Flask (Dashboard UI and API)
+- **AI Integration**: Google GenAI SDK (`gemini-flash-latest` model)
+- **Automation**: Playwright (Headless browser control)
+- **Database**: Flat JSON files in the `data/` directory for lightweight, portable data persistence.
