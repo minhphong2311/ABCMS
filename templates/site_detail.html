@@ -342,11 +342,11 @@
                 <td class="text-right py-2">
                   <div class="d-flex align-items-center justify-content-end">
                     <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
-                    <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()" style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
-                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
+                    <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
+                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
                     
-                    <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
-                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
+                    <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
+                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
                     
                     <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
                     
@@ -439,24 +439,24 @@
           <div class="d-flex align-items-center justify-content-between flex-wrap w-100">
             <!-- Left side actions: Build and Preview -->
             <div class="d-flex align-items-center">
-              <button type="button" class="btn btn-primary btn-sm mr-1"
+              <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1"
                       id="generate-grid-btn-{{ menu.folder or '' }}--{{ menu.slug }}"
                       onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)"
-                      {% if not menu.figma_link %}disabled title="Please enter Figma Link to generate"{% endif %}>
-                <i class="fas fa-cogs mr-1"></i> Generate Page
+                      {% if not menu.figma_link %}disabled title="Please enter Figma Link to generate"{% endif %} title="Generate">
+                <i class="fas fa-cogs"></i>
               </button>
               
               <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/"
-                 class="btn btn-success btn-sm btn-preview mr-1"
+                 class="btn btn-success btn-sm page-action-btn mr-1"
                  id="preview-btn-{{ menu.folder or '' }}--{{ menu.slug }}"
                  onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()"
-                 style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};">
-                <i class="fas fa-eye mr-1"></i> Preview
+                 style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};" title="Preview">
+                <i class="fas fa-eye"></i>
               </a>
-              <button class="btn btn-secondary btn-sm mr-1" disabled title="Please generate page first"
+              <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled title="Please generate page first"
                       id="preview-disabled-{{ menu.folder or '' }}--{{ menu.slug }}"
-                      style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};">
-                <i class="fas fa-eye mr-1"></i> Preview
+                      style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Preview">
+                <i class="fas fa-eye"></i>
               </button>
             </div>
             
@@ -465,12 +465,12 @@
               <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy"
                       onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)"
                       id="deploy-form-{{ menu.folder or '' }}--{{ menu.slug }}"
-                      style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};">
+                      style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};">
                 <i class="fas fa-cloud-upload-alt"></i>
               </button>
               <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled title="Please generate page first"
                       id="deploy-disabled-{{ menu.folder or '' }}--{{ menu.slug }}"
-                      style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};">
+                      style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};">
                 <i class="fas fa-cloud-upload-alt"></i>
               </button>
               
@@ -869,8 +869,10 @@ function checkDeployStatus() {
 let generatePollingIntervals = {};
 
 function generateFiles(siteId, menuSlug, btnElement) {
-    const originalContent = '<i class="fas fa-cogs mr-1"></i> Generate Page';
-    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Initializing...';
+    const originalContent = '<i class="fas fa-cogs"></i>';
+    const originalTitle = btnElement.title;
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btnElement.title = 'Initializing...';
     btnElement.disabled = true;
 
     const statusInfo = document.getElementById(`build-status-info-${menuSlug}`);
@@ -886,13 +888,15 @@ function generateFiles(siteId, menuSlug, btnElement) {
                 btnElement.disabled = false;
                 btnElement.classList.remove('btn-primary');
                 btnElement.classList.add('btn-danger');
-                btnElement.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Stop Generation';
+                btnElement.innerHTML = '<i class="fas fa-times-circle"></i>';
+                btnElement.title = 'Stop Generation';
                 btnElement.onclick = function() { cancelGenerate(response.task_id, btnElement, menuSlug, siteId); };
                 
                 pollGenerateTask(response.task_id, menuSlug, btnElement, siteId);
             } else {
                 btnElement.disabled = false;
                 btnElement.innerHTML = originalContent;
+                btnElement.title = originalTitle;
                 if (statusInfo) statusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${response.message}</span>`;
                 Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Error', text: response.message });
             }
@@ -900,6 +904,7 @@ function generateFiles(siteId, menuSlug, btnElement) {
         error: function(xhr) {
             btnElement.disabled = false;
             btnElement.innerHTML = originalContent;
+            btnElement.title = originalTitle;
             if (statusInfo) statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Server connection error</span>';
             Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Connection Error', text: 'Please try again.' });
         }
@@ -908,7 +913,8 @@ function generateFiles(siteId, menuSlug, btnElement) {
 
 function cancelGenerate(taskId, btnElement, menuSlug, siteId) {
     btnElement.disabled = true;
-    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Stopping...';
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btnElement.title = 'Stopping...';
     $.ajax({
         url: `/api/generate_cancel/${taskId}`,
         type: 'POST',
@@ -938,7 +944,8 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                     btnElement.classList.remove('btn-danger');
                     btnElement.classList.add('btn-primary');
                     btnElement.onclick = function() { generateFiles(siteId, menuSlug, btnElement); };
-                    btnElement.innerHTML = '<i class="fas fa-cogs mr-1"></i> Generate Page';
+                    btnElement.innerHTML = '<i class="fas fa-cogs"></i>';
+                    btnElement.title = 'Generate';
                     btnElement.disabled = false;
                     
                     if (task.status === 'success') {
@@ -951,15 +958,15 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                         if (statusInfo) statusInfo.innerHTML = `<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ${task.message}</span>`;
                         
                         // Update Grid View Buttons
-                        if(document.getElementById(`preview-btn-${menuSlug}`)) document.getElementById(`preview-btn-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`preview-btn-${menuSlug}`)) document.getElementById(`preview-btn-${menuSlug}`).style.display = 'inline-flex';
                         if(document.getElementById(`preview-disabled-${menuSlug}`)) document.getElementById(`preview-disabled-${menuSlug}`).style.display = 'none';
-                        if(document.getElementById(`deploy-form-${menuSlug}`)) document.getElementById(`deploy-form-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`deploy-form-${menuSlug}`)) document.getElementById(`deploy-form-${menuSlug}`).style.display = 'inline-flex';
                         if(document.getElementById(`deploy-disabled-${menuSlug}`)) document.getElementById(`deploy-disabled-${menuSlug}`).style.display = 'none';
                         
                         // Update List View Buttons
-                        if(document.getElementById(`preview-list-btn-${menuSlug}`)) document.getElementById(`preview-list-btn-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`preview-list-btn-${menuSlug}`)) document.getElementById(`preview-list-btn-${menuSlug}`).style.display = 'inline-flex';
                         if(document.getElementById(`preview-list-disabled-${menuSlug}`)) document.getElementById(`preview-list-disabled-${menuSlug}`).style.display = 'none';
-                        if(document.getElementById(`deploy-list-form-${menuSlug}`)) document.getElementById(`deploy-list-form-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`deploy-list-form-${menuSlug}`)) document.getElementById(`deploy-list-form-${menuSlug}`).style.display = 'inline-flex';
                         if(document.getElementById(`deploy-list-disabled-${menuSlug}`)) document.getElementById(`deploy-list-disabled-${menuSlug}`).style.display = 'none';
                         
                         const card = btnElement.closest('.card');

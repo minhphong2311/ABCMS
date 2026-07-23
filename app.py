@@ -1490,19 +1490,63 @@ def template_fallback_refactor(html_input, css_input, menu_slug=""):
 GENERATE_TASKS = {}
 
 def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, config, menu, site, feedback):
-    GENERATE_TASKS[task_id] = {"status": "running", "message": "Connecting to Figma..."}
     try:
-        import time
-        time.sleep(2.5) # Simulate delay
-        
+        GENERATE_TASKS[task_id] = {"status": "running", "message": "Parsing Figma link..."}
         if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
             return
-
+            
         folder, menu_slug = parse_folder_slug(menu_param)
-        figma_html_css = None
+        figma_link = menu.get('figma_link', '').strip()
+        if not figma_link:
+            raise Exception("No Figma link found for this page.")
+            
+        file_key, node_id = parse_figma_url(figma_link)
+        if not file_key or not node_id:
+            raise Exception("Invalid Figma link format.")
+            
+        if not figma_token:
+            raise Exception("Figma token is missing in settings.")
+            
+        GENERATE_TASKS[task_id] = {"status": "running", "message": "Fetching Figma design..."}
+        design_data = fetch_figma_node(file_key, node_id, figma_token)
+        if not design_data or 'nodes' not in design_data or node_id not in design_data['nodes']:
+            raise Exception("Could not fetch design from Figma API.")
+            
+        GENERATE_TASKS[task_id] = {"status": "running", "message": "Downloading assets..."}
+        document = design_data['nodes'][node_id]['document']
+        used_refs = extract_used_image_refs(document)
+        image_map = fetch_figma_images(file_key, figma_token)
+        local_image_map = download_and_map_figma_images(image_map, target_dir, menu_slug, used_refs)
         
-        # ... (implementation logic continues similar to existing structure)
+        # Export icons
+        export_figma_icons(file_key, document, figma_token, target_dir, menu_slug)
         
+        GENERATE_TASKS[task_id] = {"status": "running", "message": "Compiling HTML/CSS..."}
+        compile_result = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
+        if not compile_result:
+            raise Exception("Failed to compile HTML/CSS.")
+        html_result, css_result = compile_result
+        
+        gemini_api_key = config.get('gemini_api_key', '').strip()
+        if gemini_api_key:
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
+            html_result, css_result = compare_and_fix_visuals(figma_token, figma_link, html_result, css_result, [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id)
+            
+            if feedback:
+                GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying feedback..."}
+                css_result = apply_dynamic_css_feedback(css_result, feedback)
+                
+        # Write files
+        html_path = os.path.join(target_dir, f"{menu_slug}.html")
+        css_path = os.path.join(target_dir, f"{menu_slug}.css")
+        
+        final_html = f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n    <meta charset="UTF-8">\n    <title>{menu.get("name", menu_slug)}</title>\n    <link rel="stylesheet" href="style.css">\n    <link rel="stylesheet" href="{menu_slug}.css">\n</head>\n<body>\n    {html_result}\n</body>\n</html>'
+        
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(final_html)
+        with open(css_path, "w", encoding="utf-8") as f:
+            f.write(css_result)
+            
         sites = load_data()
         updated_site = next((s for s in sites if s['id'] == site_id), None)
         if updated_site:
@@ -1513,7 +1557,9 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
         GENERATE_TASKS[task_id] = {"status": "success", "message": f'Successfully generated page "{menu["name"]}"!'}
     except Exception as e:
-        GENERATE_TASKS[task_id] = {"status": "error", "message": f'System error: {str(e)}'}
+        import traceback
+        traceback.print_exc()
+        GENERATE_TASKS[task_id] = {"status": "error", "message": f'Generation error: {str(e)}'}
 
 @app.route('/site/<site_id>/generate/<menu_param>', methods=['POST'])
 def generate_files(site_id, menu_param):
