@@ -1,4 +1,4 @@
-# ABCMS - CMS Page Deployer & Builder
+# ABCMS - Jiniworks CMS Page Deployer & Builder
 
 **ABCMS** is a web application and automation tool specifically designed to support and streamline the deployment of frontend code (HTML, CSS, JS) directly into the **Jiniworks CMS**.
 
