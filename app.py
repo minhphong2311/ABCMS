@@ -549,11 +549,20 @@ def reorder_folder(site_id, folder_name, direction):
 @app.route('/site/<site_id>/add-menu', methods=['POST'])
 def add_menu(site_id):
     menu_name = request.form.get('menu_name', '').strip()
-    folder = request.form.get('folder', '').strip().strip('/')
+    parent_id = request.form.get('parent_id', '').strip()
+    
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    
+    folder = ""
+    if parent_id and site:
+        parent_menu = next((m for m in site['menus'] if m['id'] == parent_id), None)
+        if parent_menu:
+            folder = parent_menu.get('slug', '')
+            
     menu_slug = request.form.get('menu_slug', '').strip().strip('/')
     figma_link = request.form.get('figma_link', '').strip()
     layout = request.form.get('layout', 'sub-template').strip()
-    sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
     if not site:
         flash('Site not found!', 'danger')
@@ -581,7 +590,9 @@ def add_menu(site_id):
         'slug': menu_slug,
         'figma_link': figma_link,
         'layout': layout,
-        'generated': False
+        'id': str(uuid.uuid4()),
+        'generated': False,
+        'parent_id': parent_id if parent_id else None
     }
     site['menus'].insert(0, new_menu)
     save_data(sites)
@@ -1512,7 +1523,7 @@ def generate_files(site_id, menu_param):
         return jsonify({'success': False, 'message': 'Site not found!'}), 404
 
     folder, menu_slug = parse_folder_slug(menu_param)
-    menu = next((m for m in site['menus'] if m.get('folder', '') == folder and m['slug'] == menu_slug), None)
+    menu = next((m for m in site['menus'] if (m.get('folder') or '') == folder and m.get('slug') == menu_slug), None)
     if not menu:
         return jsonify({'success': False, 'message': 'Page not found!'}), 404
 
@@ -1585,15 +1596,41 @@ def preview_raw(site_id, menu_param):
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
     return response
 
+@app.route('/site/<site_id>/update-layout/<menu_id>', methods=['POST'])
+def update_layout(site_id, menu_id):
+    data = request.get_json()
+    new_layout = data.get('layout')
+    
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'success': False, 'message': 'Site not found'})
+        
+    menu = next((m for m in site['menus'] if m['id'] == menu_id), None)
+    if not menu:
+        return jsonify({'success': False, 'message': 'Menu not found'})
+        
+    menu['layout'] = new_layout
+    save_data(sites)
+    
+    return jsonify({'success': True})
+
 @app.route('/site/<site_id>/edit-menu/<menu_param>', methods=['POST'])
 def edit_menu(site_id, menu_param):
     new_name = request.form.get('menu_name', '').strip()
-    new_folder = request.form.get('folder', '').strip().strip('/')
+    new_parent_id = request.form.get('parent_id', '').strip()
     new_slug = request.form.get('menu_slug', '').strip().strip('/')
     new_figma = request.form.get('figma_link', '').strip()
     new_layout = request.form.get('layout', 'sub-template').strip()
     
     sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    
+    new_folder = ""
+    if new_parent_id and site:
+        parent_menu = next((m for m in site['menus'] if m['id'] == new_parent_id), None)
+        if parent_menu:
+            new_folder = parent_menu.get('slug', '')
     site = next((s for s in sites if s['id'] == site_id), None)
     if not site:
         flash('Site not found!', 'danger')
@@ -1607,8 +1644,10 @@ def edit_menu(site_id, menu_param):
     
     menu['name'] = new_name
     menu['slug'] = new_slug
+    menu['folder'] = new_folder
     menu['figma_link'] = new_figma
     menu['layout'] = new_layout
+    menu['parent_id'] = new_parent_id if new_parent_id else None
     
     save_data(sites)
     flash(f'Successfully updated page "{new_name}"!', 'success')
@@ -1630,6 +1669,30 @@ def delete_menu(site_id, menu_param):
     delete_menu_files(site_id, menu_param)
     flash('Successfully deleted page!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
+
+@app.route('/site/<site_id>/bulk-delete-menus', methods=['POST'])
+def bulk_delete_menus(site_id):
+    data = request.get_json()
+    items = data.get('items', [])
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'success': False, 'message': 'Site not found'})
+    
+    deleted_count = 0
+    for item in items:
+        menu_id = item.get('id')
+        param = item.get('param')
+        
+        original_length = len(site['menus'])
+        site['menus'] = [m for m in site['menus'] if str(m.get('id')) != str(menu_id)]
+        if len(site['menus']) < original_length:
+            if param and param != '--':
+                delete_menu_files(site_id, param)
+            deleted_count += 1
+            
+    save_data(sites)
+    return jsonify({'success': True, 'deleted_count': deleted_count})
 
 DEPLOY_TASKS = {}
 
@@ -1664,7 +1727,7 @@ def api_deploy():
     if not site:
         return jsonify({'success': False, 'message': 'Site not found!'})
 
-    menu = next((m for m in site['menus'] if m.get('folder', '') == folder and m['slug'] == menu_slug), None)
+    menu = next((m for m in site['menus'] if (m.get('folder') or '') == folder and m.get('slug') == menu_slug), None)
     if not menu:
         return jsonify({'success': False, 'message': 'Page not found!'})
         

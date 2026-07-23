@@ -48,7 +48,10 @@
   <div class="col-md-4 col-lg-3">
     <div class="card card-outline card-primary h-100">
       <div class="card-header bg-light py-2">
-        <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem;"><i class="fas fa-sitemap mr-2"></i>{{ site.name }}</h3>
+        <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem; line-height: 1.5;"><i class="fas fa-sitemap mr-2"></i>{{ site.name }}</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.85rem;" onclick="clearTreeFilter()">Show All</button>
+        </div>
       </div>
       <div class="card-body p-0 bg-white" id="site-menu-tree-container" style="overflow-y: auto; max-height: 800px;">
         <div class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading tree...</div>
@@ -61,7 +64,7 @@
     <!-- List of Pages Search & Add Button -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <!-- Page Search Input -->
-      <div class="input-group" style="max-width: 400px;">
+      <div class="input-group search-group" style="max-width: 400px;">
         <div class="input-group-prepend">
           <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
         </div>
@@ -69,14 +72,25 @@
       </div>
       
       <!-- Action Buttons & View Toggle -->
-      <div>
-        <div class="btn-group mr-3" role="group" aria-label="View Toggle">
-          <button type="button" class="btn btn-secondary" id="btn-list-view" onclick="toggleView('list')"><i class="fas fa-list"></i></button>
-          <button type="button" class="btn btn-outline-secondary" id="btn-grid-view" onclick="toggleView('grid')"><i class="fas fa-th-large"></i></button>
+      <div class="d-flex align-items-center">
+        <div class="custom-control custom-checkbox mr-4 mt-1">
+          <input type="checkbox" class="custom-control-input" id="check-all-global" onclick="toggleAllChecks(this.checked)">
+          <label class="custom-control-label font-weight-normal text-muted" for="check-all-global">Select All</label>
         </div>
-        <button type="button" class="btn btn-outline-primary mr-2" data-toggle="modal" data-target="#addFolderModal">
-          <i class="fas fa-folder mr-1"></i> Manage Folder
-        </button>
+        <div class="btn-group mr-3" role="group" aria-label="View Toggle">
+          <button type="button" class="btn btn-primary" id="btn-list-view" onclick="toggleView('list')"><i class="fas fa-list"></i></button>
+          <button type="button" class="btn btn-outline-primary" id="btn-grid-view" onclick="toggleView('grid')"><i class="fas fa-th-large"></i></button>
+        </div>
+        <div class="d-flex align-items-center mr-3 bg-light rounded px-2 py-1 border" id="bulk-actions-wrapper">
+          <span class="text-secondary mr-2 text-sm font-weight-bold"><span id="bulk-selected-count">0</span> selected</span>
+          <select id="bulk-action-select" class="custom-select custom-select-sm mr-2" style="width: 150px; border-radius: 4px;">
+            <option value="">Bulk Actions...</option>
+            <option value="generate">Generate Pages</option>
+            <option value="deploy">Deploy Pages</option>
+            <option value="delete">Delete Pages</option>
+          </select>
+          <button type="button" class="btn btn-primary btn-sm px-3" onclick="executeBulkAction('{{ site.id }}')" style="border-radius: 4px;">Apply</button>
+        </div>
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addMenuModal">
           <i class="fas fa-plus mr-1"></i> Add Page
         </button>
@@ -115,45 +129,155 @@
       <!-- LIST VIEW -->
       <div id="list-view-container">
         {% if leaf_menus %}
+        <style>
+          .table-premium tbody tr {
+            transition: all 0.2s ease;
+          }
+          .table-premium tbody tr:hover {
+            background-color: #f8f9fa;
+            box-shadow: inset 4px 0 0 #007bff;
+          }
+          .page-action-btn {
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .page-action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .table-header-premium th {
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6c757d;
+          }
+          /* Fix search input focus */
+          .search-group:focus-within .input-group-text,
+          .search-group:focus-within .form-control {
+            border-color: #80bdff !important;
+          }
+          .search-group .form-control:focus {
+            box-shadow: none !important;
+          }
+          /* Dark Mode Overrides for Outline Buttons */
+          body.dark-mode .btn-outline-primary {
+            color: #6eb6ff !important;
+            border-color: #6eb6ff !important;
+          }
+          body.dark-mode .btn-outline-primary:hover {
+            background-color: #6eb6ff !important;
+            color: #1a1d20 !important;
+          }
+          body.dark-mode .btn-primary {
+            background-color: #6eb6ff !important;
+            border-color: #6eb6ff !important;
+            color: #1a1d20 !important;
+          }
+          body.dark-mode .btn-primary:hover {
+            background-color: #4da3ff !important;
+            border-color: #4da3ff !important;
+            color: #1a1d20 !important;
+          }
+          body.dark-mode .btn-outline-secondary {
+            color: #adb5bd !important;
+            border-color: #adb5bd !important;
+          }
+          body.dark-mode .btn-outline-secondary:hover {
+            background-color: #adb5bd !important;
+            color: #1a1d20 !important;
+          }
+          /* Dark mode for Bulk Actions */
+          body.dark-mode #bulk-actions-wrapper {
+            background-color: #343a40 !important;
+            border-color: #4b545c !important;
+          }
+          body.dark-mode #bulk-actions-wrapper .text-secondary {
+            color: #adb5bd !important;
+          }
+          body.dark-mode #bulk-actions-wrapper select {
+            background-color: #343a40 !important;
+            color: #fff !important;
+            border-color: #6c757d !important;
+          }
+          /* Dark mode for search input */
+          body.dark-mode .search-group .input-group-text,
+          body.dark-mode .search-group .form-control {
+            background-color: #343a40 !important;
+            color: #fff !important;
+            border-color: #4b545c !important;
+          }
+          body.dark-mode .search-group:focus-within .input-group-text,
+          body.dark-mode .search-group:focus-within .form-control {
+            border-color: #6eb6ff !important;
+          }
+        </style>
         <div class="table-responsive bg-white rounded shadow-sm border mb-4">
-          <table class="table table-hover mb-0 align-middle table-sm" style="min-width: 800px;">
-            <thead class="bg-light text-muted">
+          <table class="table table-hover mb-0 align-middle table-premium" style="min-width: 800px;">
+            <thead class="bg-light table-header-premium">
               <tr>
+                <th style="width: 40px;" class="text-center border-top-0">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="check-all-list" onclick="toggleAllChecks(this.checked)">
+                    <label class="custom-control-label" for="check-all-list"></label>
+                  </div>
+                </th>
                 <th style="width: 250px;" class="border-top-0">Page Name</th>
                 <th class="text-center border-top-0">Generated</th>
-                <th class="text-center border-top-0">HTML</th>
-                <th class="text-center border-top-0">Layout</th>
-                <th class="text-center border-top-0">Tab</th>
+                <th class="text-center border-top-0">Standard Layout</th>
+                <th class="text-center border-top-0">Tab Layout</th>
                 <th class="text-right border-top-0">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for menu in leaf_menus %}
               <tr class="page-card-wrapper" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
-                <td class="py-2">
+                <td class="text-center py-3">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input menu-checkbox" id="check-list-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="updateBulkActionsBtn()">
+                    <label class="custom-control-label" for="check-list-{{ menu.id }}"></label>
+                  </div>
+                </td>
+                <td class="py-3">
                   <div class="d-flex align-items-center">
-                    <i class="far fa-file-code text-secondary mr-2"></i>
+                    <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center mr-3 shadow-sm" style="width: 36px; height: 36px;">
+                      <i class="far fa-file-code"></i>
+                    </div>
                     <div>
-                      <div class="font-weight-bold text-dark">{{ menu.name }}</div>
-                      <div class="text-xs text-muted">{{ menu.slug }}.html</div>
+                      <div class="font-weight-bold text-dark" style="font-size: 0.95rem;">{{ menu.name }}</div>
+                      <div class="text-muted" style="font-size: 0.8rem;">{{ menu.slug }}.html</div>
                     </div>
                   </div>
                 </td>
-                <td class="text-center py-2">
-                  {% if menu.generated %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
+                <td class="text-center py-2" id="status-badge-list-{{ menu.folder or '' }}--{{ menu.slug }}">
+                  {% if menu.generated %}
+                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Page Generated</span>
+                  {% else %}
+                    <span class="badge badge-secondary px-2 py-1"><i class="fas fa-exclamation-circle mr-1"></i>Page not generated</span>
+                  {% endif %}
                 </td>
-                <td class="text-center py-2">
-                  <i class="fas fa-check-square text-success"></i>
+                <td class="text-center py-2" style="vertical-align: middle;">
+                  <div class="custom-control custom-radio d-inline-block">
+                    <input type="radio" id="layout_sub_{{ menu.id }}" name="layout_{{ menu.id }}" value="sub-template" class="custom-control-input" onchange="updateLayout('{{ site.id }}', '{{ menu.id }}', this.value)" {% if menu.layout == 'sub-template' or not menu.layout %}checked{% endif %}>
+                    <label class="custom-control-label" for="layout_sub_{{ menu.id }}"></label>
+                  </div>
                 </td>
-                <td class="text-center py-2">
-                  {% if menu.layout and 'sub-template' in menu.layout %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
-                </td>
-                <td class="text-center py-2">
-                  {% if menu.layout == 'sub-template-tab' %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
+                <td class="text-center py-2" style="vertical-align: middle;">
+                  <div class="custom-control custom-radio d-inline-block">
+                    <input type="radio" id="layout_tab_{{ menu.id }}" name="layout_{{ menu.id }}" value="sub-template-tab" class="custom-control-input" onchange="updateLayout('{{ site.id }}', '{{ menu.id }}', this.value)" {% if menu.layout == 'sub-template-tab' %}checked{% endif %}>
+                    <label class="custom-control-label" for="layout_tab_{{ menu.id }}"></label>
+                  </div>
                 </td>
                 <td class="text-right py-2">
                   <div class="d-flex align-items-center justify-content-end">
-                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
+                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
                     <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()" style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
                     
@@ -161,6 +285,12 @@
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
                     
                     <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
+                    
+                    <form action="/site/{{ site.id }}/delete-menu/{{ menu.folder or '' }}--{{ menu.slug }}" method="POST" class="d-inline" style="margin: 0;" onsubmit="confirmDeleteMenu(event, this)">
+                      <button type="submit" class="btn btn-danger btn-sm page-action-btn" title="Delete">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </form>
                   </div>
                 </td>
               </tr>
@@ -182,14 +312,20 @@
       <div class="row" id="grid-view-container" style="display: none;">
         {% if leaf_menus %}
           {% for menu in leaf_menus %}
-    <div class="col-md-6 col-lg-4 mb-4 page-card-wrapper" id="page-card-{{ menu.folder or '' }}--{{ menu.slug }}">
+    <div class="col-md-6 col-lg-4 mb-4 page-card-wrapper" id="page-card-{{ menu.folder or '' }}--{{ menu.slug }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
       <div class="card card-outline {% if menu.generated %}card-success{% else %}card-secondary{% endif %} h-100 d-flex flex-column justify-content-between">
         
         <!-- Card Header -->
         <div class="card-header d-flex justify-content-between align-items-center py-2 bg-light w-100" style="display: flex !important; justify-content: space-between !important; width: 100%;">
-          <h5 class="card-title font-weight-bold mb-0 text-dark" style="float: none; display: inline-block; margin-bottom: 0;">
-            <i class="far fa-file-code text-secondary mr-2"></i>{{ menu.name }}
-          </h5>
+          <div class="d-flex align-items-center">
+            <div class="custom-control custom-checkbox mr-2">
+              <input type="checkbox" class="custom-control-input menu-checkbox" id="check-grid-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="updateBulkActionsBtn()">
+              <label class="custom-control-label" for="check-grid-{{ menu.id }}"></label>
+            </div>
+            <h5 class="card-title font-weight-bold mb-0 text-dark" style="float: none; display: inline-block; margin-bottom: 0;">
+              <i class="far fa-file-code text-secondary mr-2"></i>{{ menu.name }}
+            </h5>
+          </div>
           <span class="badge badge-secondary" style="margin-left: auto; float: right; display: inline-block;">{{ menu.layout }}</span>
         </div>
         
@@ -240,6 +376,7 @@
             <!-- Left side actions: Build and Preview -->
             <div class="d-flex align-items-center">
               <button type="button" class="btn btn-primary btn-sm mr-1"
+                      id="generate-grid-btn-{{ menu.folder or '' }}--{{ menu.slug }}"
                       onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)"
                       {% if not menu.figma_link %}disabled title="Please enter Figma Link to generate"{% endif %}>
                 <i class="fas fa-cogs mr-1"></i> Generate Page
@@ -316,11 +453,8 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="folder">Child Folder (Folder)</label>
-            <select class="form-control" id="folder" name="folder">
+            <select class="form-control" id="folder" name="parent_id">
               <option value="">Root Folder (Root)</option>
-              {% for folder in site.folders %}
-                <option value="{{ folder }}">{{ folder }}</option>
-              {% endfor %}
             </select>
           </div>
           <div class="form-group">
@@ -334,8 +468,8 @@
           <div class="form-group">
             <label for="layout">Layout <span class="text-danger">*</span></label>
             <select class="form-control" id="layout" name="layout">
-              <option value="sub-template">sub-template (Standard inner page)</option>
-              <option value="sub-template-tab">sub-template-tab (Tabbed inner page)</option>
+              <option value="sub-template">Standard Layout</option>
+              <option value="sub-template-tab">Tab Layout</option>
             </select>
           </div>
           <div class="form-group">
@@ -364,14 +498,11 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="row form-group mb-3" style="display: none;">
+          <div class="row form-group mb-3">
             <div class="col-md-12">
             <label for="edit_folder">Child Folder (Folder)</label>
-            <select class="form-control" id="edit_folder" name="folder">
+            <select class="form-control" id="edit_folder" name="parent_id">
               <option value="">Root Folder (Root)</option>
-              {% for folder in site.folders %}
-                <option value="{{ folder }}">{{ folder }}</option>
-              {% endfor %}
             </select>
             </div>
           </div>
@@ -386,8 +517,8 @@
           <div class="form-group">
             <label for="edit_layout">Layout <span class="text-danger">*</span></label>
             <select class="form-control" id="edit_layout" name="layout">
-              <option value="sub-template">sub-template</option>
-              <option value="sub-template-tab">sub-template-tab</option>
+              <option value="sub-template">Standard Layout</option>
+              <option value="sub-template-tab">Tab Layout</option>
             </select>
           </div>
           <div class="form-group">
@@ -729,12 +860,23 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                     if (task.status === 'success') {
                         const badgeContainer = document.getElementById(`status-badge-container-${menuSlug}`);
                         if (badgeContainer) badgeContainer.innerHTML = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Page Generated</span>';
+                        
+                        const badgeListContainer = document.getElementById(`status-badge-list-${menuSlug}`);
+                        if (badgeListContainer) badgeListContainer.innerHTML = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Page Generated</span>';
+                        
                         if (statusInfo) statusInfo.innerHTML = `<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ${task.message}</span>`;
                         
-                        document.getElementById(`preview-btn-${menuSlug}`).style.display = 'inline-block';
-                        document.getElementById(`preview-disabled-${menuSlug}`).style.display = 'none';
-                        document.getElementById(`deploy-form-${menuSlug}`).style.display = 'inline-block';
-                        document.getElementById(`deploy-disabled-${menuSlug}`).style.display = 'none';
+                        // Update Grid View Buttons
+                        if(document.getElementById(`preview-btn-${menuSlug}`)) document.getElementById(`preview-btn-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`preview-disabled-${menuSlug}`)) document.getElementById(`preview-disabled-${menuSlug}`).style.display = 'none';
+                        if(document.getElementById(`deploy-form-${menuSlug}`)) document.getElementById(`deploy-form-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`deploy-disabled-${menuSlug}`)) document.getElementById(`deploy-disabled-${menuSlug}`).style.display = 'none';
+                        
+                        // Update List View Buttons
+                        if(document.getElementById(`preview-list-btn-${menuSlug}`)) document.getElementById(`preview-list-btn-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`preview-list-disabled-${menuSlug}`)) document.getElementById(`preview-list-disabled-${menuSlug}`).style.display = 'none';
+                        if(document.getElementById(`deploy-list-form-${menuSlug}`)) document.getElementById(`deploy-list-form-${menuSlug}`).style.display = 'inline-block';
+                        if(document.getElementById(`deploy-list-disabled-${menuSlug}`)) document.getElementById(`deploy-list-disabled-${menuSlug}`).style.display = 'none';
                         
                         const card = btnElement.closest('.card');
                         card.classList.remove('card-secondary');
@@ -803,9 +945,13 @@ function openEditMenuModal(btnElement) {
     const slug = btnElement.getAttribute('data-slug') || '';
     const figmaLink = btnElement.getAttribute('data-figma') || '';
     const layout = btnElement.getAttribute('data-layout') || '';
+    
+    // Find menu to get parent_id
+    const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
+    const parentId = menu ? (menu.parent_id || '') : '';
 
     document.getElementById('edit_menu_name').value = name;
-    document.getElementById('edit_folder').value = folder;
+    document.getElementById('edit_folder').value = parentId;
     document.getElementById('edit_menu_slug').value = slug;
     document.getElementById('edit_figma_link').value = figmaLink;
     document.getElementById('edit_layout').value = layout;
@@ -897,10 +1043,11 @@ function deleteFolder(folder) {
 
 
 // --- SPLIT VIEW LOGIC ---
-const siteMenus = {{ site.menus | tojson | safe }} || [];
+let siteMenus = {{ site.menus | tojson | safe }} || [];
 let currentTreeFilterIds = null; // null means show all, otherwise array of leaf node ids to show
 
 document.addEventListener('DOMContentLoaded', () => {
+    populateFolderSelects();
     renderMenuTree();
     
     // Restore View Preference
@@ -917,9 +1064,7 @@ function renderMenuTree() {
     
     const treeHTML = buildTreeHTML(siteMenus, null);
     container.innerHTML = `
-        <div class="px-3 py-2 border-bottom bg-light cursor-pointer" onclick="clearTreeFilter()" style="cursor: pointer;">
-           <i class="fas fa-home text-primary mr-2"></i> <strong>Show All Pages</strong>
-        </div>
+        <style>.tree-active, .tree-active span, .tree-active i { color: #fff !important; }</style>
         <div class="p-2">${treeHTML}</div>
     `;
 }
@@ -928,7 +1073,7 @@ function buildTreeHTML(menus, parentId) {
     const children = menus.filter(m => (m.parent_id || null) === (parentId || null));
     if (children.length === 0) return '';
     
-    let html = '<ul class="list-unstyled pl-3 mb-0" style="margin-left: ' + (parentId ? '10px' : '0') + '">';
+    let html = '<ul class="list-unstyled pl-0 mb-0" style="margin-left: ' + (parentId ? '12px' : '0') + '">';
     children.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(node => {
         const hasChildren = menus.some(m => m.parent_id === node.id);
         
@@ -938,9 +1083,9 @@ function buildTreeHTML(menus, parentId) {
                   <div class="d-flex align-items-center tree-node cursor-pointer p-1 rounded" onclick="toggleAndFilterTreeNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer;">
                     <i class="fas fa-chevron-right fa-xs fa-fw text-muted mr-1" id="tree-caret-${node.id}"></i>
                     <i class="fas fa-folder text-warning mr-2"></i> 
-                    <span class="font-weight-bold text-dark">${node.name}</span>
+                    <span class="font-weight-bold">${node.name}</span>
                   </div>
-                  <div class="tree-children border-left" id="tree-children-${node.id}" style="display: none;">
+                  <div class="tree-children" id="tree-children-${node.id}" style="display: none;">
                     ${buildTreeHTML(menus, node.id)}
                   </div>
                 </li>
@@ -948,9 +1093,9 @@ function buildTreeHTML(menus, parentId) {
         } else {
             html += `
                 <li class="py-1">
-                  <div class="d-flex align-items-center tree-leaf cursor-pointer p-1 rounded" onclick="filterByLeafNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer; padding-left: 1.5rem !important;">
+                  <div class="d-flex align-items-center tree-leaf cursor-pointer p-1 rounded" onclick="filterByLeafNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer; padding-left: 1.25rem !important;">
                     <i class="far fa-file-code text-secondary mr-2"></i>
-                    <span class="text-dark">${node.name}</span>
+                    <span>${node.name}</span>
                   </div>
                 </li>
             `;
@@ -964,6 +1109,278 @@ function clearTreeFilter() {
     currentTreeFilterIds = null;
     highlightTreeNode(null);
     applyFilters();
+}
+
+function toggleAllChecks(checked) {
+    const checkboxes = document.querySelectorAll('.menu-checkbox');
+    checkboxes.forEach(cb => {
+        // only check visible ones (to handle search filtering properly)
+        const row = cb.closest('.page-card-wrapper');
+        if (row && row.style.display !== 'none') {
+            cb.checked = checked;
+        }
+    });
+    const checkAllList = document.getElementById('check-all-list');
+    const checkAllGlobal = document.getElementById('check-all-global');
+    if (checkAllList) checkAllList.checked = checked;
+    if (checkAllGlobal) checkAllGlobal.checked = checked;
+    updateBulkActionsBtn();
+}
+
+function updateBulkActionsBtn() {
+    const checkboxes = document.querySelectorAll('.menu-checkbox:checked');
+    const visibleChecked = Array.from(checkboxes).filter(cb => {
+        const row = cb.closest('.page-card-wrapper');
+        return row && row.style.display !== 'none';
+    });
+    const values = new Set(visibleChecked.map(cb => cb.value));
+    
+    const count = values.size;
+    const countSpan = document.getElementById('bulk-selected-count');
+    countSpan.innerText = count;
+}
+
+function executeBulkAction(siteId) {
+    const checkboxes = document.querySelectorAll('.menu-checkbox:checked');
+    const visibleChecked = Array.from(checkboxes).filter(cb => {
+        const row = cb.closest('.page-card-wrapper');
+        return row && row.style.display !== 'none';
+    });
+    if (visibleChecked.length === 0) {
+        Swal.fire('Info', 'Please check at least one page to apply the action.', 'info');
+        return;
+    }
+
+    const action = document.getElementById('bulk-action-select').value;
+    if (!action) {
+        Swal.fire('Info', 'Please select an action from the dropdown first.', 'info');
+        return;
+    }
+    
+    if (action === 'generate') {
+        bulkGenerateSelected(siteId);
+    } else if (action === 'deploy') {
+        bulkDeploySelected(siteId);
+    } else if (action === 'delete') {
+        bulkDeleteSelected(siteId);
+    }
+}
+
+function bulkGenerateSelected(siteId) {
+    const checkboxes = document.querySelectorAll('.menu-checkbox:checked');
+    const values = Array.from(new Set(Array.from(checkboxes).map(cb => cb.value)));
+    if (values.length === 0) return;
+    
+    const generateList = [];
+    for (let val of values) {
+        const sepIndex = val.indexOf('--');
+        const folder = val.substring(0, sepIndex);
+        const slug = val.substring(sepIndex + 2);
+        
+        const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
+        if (menu && menu.figma_link) {
+            generateList.push({ folder, slug, val });
+        }
+    }
+    
+    if (generateList.length === 0) {
+        Swal.fire('Info', 'No selected pages have a Figma Link. Cannot generate.', 'info');
+        return;
+    }
+    
+    Swal.fire({
+        title: `Generate ${generateList.length} pages?`,
+        text: 'This will initiate generation for the selected pages in parallel.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, generate!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            generateList.forEach(item => {
+                let btn = document.getElementById(`generate-list-btn-${item.val}`);
+                if (!btn || btn.closest('.page-card-wrapper').style.display === 'none') {
+                    btn = document.getElementById(`generate-grid-btn-${item.val}`);
+                }
+                if (btn) {
+                    generateFiles(siteId, item.val, btn);
+                }
+            });
+        }
+    });
+}
+
+function bulkDeploySelected(siteId) {
+    const checkboxes = document.querySelectorAll('.menu-checkbox:checked');
+    const values = Array.from(new Set(Array.from(checkboxes).map(cb => cb.value)));
+    if (values.length === 0) return;
+    
+    const deployList = [];
+    for (let val of values) {
+        const sepIndex = val.indexOf('--');
+        const folder = val.substring(0, sepIndex);
+        const slug = val.substring(sepIndex + 2);
+        
+        // Ensure it is generated before allowing deploy
+        const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
+        if (menu && menu.generated) {
+            deployList.push({ folder, slug, val });
+        }
+    }
+    
+    if (deployList.length === 0) {
+        Swal.fire('Info', 'No generated pages selected to deploy. Please generate them first.', 'info');
+        return;
+    }
+    
+    Swal.fire({
+        title: `Deploy ${deployList.length} pages?`,
+        text: 'This will initiate deployment for the selected generated pages.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, deploy!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let startedCount = 0;
+            deployList.forEach(item => {
+                // Find button to show spinner
+                const btn = document.getElementById(`deploy-list-form-${item.val}`) || document.getElementById(`deploy-grid-form-${item.val}`);
+                if (btn) {
+                    btn.dataset.original = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                }
+                
+                $.ajax({
+                    url: '/api/deploy',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        site_id: siteId,
+                        menu_slug: item.slug,
+                        folder: item.folder
+                    }),
+                    success: function() {
+                        startedCount++;
+                        if (startedCount === deployList.length) {
+                            checkDeployStatus();
+                        }
+                    }
+                });
+            });
+            Swal.fire('Started', `Initiated deployment for ${deployList.length} pages. Watch the status on each item.`, 'success');
+        }
+    });
+}
+
+function bulkDeleteSelected(siteId) {
+    const checkboxes = document.querySelectorAll('.menu-checkbox:checked');
+    const items = [];
+    const seen = new Set();
+    checkboxes.forEach(cb => {
+        const id = cb.id.replace('check-list-', '').replace('check-grid-', '');
+        if (!seen.has(id)) {
+            seen.add(id);
+            items.push({ id: id, param: cb.value });
+        }
+    });
+    if (items.length === 0) return;
+    
+    Swal.fire({
+        title: `Delete ${items.length} items?`,
+        text: 'Are you sure you want to delete these? All generated files will be removed permanently.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({ title: 'Deleting...', text: 'Please wait.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            $.ajax({
+                url: `/site/${siteId}/bulk-delete-menus`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ items: items }),
+                success: function(response) {
+                    if (response.success) {
+                        items.forEach(item => {
+                            const listCb = document.getElementById(`check-list-${item.id}`);
+                            if (listCb) {
+                                const tr = listCb.closest('tr');
+                                if (tr) tr.remove();
+                            }
+                            const gridCb = document.getElementById(`check-grid-${item.id}`);
+                            if (gridCb) {
+                                const wrapper = gridCb.closest('.page-card-wrapper');
+                                if (wrapper) wrapper.remove();
+                            }
+                            const treeNode = document.getElementById(`tree-node-ui-${item.id}`);
+                            if (treeNode) {
+                                const li = treeNode.closest('li');
+                                if (li) li.remove();
+                            }
+                            siteMenus = siteMenus.filter(m => m.id !== item.id);
+                        });
+                        Swal.fire('Deleted!', `Successfully deleted ${response.deleted_count} items.`, 'success');
+                        updateBulkActionsBtn();
+                    } else {
+                        Swal.fire('Error', response.message || 'Could not delete items.', 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Connection error.', 'error');
+                }
+            });
+        }
+    });
+}
+
+function updateLayout(siteId, menuId, newLayout) {
+    $.ajax({
+        url: `/site/${siteId}/update-layout/${menuId}`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ layout: newLayout }),
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Layout saved' });
+                
+                const menu = siteMenus.find(m => m.id === menuId);
+                if (menu) {
+                    menu.layout = newLayout;
+                    const editBtns = document.querySelectorAll(`button[data-folder="${menu.folder || ''}"][data-slug="${menu.slug || ''}"]`);
+                    editBtns.forEach(btn => btn.setAttribute('data-layout', newLayout));
+                }
+            } else {
+                Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Error', text: response.message });
+            }
+        },
+        error: function() {
+            Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Connection Error', text: 'Please try again.' });
+        }
+    });
+}
+
+function buildSelectOptionsHTML(menus, parentId, level) {
+    let html = '';
+    const children = menus.filter(m => (m.parent_id || null) === (parentId || null));
+    children.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(node => {
+        const prefix = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level) + (level > 0 ? '↳ ' : '');
+        html += `<option value="${node.id}">${prefix}${node.name}</option>`;
+        html += buildSelectOptionsHTML(menus, node.id, level + 1);
+    });
+    return html;
+}
+
+function populateFolderSelects() {
+    const optionsHTML = '<option value="">Root Folder (Root)</option>' + buildSelectOptionsHTML(siteMenus, null, 0);
+    const addSelect = document.getElementById('folder');
+    const editSelect = document.getElementById('edit_folder');
+    if (addSelect) addSelect.innerHTML = optionsHTML;
+    if (editSelect) editSelect.innerHTML = optionsHTML;
 }
 
 function toggleAndFilterTreeNode(nodeId) {
@@ -993,10 +1410,10 @@ function filterByLeafNode(nodeId) {
 }
 
 function highlightTreeNode(nodeId) {
-    document.querySelectorAll('[id^="tree-node-ui-"]').forEach(el => el.classList.remove('bg-info', 'text-white'));
+    document.querySelectorAll('[id^="tree-node-ui-"]').forEach(el => el.classList.remove('bg-primary', 'text-white', 'tree-active'));
     if (nodeId) {
         const el = document.getElementById(`tree-node-ui-${nodeId}`);
-        if (el) el.classList.add('bg-info', 'text-white');
+        if (el) el.classList.add('bg-primary', 'text-white', 'tree-active');
     }
 }
 
@@ -1024,13 +1441,13 @@ function toggleView(viewType) {
     if (viewType === 'list') {
         listView.style.display = 'block';
         gridView.style.display = 'none';
-        btnList.classList.replace('btn-outline-secondary', 'btn-secondary');
-        btnGrid.classList.replace('btn-secondary', 'btn-outline-secondary');
+        btnList.classList.replace('btn-outline-primary', 'btn-primary');
+        btnGrid.classList.replace('btn-primary', 'btn-outline-primary');
     } else {
         listView.style.display = 'none';
         gridView.style.display = 'flex';
-        btnList.classList.replace('btn-secondary', 'btn-outline-secondary');
-        btnGrid.classList.replace('btn-outline-secondary', 'btn-secondary');
+        btnList.classList.replace('btn-primary', 'btn-outline-primary');
+        btnGrid.classList.replace('btn-outline-primary', 'btn-primary');
     }
 }
 
