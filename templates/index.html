@@ -6,7 +6,7 @@
 {% block content %}
 <!-- Search bar & Add button -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <div class="input-group" style="max-width: 400px;">
+  <div class="input-group search-group" style="max-width: 400px;">
     <div class="input-group-prepend">
       <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
     </div>
@@ -49,11 +49,17 @@
     <div class="col-lg-6 col-xl-4 mb-4 site-box-wrapper" data-site-id="{{ site.id }}" data-site-name="{{ site.name }}">
       <div class="site-card">
         <!-- Header -->
-        <div class="site-card-header">
-          <div class="header-left">
-            <i class="fas fa-desktop monitor-icon mr-2"></i>
+        <div class="site-card-header" style="flex-direction: column; align-items: flex-start;">
+          <div class="header-left w-100 mb-1">
+            <i class="fas fa-desktop monitor-icon mr-2" style="width: 18px; text-align: center;"></i>
             <span class="site-id-badge">{{ site.id }}</span>
             <span class="site-name-title">{{ site.name }}</span>
+          </div>
+          <div class="w-100 d-flex">
+            <div style="width: 18px; margin-right: 0.5rem;"></div>
+            <a href="https://demo.jiniworks.com/{{ site.id }}" target="_blank" class="cms-link text-truncate" title="Visit CMS">
+              https://demo.jiniworks.com/{{ site.id }}
+            </a>
           </div>
         </div>
         
@@ -93,19 +99,19 @@
         <!-- Footer -->
         <div class="site-card-footer justify-content-between">
           <div class="footer-left">
+            <!-- Go to site details / management -->
+            <a href="/site/{{ site.id }}" class="footer-action-btn" title="Manage Site / Setup Menu">
+              <i class="fas fa-cog"></i>
+            </a>
             <!-- Add Menu directly from list -->
             <button type="button" class="footer-action-btn" title="Add Menu" data-id="{{ site.id }}" onclick="openAddMenuModal(this)">
               <i class="fas fa-bars"></i>
             </button>
           </div>
           <div class="footer-right">
-            <!-- Go to site details / management -->
-            <a href="/site/{{ site.id }}" class="footer-action-btn" title="Manage Site / Setup Menu">
-              <i class="fas fa-cog"></i>
-            </a>
-            <!-- Go to live site URL -->
-            <a href="{{ site.url }}" target="_blank" class="footer-action-btn" title="Visit Site Homepage">
-              <i class="fas fa-home"></i>
+            <!-- Go to CMS Admin -->
+            <a href="{{ site.url }}" target="_blank" class="footer-action-btn" title="Open CMS Admin">
+              <i class="fas fa-user-shield"></i>
             </a>
             <!-- Edit Site metadata -->
             <button type="button" class="footer-action-btn" title="Edit Site Info"
@@ -472,6 +478,48 @@
     border: 1px dashed #bdc3c7;
     cursor: move;
     font-size: 12px;
+}
+.cms-link {
+    font-size: 13px;
+    color: #007bff;
+    text-decoration: none;
+    word-break: break-all;
+}
+.cms-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+body.dark-mode .cms-link {
+    color: #6eb6ff;
+}
+body.dark-mode .cms-link:hover {
+    color: #9cd1ff;
+    text-decoration: underline;
+}
+
+/* Fix search input focus */
+.search-group .input-group-text,
+.search-group .form-control {
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.search-group:focus-within .input-group-text,
+.search-group:focus-within .form-control {
+    border-color: #80bdff !important;
+}
+.search-group .form-control:focus {
+    box-shadow: none !important;
+}
+
+/* Dark mode for search input */
+body.dark-mode .search-group .input-group-text,
+body.dark-mode .search-group .form-control {
+    background-color: #343a40 !important;
+    color: #fff !important;
+    border-color: #4b545c !important;
+}
+body.dark-mode .search-group:focus-within .input-group-text,
+body.dark-mode .search-group:focus-within .form-control {
+    border-color: #6eb6ff !important;
 }
 </style>
 {% endblock %}

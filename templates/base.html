@@ -15,10 +15,23 @@
   {% block style %}{% endblock %}
 </head>
 <body class="hold-transition layout-top-nav">
+<script>
+  // Prevent FOUC (Flash of Unstyled Content) in Dark Mode
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+</script>
 <div class="wrapper">
 
   <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
+  <nav class="main-header navbar navbar-expand-md navbar-light navbar-white" id="main-navbar">
+    <script>
+      if (localStorage.getItem('theme') === 'dark') {
+        var nav = document.getElementById('main-navbar');
+        nav.classList.remove('navbar-white', 'navbar-light');
+        nav.classList.add('navbar-dark');
+      }
+    </script>
     <div class="container-fluid">
       <a href="/" class="navbar-brand d-flex align-items-center py-0" style="margin-right: 1.5rem;">
         <span class="brand-text font-weight-bold" style="background: linear-gradient(135deg, #00aeef, #8cc63f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.65rem; line-height: 1.2;">ABCMS</span>
@@ -57,7 +70,7 @@
   <div class="content-wrapper">
 
     <!-- Main content -->
-    <section class="content pt-3">
+    <section class="content py-3">
       <div class="container-fluid">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
