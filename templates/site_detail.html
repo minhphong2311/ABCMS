@@ -2,6 +2,49 @@
 
 {% block title %}Site Details - {{ site.name }}{% endblock %}
 
+{% block style %}
+<style>
+.tree-node:hover, .tree-leaf:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+.tree-node.bg-info, .tree-leaf.bg-info {
+    color: #fff !important;
+}
+.tree-node.bg-info .text-muted, .tree-leaf.bg-info .text-muted, .tree-leaf.bg-info .text-secondary {
+    color: #f8f9fa !important;
+}
+body.dark-mode .tree-node:hover, body.dark-mode .tree-leaf:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+body.dark-mode .tree-node.bg-info, body.dark-mode .tree-leaf.bg-info {
+    background-color: #3f6791 !important;
+}
+body.dark-mode .table-responsive.bg-white {
+    background-color: #343a40 !important;
+    border-color: #4b545c !important;
+}
+body.dark-mode .table th, body.dark-mode .table td {
+    border-color: #4b545c;
+}
+body.dark-mode .table thead.bg-light {
+    background-color: #454d55 !important;
+}
+body.dark-mode .table thead.bg-light th {
+    color: #ced4da !important;
+}
+body.dark-mode .font-weight-bold.text-dark {
+    color: #fff !important;
+}
+body.dark-mode .card-header.bg-light {
+    background-color: #454d55 !important;
+}
+body.dark-mode #site-menu-tree-container {
+    background-color: #343a40 !important;
+}
+</style>
+{% endblock %}
+
+
 
 {% block content %}
 <!-- Full-width Site Header and Figma Token Configurations -->
@@ -39,66 +82,147 @@
   </div>
 </div>
 
-<!-- List of Pages Search & Add Button -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <!-- Page Search Input (Far Left) -->
-  <div class="input-group" style="max-width: 400px;">
-    <div class="input-group-prepend">
-      <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
-    </div>
-    <input type="text" id="pageSearchInput" class="form-control border-left-0" placeholder="Search Page..." onkeyup="filterPages()">
-  </div>
-  
-  <!-- Action Buttons (Far Right) -->
-  <div>
-    <button type="button" class="btn btn-outline-primary mr-2" data-toggle="modal" data-target="#addFolderModal">
-      <i class="fas fa-folder mr-1"></i> Manage Folder
-    </button>
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addMenuModal">
-      <i class="fas fa-plus mr-1"></i> Add Page
-    </button>
-  </div>
-</div>
 
-<!-- Folder Filters Row -->
-<div class="mb-4 d-flex align-items-center flex-wrap" id="folderFiltersRow">
-  <button class="btn btn-xs btn-primary mr-2 mb-2 folder-filter-btn" data-folder="all" onclick="filterByFolder('all', this)">All</button>
-  <button class="btn btn-xs btn-outline-primary mr-2 mb-2 folder-filter-btn" data-folder="root" onclick="filterByFolder('root', this)">Root Folder</button>
-  {% for folder in site.folders %}
-    <button class="btn btn-xs btn-outline-primary mr-2 mb-2 folder-filter-btn" data-folder="{{ folder }}" onclick="filterByFolder('{{ folder }}', this)">/{{ folder }}</button>
-  {% endfor %}
-</div>
-
-<!-- Grid Box of Pages -->
+<!-- Main Split Layout -->
 <div class="row">
-  <!-- Dynamic Page Search No Results message -->
-  <div class="col-12" id="noPageSearchResults" style="display: none; width: 100%;">
-    <div class="card py-5 text-center text-muted card-outline card-secondary">
-      <i class="fas fa-search fa-3x mb-3 text-light"></i>
-      <h5>No Pages match the search keyword.</h5>
+  <!-- Left Pane: Menu Tree -->
+  <div class="col-md-4 col-lg-3">
+    <div class="card card-outline card-primary h-100">
+      <div class="card-header bg-light py-2">
+        <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem;"><i class="fas fa-sitemap mr-2"></i>{{ site.name }}</h3>
+      </div>
+      <div class="card-body p-0 bg-white" id="site-menu-tree-container" style="overflow-y: auto; max-height: 800px;">
+        <div class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading tree...</div>
+      </div>
     </div>
   </div>
 
-  {% set parent_ids = [] %}
-  {% if site.menus %}
-    {% for m in site.menus %}
-      {% if m.parent_id %}
-        {% set _ = parent_ids.append(m.parent_id) %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+  <!-- Right Pane: List/Grid Views -->
+  <div class="col-md-8 col-lg-9">
+    <!-- List of Pages Search & Add Button -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <!-- Page Search Input -->
+      <div class="input-group" style="max-width: 400px;">
+        <div class="input-group-prepend">
+          <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+        </div>
+        <input type="text" id="pageSearchInput" class="form-control border-left-0" placeholder="Search Page..." onkeyup="filterPages()">
+      </div>
+      
+      <!-- Action Buttons & View Toggle -->
+      <div>
+        <div class="btn-group mr-3" role="group" aria-label="View Toggle">
+          <button type="button" class="btn btn-secondary" id="btn-list-view" onclick="toggleView('list')"><i class="fas fa-list"></i></button>
+          <button type="button" class="btn btn-outline-secondary" id="btn-grid-view" onclick="toggleView('grid')"><i class="fas fa-th-large"></i></button>
+        </div>
+        <button type="button" class="btn btn-outline-primary mr-2" data-toggle="modal" data-target="#addFolderModal">
+          <i class="fas fa-folder mr-1"></i> Manage Folder
+        </button>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addMenuModal">
+          <i class="fas fa-plus mr-1"></i> Add Page
+        </button>
+      </div>
+    </div>
 
-  {% set leaf_menus = [] %}
-  {% if site.menus %}
-    {% for m in site.menus %}
-      {% if m.id not in parent_ids %}
-        {% set _ = leaf_menus.append(m) %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+    <!-- Dynamic Page Search No Results message -->
+    <div class="col-12" id="noPageSearchResults" style="display: none; width: 100%;">
+      <div class="card py-5 text-center text-muted card-outline card-secondary">
+        <i class="fas fa-search fa-3x mb-3 text-light"></i>
+        <h5>No Pages match the search keyword.</h5>
+      </div>
+    </div>
 
-  {% if leaf_menus %}
-    {% for menu in leaf_menus %}
+    <!-- Views Container -->
+    <div id="pages-view-container">
+
+      {% set parent_ids = [] %}
+      {% if site.menus %}
+        {% for m in site.menus %}
+          {% if m.parent_id %}
+            {% set _ = parent_ids.append(m.parent_id) %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% set leaf_menus = [] %}
+      {% if site.menus %}
+        {% for m in site.menus %}
+          {% if m.id not in parent_ids %}
+            {% set _ = leaf_menus.append(m) %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      <!-- LIST VIEW -->
+      <div id="list-view-container">
+        {% if leaf_menus %}
+        <div class="table-responsive bg-white rounded shadow-sm border mb-4">
+          <table class="table table-hover mb-0 align-middle table-sm" style="min-width: 800px;">
+            <thead class="bg-light text-muted">
+              <tr>
+                <th style="width: 250px;" class="border-top-0">Page Name</th>
+                <th class="text-center border-top-0">Generated</th>
+                <th class="text-center border-top-0">HTML</th>
+                <th class="text-center border-top-0">Layout</th>
+                <th class="text-center border-top-0">Tab</th>
+                <th class="text-right border-top-0">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for menu in leaf_menus %}
+              <tr class="page-card-wrapper" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
+                <td class="py-2">
+                  <div class="d-flex align-items-center">
+                    <i class="far fa-file-code text-secondary mr-2"></i>
+                    <div>
+                      <div class="font-weight-bold text-dark">{{ menu.name }}</div>
+                      <div class="text-xs text-muted">{{ menu.slug }}.html</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-center py-2">
+                  {% if menu.generated %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
+                </td>
+                <td class="text-center py-2">
+                  <i class="fas fa-check-square text-success"></i>
+                </td>
+                <td class="text-center py-2">
+                  {% if menu.layout and 'sub-template' in menu.layout %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
+                </td>
+                <td class="text-center py-2">
+                  {% if menu.layout == 'sub-template-tab' %}<i class="fas fa-check-square text-success"></i>{% else %}<i class="far fa-square text-muted"></i>{% endif %}
+                </td>
+                <td class="text-right py-2">
+                  <div class="d-flex align-items-center justify-content-end">
+                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
+                    <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()" style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
+                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
+                    
+                    <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-block{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
+                    <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-block{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
+                    
+                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="col-12 px-0">
+          <div class="card py-5 text-center text-muted card-outline card-secondary">
+            <i class="fas fa-folder-open fa-3x mb-3 text-light"></i>
+            <h5>No child pages have been set up. Click "Add New Page" to begin!</h5>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- GRID VIEW -->
+      <div class="row" id="grid-view-container" style="display: none;">
+        {% if leaf_menus %}
+          {% for menu in leaf_menus %}
     <div class="col-md-6 col-lg-4 mb-4 page-card-wrapper" id="page-card-{{ menu.folder or '' }}--{{ menu.slug }}">
       <div class="card card-outline {% if menu.generated %}card-success{% else %}card-secondary{% endif %} h-100 d-flex flex-column justify-content-between">
         
@@ -211,17 +335,14 @@
         
       </div>
     </div>
-    {% endfor %}
-  {% else %}
-    <div class="col-12">
-      <div class="card py-5 text-center text-muted card-outline card-secondary">
-        <i class="fas fa-folder-open fa-3x mb-3 text-light"></i>
-        <h5>No child pages have been set up. Click "Add New Page" to begin!</h5>
-      </div>
-    </div>
-  {% endif %}
-</div>
 
+          {% endfor %}
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
 <!-- Add Page Modal (Add Page) -->
 <div class="modal fade" id="addMenuModal" tabindex="-1" aria-labelledby="addMenuModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -775,21 +896,143 @@ function deleteFolder(folder) {
     });
 }
 
-let currentFolderFilter = 'all';
 
-function filterByFolder(folder, btnElement) {
-    currentFolderFilter = folder;
+// --- SPLIT VIEW LOGIC ---
+const siteMenus = {{ site.menus | tojson | safe }} || [];
+let currentTreeFilterIds = null; // null means show all, otherwise array of leaf node ids to show
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderMenuTree();
     
-    // Update active class on filter buttons
-    document.querySelectorAll('.folder-filter-btn').forEach(btn => {
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-outline-primary');
+    // Restore View Preference
+    const savedView = localStorage.getItem('siteDetailViewMode') || 'list';
+    toggleView(savedView);
+});
+
+function renderMenuTree() {
+    const container = document.getElementById('site-menu-tree-container');
+    if (siteMenus.length === 0) {
+        container.innerHTML = '<div class="text-center p-3 text-muted">No menus found.</div>';
+        return;
+    }
+    
+    const treeHTML = buildTreeHTML(siteMenus, null);
+    container.innerHTML = `
+        <div class="px-3 py-2 border-bottom bg-light cursor-pointer" onclick="clearTreeFilter()" style="cursor: pointer;">
+           <i class="fas fa-home text-primary mr-2"></i> <strong>Show All Pages</strong>
+        </div>
+        <div class="p-2">${treeHTML}</div>
+    `;
+}
+
+function buildTreeHTML(menus, parentId) {
+    const children = menus.filter(m => (m.parent_id || null) === (parentId || null));
+    if (children.length === 0) return '';
+    
+    let html = '<ul class="list-unstyled pl-3 mb-0" style="margin-left: ' + (parentId ? '10px' : '0') + '">';
+    children.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(node => {
+        const hasChildren = menus.some(m => m.parent_id === node.id);
+        
+        if (hasChildren) {
+            html += `
+                <li class="py-1">
+                  <div class="d-flex align-items-center tree-node cursor-pointer p-1 rounded" onclick="toggleAndFilterTreeNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer;">
+                    <i class="fas fa-chevron-right fa-xs fa-fw text-muted mr-1" id="tree-caret-${node.id}"></i>
+                    <i class="fas fa-folder text-warning mr-2"></i> 
+                    <span class="font-weight-bold text-dark">${node.name}</span>
+                  </div>
+                  <div class="tree-children border-left" id="tree-children-${node.id}" style="display: none;">
+                    ${buildTreeHTML(menus, node.id)}
+                  </div>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="py-1">
+                  <div class="d-flex align-items-center tree-leaf cursor-pointer p-1 rounded" onclick="filterByLeafNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer; padding-left: 1.5rem !important;">
+                    <i class="far fa-file-code text-secondary mr-2"></i>
+                    <span class="text-dark">${node.name}</span>
+                  </div>
+                </li>
+            `;
+        }
     });
-    btnElement.classList.remove('btn-outline-primary');
-    btnElement.classList.add('btn-primary');
-    
-    // Apply filters
+    html += '</ul>';
+    return html;
+}
+
+function clearTreeFilter() {
+    currentTreeFilterIds = null;
+    highlightTreeNode(null);
     applyFilters();
+}
+
+function toggleAndFilterTreeNode(nodeId) {
+    // Toggle expand/collapse
+    const childrenDiv = document.getElementById(`tree-children-${nodeId}`);
+    const caret = document.getElementById(`tree-caret-${nodeId}`);
+    
+    if (childrenDiv.style.display === 'none') {
+        childrenDiv.style.display = 'block';
+        caret.classList.replace('fa-chevron-right', 'fa-chevron-down');
+    } else {
+        childrenDiv.style.display = 'none';
+        caret.classList.replace('fa-chevron-down', 'fa-chevron-right');
+    }
+    
+    // Filter to show all descendants of this folder
+    const descendantIds = getAllDescendantLeafIds(nodeId);
+    currentTreeFilterIds = descendantIds;
+    highlightTreeNode(nodeId);
+    applyFilters();
+}
+
+function filterByLeafNode(nodeId) {
+    currentTreeFilterIds = [nodeId];
+    highlightTreeNode(nodeId);
+    applyFilters();
+}
+
+function highlightTreeNode(nodeId) {
+    document.querySelectorAll('[id^="tree-node-ui-"]').forEach(el => el.classList.remove('bg-info', 'text-white'));
+    if (nodeId) {
+        const el = document.getElementById(`tree-node-ui-${nodeId}`);
+        if (el) el.classList.add('bg-info', 'text-white');
+    }
+}
+
+function getAllDescendantLeafIds(parentId) {
+    let leaves = [];
+    const children = siteMenus.filter(m => m.parent_id === parentId);
+    children.forEach(c => {
+        const hasSub = siteMenus.some(m => m.parent_id === c.id);
+        if (hasSub) {
+            leaves = leaves.concat(getAllDescendantLeafIds(c.id));
+        } else {
+            leaves.push(c.id);
+        }
+    });
+    return leaves;
+}
+
+function toggleView(viewType) {
+    localStorage.setItem('siteDetailViewMode', viewType);
+    const listView = document.getElementById('list-view-container');
+    const gridView = document.getElementById('grid-view-container');
+    const btnList = document.getElementById('btn-list-view');
+    const btnGrid = document.getElementById('btn-grid-view');
+    
+    if (viewType === 'list') {
+        listView.style.display = 'block';
+        gridView.style.display = 'none';
+        btnList.classList.replace('btn-outline-secondary', 'btn-secondary');
+        btnGrid.classList.replace('btn-secondary', 'btn-outline-secondary');
+    } else {
+        listView.style.display = 'none';
+        gridView.style.display = 'flex';
+        btnList.classList.replace('btn-secondary', 'btn-outline-secondary');
+        btnGrid.classList.replace('btn-outline-secondary', 'btn-secondary');
+    }
 }
 
 function filterPages() {
@@ -798,44 +1041,51 @@ function filterPages() {
 
 function applyFilters() {
     const query = document.getElementById('pageSearchInput').value.toLowerCase().trim();
-    const cards = document.querySelectorAll('.page-card-wrapper');
+    // Support both grid and list items
+    const items = document.querySelectorAll('.page-card-wrapper');
     const noResults = document.getElementById('noPageSearchResults');
     let visibleCount = 0;
     
-    cards.forEach(card => {
-        // Extract folder and slug from composite ID: page-card-folder--slug
-        const cardId = card.id.replace('page-card-', '');
-        const parts = cardId.split('--');
-        const folderPart = parts[0];
-        const slugPart = parts[1] || cardId;
+    items.forEach(item => {
+        // We can find the node ID if we need to, or match by folder/slug.
+        // Actually, we need a way to map the card to the menu.id.
+        // Let's add data-id attribute to the tr/div, but since we didn't, we can find the menu by slug and folder.
+        const folder = item.getAttribute('data-folder');
+        const slug = item.getAttribute('data-slug');
+        const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
+        const menuId = menu ? menu.id : null;
         
-        const titleElement = card.querySelector('.card-title');
-        const titleText = titleElement ? titleElement.textContent.toLowerCase() : '';
-        const slugText = slugPart.toLowerCase();
-        
-        // Match query
-        const matchesQuery = titleText.includes(query) || slugText.includes(query);
-        
-        // Match folder
-        let matchesFolder = false;
-        if (currentFolderFilter === 'all') {
-            matchesFolder = true;
-        } else if (currentFolderFilter === 'root') {
-            matchesFolder = (folderPart === '');
+        let titleText = '';
+        if(item.tagName === 'TR') {
+           const titleEl = item.querySelector('.font-weight-bold');
+           titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
         } else {
-            matchesFolder = (folderPart === currentFolderFilter);
+           const titleEl = item.querySelector('.card-title');
+           titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
         }
         
-        if (matchesQuery && matchesFolder) {
-            card.style.setProperty('display', 'block', 'important');
+        const slugText = slug.toLowerCase();
+        const matchesQuery = titleText.includes(query) || slugText.includes(query);
+        
+        let matchesTree = true;
+        if (currentTreeFilterIds !== null && menuId) {
+            matchesTree = currentTreeFilterIds.includes(menuId);
+        }
+        
+        if (matchesQuery && matchesTree) {
+            if(item.tagName === 'TR') {
+                item.style.setProperty('display', 'table-row', 'important');
+            } else {
+                item.style.setProperty('display', 'block', 'important');
+            }
             visibleCount++;
         } else {
-            card.style.setProperty('display', 'none', 'important');
+            item.style.setProperty('display', 'none', 'important');
         }
     });
     
     if (noResults) {
-        if (visibleCount > 0 || cards.length === 0) {
+        if (visibleCount > 0 || items.length === 0) {
             noResults.style.display = 'none';
         } else {
             noResults.style.display = 'block';
