@@ -1,0 +1,168 @@
+/* Dark mode toggle */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+}
+.theme-switch {
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  width: 50px;
+  margin-bottom: 0;
+}
+.theme-switch input {
+  display: none;
+}
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .4s;
+}
+.slider:before {
+  background-color: #fff;
+  bottom: 4px;
+  content: "";
+  height: 16px;
+  left: 4px;
+  position: absolute;
+  transition: .4s;
+  width: 16px;
+}
+input:checked + .slider {
+  background-color: #007bff;
+}
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+.slider.round {
+  border-radius: 24px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Site Card Dark Mode */
+body.dark-mode .site-card {
+    background: #343a40;
+    border-color: #3f6791;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+body.dark-mode .site-card-header {
+    background: #454d55;
+    border-bottom-color: #3f6791;
+}
+body.dark-mode .monitor-icon {
+    color: #adb5bd;
+}
+body.dark-mode .site-id-badge {
+    background: #343a40;
+    color: #adb5bd;
+}
+body.dark-mode .site-name-title {
+    color: #f8f9fa;
+}
+body.dark-mode .site-card-body {
+    background: #343a40;
+}
+/* override inline color #333 */
+body.dark-mode .stat-number {
+    color: #90c2f9 !important;
+}
+body.dark-mode .site-card-footer {
+    background: #454d55;
+    border-top-color: #3f6791;
+}
+body.dark-mode .footer-right, 
+body.dark-mode .footer-left {
+    background: #343a40;
+    border-color: #4b545c;
+}
+body.dark-mode .footer-action-btn {
+    color: #adb5bd;
+    border-right-color: #4b545c;
+}
+body.dark-mode .footer-action-btn:hover {
+    background: #4b545c;
+    color: #ffffff;
+}
+body.dark-mode .footer-action-btn.delete-btn:hover {
+    background: #a71d2a;
+    color: #ffffff;
+}
+
+/* Site Detail & Menu Cards Dark Mode */
+body.dark-mode .card-header.bg-light {
+    background-color: #454d55 !important;
+    border-bottom-color: #4b545c !important;
+}
+body.dark-mode .card-header .text-dark {
+    color: #f8f9fa !important;
+}
+body.dark-mode .input-group-text.bg-white {
+    background-color: #343a40 !important;
+    border-color: #6c757d !important;
+    color: #adb5bd !important;
+}
+body.dark-mode .form-control {
+    background-color: #343a40 !important;
+    border-color: #6c757d !important;
+    color: #f8f9fa !important;
+}
+body.dark-mode .form-control:focus {
+    background-color: #343a40 !important;
+    border-color: #3f6791 !important;
+    color: #f8f9fa !important;
+}
+body.dark-mode code {
+    color: #e83e8c;
+    background-color: transparent;
+}
+
+/* Tree Menu Action Buttons Dark Mode */
+body.dark-mode .tree-action-btn {
+    background: #343a40 !important;
+}
+body.dark-mode .tree-btn-add:hover {
+    background-color: #3498db !important;
+    color: white !important;
+}
+body.dark-mode .tree-btn-delete:hover {
+    background-color: #f39c12 !important;
+    color: white !important;
+}
+body.dark-mode .tree-btn-edit:hover {
+    background-color: #2ecc71 !important;
+    color: white !important;
+}
+
+/* Override hardcoded bg-white and custom tree borders */
+body.dark-mode .bg-white {
+    background-color: #343a40 !important;
+    color: #f8f9fa !important;
+}
+body.dark-mode .border-primary {
+    border-color: #3f6791 !important;
+}
+body.dark-mode .border-info {
+    border-color: #17a2b8 !important;
+}
+body.dark-mode .modal-content {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Match Page Cards to Site Cards in Dark Mode */
+body.dark-mode .page-card-wrapper .card {
+    border-color: #3f6791 !important;
+    border-top-color: #3f6791 !important;
+    background-color: #343a40 !important;
+}
+body.dark-mode .page-card-wrapper .card-header {
+    border-bottom-color: #3f6791 !important;
+    background-color: #454d55 !important;
+}

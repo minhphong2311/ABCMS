@@ -104,3 +104,8 @@
     - Backend đọc toàn bộ nội dung **HTML và CSS** hiện tại của trang, gửi kèm yêu cầu người dùng lên AI để phân tích. Cùng lúc đó, AI cũng được truyền vào nội dung của các template chuẩn từ thư mục `data/ai_templates/` và danh sách các thư viện CSS chuẩn của Site để sử dụng làm tài liệu tham chiếu (Reference) khi sửa HTML/CSS.
     - AI trả về toàn bộ HTML và CSS đã được cập nhật dưới dạng JSON. Backend ghi đè trực tiếp vào file tương ứng, Iframe Preview tự động reload để hiển thị giao diện mới ngay lập tức.
     - Gemini API Key được dùng chung cho tất cả các Site. Key lưu bảo mật tại `data/config.json` và cấu hình qua trang **Cài đặt hệ thống** (biểu tượng răng cưa ở top navbar).
+20. Cập nhật giao diện (Dark Mode & Đồng bộ Card):
+    - Thêm nút bật/tắt Dark Mode trên thanh điều hướng (lưu trạng thái qua localStorage), code CSS/JS được tách riêng vào static/css/dark-mode.css và static/js/dark-mode.js.
+    - Đồng bộ thiết kế của Site Card (Dashboard) và Page Card (Site Detail) với viền xanh (1.5px solid #00aeef) và bo góc 6px.
+    - Bổ sung CSS hỗ trợ Dark Mode cho các thành phần tuỳ chỉnh (menu tree, modal bg-white, page card, viền input search).
+    - Mặc định gán layout: 'sub-template' khi tạo Menu mới qua tính năng tạo nhanh (Inline Menu).

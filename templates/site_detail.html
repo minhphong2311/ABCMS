@@ -409,9 +409,15 @@
 <style>
 /* Page card enhancements */
 .page-card-wrapper .card {
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    border: 1.5px solid #00aeef !important;
+    border-top: 1.5px solid #00aeef !important;
     transition: transform 0.2s, box-shadow 0.2s;
+}
+.page-card-wrapper .card-header {
+    border-bottom: 1px solid rgba(0,0,0,.125) !important;
+    background-color: #fafafa !important;
 }
 .page-card-wrapper .card:hover {
     transform: translateY(-3px);

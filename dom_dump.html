@@ -1,0 +1,188 @@
+<!DOCTYPE html><html class="login-content ng-scope" data-ng-app="homer"><!--<![endif]--><head><style type="text/css">[uib-typeahead-popup].dropdown-menu{display:block;}</style><style type="text/css">.uib-time input{width:50px;}</style><style type="text/css">[uib-tooltip-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-bottom > .tooltip-arrow,[uib-popover-popup].popover.top-left > .arrow,[uib-popover-popup].popover.top-right > .arrow,[uib-popover-popup].popover.bottom-left > .arrow,[uib-popover-popup].popover.bottom-right > .arrow,[uib-popover-popup].popover.left-top > .arrow,[uib-popover-popup].popover.left-bottom > .arrow,[uib-popover-popup].popover.right-top > .arrow,[uib-popover-popup].popover.right-bottom > .arrow,[uib-popover-html-popup].popover.top-left > .arrow,[uib-popover-html-popup].popover.top-right > .arrow,[uib-popover-html-popup].popover.bottom-left > .arrow,[uib-popover-html-popup].popover.bottom-right > .arrow,[uib-popover-html-popup].popover.left-top > .arrow,[uib-popover-html-popup].popover.left-bottom > .arrow,[uib-popover-html-popup].popover.right-top > .arrow,[uib-popover-html-popup].popover.right-bottom > .arrow,[uib-popover-template-popup].popover.top-left > .arrow,[uib-popover-template-popup].popover.top-right > .arrow,[uib-popover-template-popup].popover.bottom-left > .arrow,[uib-popover-template-popup].popover.bottom-right > .arrow,[uib-popover-template-popup].popover.left-top > .arrow,[uib-popover-template-popup].popover.left-bottom > .arrow,[uib-popover-template-popup].popover.right-top > .arrow,[uib-popover-template-popup].popover.right-bottom > .arrow{top:auto;bottom:auto;left:auto;right:auto;margin:0;}[uib-popover-popup].popover,[uib-popover-html-popup].popover,[uib-popover-template-popup].popover{display:block !important;}</style><style type="text/css">.uib-datepicker .uib-title{width:100%;}.uib-day button,.uib-month button,.uib-year button{min-width:100%;}.uib-datepicker-popup.dropdown-menu{display:block;float:none;margin:0;}.uib-button-bar{padding:10px 9px 2px;}.uib-left,.uib-right{width:100%}</style><style type="text/css">.uib-position-measure{display:block !important;visibility:hidden !important;position:absolute !important;top:-9999px !important;left:-9999px !important;}.uib-position-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll;}</style><style type="text/css">.ng-animate.item:not(.left):not(.right){-webkit-transition:0s ease-in-out left;transition:0s ease-in-out left}</style><style>@charset "UTF-8";[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="shortcut icon" href="/_res/_common/img/favicon.ico">
+        <title>JiniWorks Login</title>
+
+        <!-- Vendor CSS -->
+        <link href="/_res/_common/bower_components/animate.css/animate.min.css" rel="stylesheet">
+        <link href="/_res/_common/bower_components/material-design-iconic-font/dist/css/material-design-iconic-font.min.css" rel="stylesheet">
+
+        <!-- CSS -->
+	    <link href="/_res/_common/bower_components/angular-loading-bar/src/loading-bar.css" rel="stylesheet">
+        <link href="/_res/_common/css/meterial/app.meterial1.css" rel="stylesheet">
+        <link href="/_res/_common/css/meterial/app.meterial2.css" rel="stylesheet">
+	    	<link rel="stylesheet" href="/_res/_common/css/han-font.css">
+	    	<link rel="stylesheet" href="/_res/_common/css/toastr.css">
+
+        <style>
+			body {
+			  font-family: "nanumgothic", "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+			}
+		#loading-bar-spinner { top: 50%; }
+        .jini { font-size: 27px; position: absolute; right: 30px; bottom: 10px; }
+        .sm { font-size: 14px; }
+        form .invalid { text-align:right; color: #f6675d;}
+        form .valid { text-align:right; color: blue;}
+        .lng-btn { text-align: right; padding: 20px 20px 0 0;}
+        .tm-icon { font-size:32px !important; color: white; }
+        .jiniworks { font-size: 20px; position: absolute; z-index: 1; color: white; top: -30px; width: 100%; left: 0;}
+        input[type=password] {-webkit-ime-mode:inactive;-moz-ime-mode:inactive;-ms-ime-mode:inactive;ime-mode:inactive;}
+        .ai-modal-container, .cgw-text-selection-popup { display: none;}
+        /* OTP 입력 인풋 필드 스타일 */
+        .otp-input-container { display: flex; justify-content: center;gap: 10px;margin-top: 20px; }
+        .otp-input {width: 50px;height: 50px;font-size: 24px;text-align: center;border: 2px solid #ccc;border-radius: 8px;background-color: #f9f9f9;transition: border-color 0.3s ease, background-color 0.3s ease;}
+        .otp-input:focus {border-color: #007bff;background-color: #eef5ff;outline: none;}
+        .error-border {border-color: red;}
+        </style>
+        <script>
+        	var values = {
+        			constant: {
+	        			cmsConfig: {
+	        				adminLocale: 'ko'
+	        			}
+        			}
+        	}
+        </script>
+
+        <!-- Core -->
+        <script src="/_res/_common/js/jquery/jquery-latest.min.js"></script>
+
+        <!-- Angular -->
+        <script src="/_res/_common/angular/latest/angular.min.js"></script>
+		<script>
+		angular.lowercase = function(val) { return val ? val.toLowerCase() : val;  }
+		</script>
+        <script src="/_res/_common/bower_components/angular-dynamic-locale/tmhDynamicLocale.min.js"></script>
+
+        <script src="/_res/_common/angular/latest/angular-animate.min.js"></script>
+		<script src="/_res/_common/bower_components/angular-translate/angular-translate.min.js"></script>
+		<script src="/_res/_common/bower_components/angular-loading-bar/src/loading-bar.js"></script>
+        <script src="/_res/_common/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+        <script src="/_res/_common/js/cookie/js.cookie.js"></script>
+        <script src="/_res/_common/js/toastr.js"></script>
+        <!-- Placeholder for IE9 -->
+        <!--[if IE 9 ]>
+            
+        <![endif]-->
+
+        <!-- App level -->
+		<script src="scripts/language.js"></script> 
+        <script src="scripts/login/app.js"></script>
+        <script src="scripts/translations.js"></script>
+
+    </head>
+
+    <body class="login-content ng-scope" data-ng-controller="loginCtrl as login">
+
+
+<!--[if lte IE 10]>
+	
+
+            <div class="ie-warning">
+                <h1 class="c-white">브라우저 호환성 오류</h1>
+                <p>웹표준을 지원하지 않는 IE11 이하 버전의 인터넷 익스프롤러는 지원하지 않습니다. 현재 사이트를 이용 하시려면 다음 웹 브라우저 중 하나로 접속 하시기 바랍니다. </p>
+                <div class="iew-container">
+                    <ul class="iew-download">
+                        <li>
+                            <a href="http://www.google.com/chrome/">
+                                <img src="/_res/_common/img/browsers/chrome.png" alt="">
+                                <div>Chrome</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.mozilla.org/en-US/firefox/new/">
+                                <img src="/_res/_common/img/browsers/firefox.png" alt="">
+                                <div>Firefox</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://www.opera.com">
+                                <img src="/_res/_common/img/browsers/opera.png" alt="">
+                                <div>Opera</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.apple.com/safari/">
+                                <img src="/_res/_common/img/browsers/safari.png" alt="">
+                                <div>Safari</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://windows.microsoft.com/en-us/internet-explorer/download-ie">
+                                <img src="/_res/_common/img/browsers/ie.png" alt="">
+                                <div>IE (New)</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <p>불변을 드려 죄송합니다.</p>
+            </div>
+<script type="text/javascript">
+	document.close();
+</script>
+<![endif]-->
+
+
+		
+
+        <!-- Login -->
+        <div class="lc-block toggled" id="l-login">
+        <div class="jiniworks">JiniWorks <span class="sm">Web contents management system</span></div>
+			<div ng-show="login.step == 1">
+	        	<form novalidate="" name="loginForm" ng-submit="login.submitLogin($event)" class="ng-pristine ng-invalid ng-invalid-required">
+				<input type="hidden" ng-model="login.url" name="url" ng-init="login.url = '/_fox/index.do?siteId=test-phong'" autocomplete="off" class="ng-pristine ng-untouched ng-valid ng-not-empty">
+	            <div class="invalid">
+	            	<label class="control-label">&nbsp;</label>
+	            	<!-- ngIf: loginForm.userId.$invalid && loginForm.submitted -->
+	            </div>
+	            <div class="input-group m-b-20">
+	                <span class="input-group-addon"><i class="zmdi zmdi-account"></i></span>
+	                <div ng-class="{'has-error': loginForm.userId.$invalid &amp;&amp; loginForm.submitted}">
+		                <div class="fg-line">
+		                    <input set-focus="!login.userId" name="userId" type="text" class="form-control ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required" placeholder="아이디" ng-required="true" ng-model="login.userId" required="required">
+		                </div>
+	                </div>
+	            </div>
+
+	            <div class="invalid">
+	            	<label class="control-label">&nbsp;</label>
+	            	<label for="inputError2" class="control-label"><!-- ngIf: loginForm.userPassword.$invalid && loginForm.submitted --></label>
+	            </div>
+	            <div class="input-group m-b-20">
+	                <span class="input-group-addon"><i class="zmdi zmdi-key"></i></span>
+	                <div ng-class="{'has-error': loginForm.userPassword.$invalid &amp;&amp; loginForm.submitted}">
+		                <div class="fg-line">
+		                    <input set-focus="login.userId" type="password" name="userPassword" ng-model="login.userPassword" ng-required="true" class="form-control ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required" placeholder="비밀번호" autocomplete="off" required="required">
+		                </div>
+	                </div>
+	            </div>
+
+	            <div class="clearfix"></div>
+
+	            <div class="checkbox">
+	                <label class="ng-binding">
+	                    <input name="isSaveId" type="checkbox" ng-model="login.isSaveId" class="ng-pristine ng-untouched ng-valid ng-empty">
+	                    <i class="input-helper"></i>
+	                    아이디 저장
+	                </label>
+	            </div>
+
+	            <button type="submit" class="btn btn-login btn-danger btn-float"><i class="zmdi zmdi-arrow-forward"></i></button>
+
+	            </form>
+            </div>
+
+            <!-- ngIf: login.step == 1.5 -->
+
+            <!-- ngIf: login.step == 2 -->
+
+        </div>
+        <span class="jini">JiniWorks <span class="sm">Web contents management system</span></span>
+
+
+
+    
+
+</body></html>

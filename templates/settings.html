@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cog text-primary mr-2"></i> System Settings</h3>
+      </div>
+      
+      <div class="card-body">
+        <!-- Gemini API Key configuration -->
+        <h5 class="mb-3"><i class="fas fa-brain text-info mr-2"></i>AI Feedback Configuration (Google Gemini)</h5>
+        <p class="text-muted text-sm">Gemini API Key is shared across all Sites for the AI to understand user feedback and analyze/change HTML/CSS UI.</p>
+        
+        <div class="form-group mb-0">
+          <label for="gemini_key_input">Gemini API Key</label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-key"></i></span>
+            </div>
+            <input type="password" class="form-control" id="gemini_key_input" placeholder="Enter Gemini API Key...">
+          </div>
+        </div>
+        
+        <hr class="my-4">
+        
+        <!-- Figma API Key configuration -->
+        <h5 class="mb-3"><i class="fab fa-figma text-danger mr-2"></i>Configure Figma Token</h5>
+        <p class="text-muted text-sm">Figma Personal Access Token is used to sync design directly from Figma to UI code.</p>
+        
+        <div class="form-group mb-0">
+          <label for="figma_token_input">Figma Access Token</label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            </div>
+            <input type="password" class="form-control" id="figma_token_input" placeholder="Enter Figma Personal Access Token...">
+          </div>
+          <small class="form-text text-muted mt-2"><i class="fas fa-info-circle mr-1"></i>Click Save Settings below to overwrite the global configuration file on the server.</small>
+        </div>
+        
+        <div class="mt-4 text-right">
+          <button type="button" class="btn btn-primary px-4" id="btnSaveConfig">
+            <i class="fas fa-save mr-1"></i> Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Fetch configs from server on load
+      $.get('/api/config', function(data) {
+          if (data.gemini_api_key) {
+              document.getElementById('gemini_key_input').value = data.gemini_api_key;
+          }
+          if (data.figma_token) {
+              document.getElementById('figma_token_input').value = data.figma_token;
+          }
+      });
+      
+      // Save config when button is clicked
+      document.getElementById('btnSaveConfig').addEventListener('click', function() {
+          const btn = this;
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+          btn.disabled = true;
+          
+          const payload = {
+              gemini_api_key: document.getElementById('gemini_key_input').value.trim(),
+              figma_token: document.getElementById('figma_token_input').value.trim()
+          };
+          
+          $.ajax({
+              url: '/api/config',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(payload),
+              success: function(res) {
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+                  if (res.success) {
+                      Swal.fire({
+                          toast: true,
+                          position: 'top-end',
+                          showConfirmButton: false,
+                          timer: 2000,
+                          icon: 'success',
+                          title: 'Configuration saved successfully!'
+                      });
+                  }
+              },
+              error: function() {
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Error',
+                      text: 'Cannot save configuration, please try again.'
+                  });
+              }
+          });
+      });
+  });
+</script>
+{% endblock %}

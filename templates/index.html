@@ -312,7 +312,7 @@
     overflow: hidden;
 }
 .site-card-header {
-    border-bottom: 1.5px solid #8cc63f;
+    border-bottom: 1px solid rgba(0,0,0,.125);
     padding: 10px 15px;
     display: flex;
     justify-content: space-between;
@@ -779,6 +779,7 @@ async function saveInlineAdd
         parent_id: parentId === '' ? null : parentId,
         name: name,
         slug: slug,
+        layout: 'sub-template',
         order: 9999 // Put at end, will be sorted
     });
     
