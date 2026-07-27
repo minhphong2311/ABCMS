@@ -194,3 +194,32 @@ def delete_menu_files(site_id, menu_param):
             print(f"Deleted folder {folder_dir}")
         except Exception as e:
             print(f"Failed to delete folder {folder_dir}: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Menu tree helpers
+# ---------------------------------------------------------------------------
+
+def assign_folders_from_roots(menus):
+    """Assign the 'folder' field for every menu based on its root ancestor's slug.
+
+    Root menus (parent_id is None) will be treated as folders.
+    All descendants of a root menu will inherit that root's slug as their folder.
+    """
+    # Build id → menu map
+    menu_map = {m['id']: m for m in menus if 'id' in m}
+
+    # Find root menus (no parent)
+    def get_root_slug(menu_id):
+        m = menu_map.get(menu_id)
+        if not m:
+            return ''
+        if not m.get('parent_id'):
+            return m.get('slug', '')
+        return get_root_slug(m['parent_id'])
+
+    for m in menus:
+        if not m.get('parent_id'):
+            m['folder'] = ''
+        else:
+            m['folder'] = get_root_slug(m['id'])
