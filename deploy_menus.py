@@ -124,7 +124,52 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
                         await asyncio.sleep(1)
 
             print("Finished deploying menus!")
-            return {'success': True, 'message': 'Menus deployed successfully!'}
+            
+            # --- CREATE FOLDERS IN PAGE MANAGER ---
+            unique_folders = set()
+            for m in menus:
+                if m.get('folder'):
+                    unique_folders.add(m.get('folder'))
+                elif not m.get('parent_id') and m.get('slug'):
+                    unique_folders.add(m.get('slug'))
+            
+            unique_folders = sorted(list(unique_folders))
+            
+            if unique_folders:
+                print(f"Creating folders in Page Manager: {unique_folders}")
+                target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
+                await page.goto(target_url_page)
+                await page.wait_for_load_state('networkidle')
+                await asyncio.sleep(4)
+                
+                await page.evaluate('''() => {
+                    const tabs = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading, a'));
+                    const pageTab = tabs.find(x => (x.innerText || x.textContent || '').trim().includes('페이지'));
+                    if (pageTab) pageTab.click();
+                }''')
+                await asyncio.sleep(2)
+                
+                folders_created = False
+                for folder in unique_folders:
+                    folder_anchor_id = f'/{site_id}/{folder}_anchor'
+                    try:
+                        await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
+                        folder_el = True
+                    except Exception:
+                        folder_el = False
+                    
+                    if not folder_el:
+                        print(f"Folder '{folder}' not found. Creating...")
+                        await page.evaluate(f'''async () => {{
+                            try {{ await window.angular.element(document.body).injector().get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}"); }} catch(e) {{}}
+                        }}''')
+                        await asyncio.sleep(1.5)
+                        folders_created = True
+                
+                if folders_created:
+                    print("Folders created successfully.")
+            
+            return {'success': True, 'message': 'Menus and folders deployed successfully!'}
         except Exception as e:
             print(f'Menu deploy ERROR: {e}')
             return {'success': False, 'message': f'Menu deploy error: {str(e)}'}
