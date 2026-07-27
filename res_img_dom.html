@@ -1,0 +1,111 @@
+
+
+
+<!--[if lte IE 10]>
+	
+
+            <div class="ie-warning">
+                <h1 class="c-white">브라우저 호환성 오류</h1>
+                <p>웹표준을 지원하지 않는 IE11 이하 버전의 인터넷 익스프롤러는 지원하지 않습니다. 현재 사이트를 이용 하시려면 다음 웹 브라우저 중 하나로 접속 하시기 바랍니다. </p>
+                <div class="iew-container">
+                    <ul class="iew-download">
+                        <li>
+                            <a href="http://www.google.com/chrome/">
+                                <img src="/_res/_common/img/browsers/chrome.png" alt="">
+                                <div>Chrome</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.mozilla.org/en-US/firefox/new/">
+                                <img src="/_res/_common/img/browsers/firefox.png" alt="">
+                                <div>Firefox</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://www.opera.com">
+                                <img src="/_res/_common/img/browsers/opera.png" alt="">
+                                <div>Opera</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.apple.com/safari/">
+                                <img src="/_res/_common/img/browsers/safari.png" alt="">
+                                <div>Safari</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://windows.microsoft.com/en-us/internet-explorer/download-ie">
+                                <img src="/_res/_common/img/browsers/ie.png" alt="">
+                                <div>IE (New)</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <p>불변을 드려 죄송합니다.</p>
+            </div>
+<script type="text/javascript">
+	document.close();
+</script>
+<![endif]-->
+
+
+		
+
+        <!-- Login -->
+        <div class="lc-block toggled" id="l-login">
+        <div class="jiniworks">JiniWorks <span class="sm">Web contents management system</span></div>
+			<div ng-show="login.step == 1">
+	        	<form novalidate="" name="loginForm" ng-submit="login.submitLogin($event)" class="ng-pristine ng-invalid ng-invalid-required">
+				<input type="hidden" ng-model="login.url" name="url" ng-init="login.url = '/_fox/index.do?siteId=test-phong'" autocomplete="off" class="ng-pristine ng-untouched ng-valid ng-not-empty">
+	            <div class="invalid">
+	            	<label class="control-label">&nbsp;</label>
+	            	<!-- ngIf: loginForm.userId.$invalid && loginForm.submitted -->
+	            </div>
+	            <div class="input-group m-b-20">
+	                <span class="input-group-addon"><i class="zmdi zmdi-account"></i></span>
+	                <div ng-class="{'has-error': loginForm.userId.$invalid &amp;&amp; loginForm.submitted}">
+		                <div class="fg-line">
+		                    <input set-focus="!login.userId" name="userId" type="text" class="form-control ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required" placeholder="아이디" ng-required="true" ng-model="login.userId" required="required">
+		                </div>
+	                </div>
+	            </div>
+
+	            <div class="invalid">
+	            	<label class="control-label">&nbsp;</label>
+	            	<label for="inputError2" class="control-label"><!-- ngIf: loginForm.userPassword.$invalid && loginForm.submitted --></label>
+	            </div>
+	            <div class="input-group m-b-20">
+	                <span class="input-group-addon"><i class="zmdi zmdi-key"></i></span>
+	                <div ng-class="{'has-error': loginForm.userPassword.$invalid &amp;&amp; loginForm.submitted}">
+		                <div class="fg-line">
+		                    <input set-focus="login.userId" type="password" name="userPassword" ng-model="login.userPassword" ng-required="true" class="form-control ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required" placeholder="비밀번호" autocomplete="off" required="required">
+		                </div>
+	                </div>
+	            </div>
+
+	            <div class="clearfix"></div>
+
+	            <div class="checkbox">
+	                <label class="ng-binding">
+	                    <input name="isSaveId" type="checkbox" ng-model="login.isSaveId" class="ng-pristine ng-untouched ng-valid ng-empty">
+	                    <i class="input-helper"></i>
+	                    아이디 저장
+	                </label>
+	            </div>
+
+	            <button type="submit" class="btn btn-login btn-danger btn-float"><i class="zmdi zmdi-arrow-forward"></i></button>
+
+	            </form>
+            </div>
+
+            <!-- ngIf: login.step == 1.5 -->
+
+            <!-- ngIf: login.step == 2 -->
+
+        </div>
+        <span class="jini">JiniWorks <span class="sm">Web contents management system</span></span>
+
+
+
+    
+

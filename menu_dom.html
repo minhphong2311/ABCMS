@@ -1,0 +1,1726 @@
+<!DOCTYPE html><html class="homer ng-scope" data-ng-app="jini"><!--<![endif]--><head><style type="text/css">[uib-typeahead-popup].dropdown-menu{display:block;}</style><style type="text/css">.uib-time input{width:50px;}</style><style type="text/css">[uib-tooltip-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-bottom > .tooltip-arrow,[uib-popover-popup].popover.top-left > .arrow,[uib-popover-popup].popover.top-right > .arrow,[uib-popover-popup].popover.bottom-left > .arrow,[uib-popover-popup].popover.bottom-right > .arrow,[uib-popover-popup].popover.left-top > .arrow,[uib-popover-popup].popover.left-bottom > .arrow,[uib-popover-popup].popover.right-top > .arrow,[uib-popover-popup].popover.right-bottom > .arrow,[uib-popover-html-popup].popover.top-left > .arrow,[uib-popover-html-popup].popover.top-right > .arrow,[uib-popover-html-popup].popover.bottom-left > .arrow,[uib-popover-html-popup].popover.bottom-right > .arrow,[uib-popover-html-popup].popover.left-top > .arrow,[uib-popover-html-popup].popover.left-bottom > .arrow,[uib-popover-html-popup].popover.right-top > .arrow,[uib-popover-html-popup].popover.right-bottom > .arrow,[uib-popover-template-popup].popover.top-left > .arrow,[uib-popover-template-popup].popover.top-right > .arrow,[uib-popover-template-popup].popover.bottom-left > .arrow,[uib-popover-template-popup].popover.bottom-right > .arrow,[uib-popover-template-popup].popover.left-top > .arrow,[uib-popover-template-popup].popover.left-bottom > .arrow,[uib-popover-template-popup].popover.right-top > .arrow,[uib-popover-template-popup].popover.right-bottom > .arrow{top:auto;bottom:auto;left:auto;right:auto;margin:0;}[uib-popover-popup].popover,[uib-popover-html-popup].popover,[uib-popover-template-popup].popover{display:block !important;}</style><style type="text/css">.uib-datepicker .uib-title{width:100%;}.uib-day button,.uib-month button,.uib-year button{min-width:100%;}.uib-datepicker-popup.dropdown-menu{display:block;float:none;margin:0;}.uib-button-bar{padding:10px 9px 2px;}.uib-left,.uib-right{width:100%}</style><style type="text/css">.uib-position-measure{display:block !important;visibility:hidden !important;position:absolute !important;top:-9999px !important;left:-9999px !important;}.uib-position-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll;}</style><style type="text/css">.ng-animate.item:not(.left):not(.right){-webkit-transition:0s ease-in-out left;transition:0s ease-in-out left}</style><style>@charset "UTF-8";[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="shortcut icon" href="/_res/_common/img/favicon.ico">
+    <!-- Page title set in pageTitle directive -->
+    <title x-page-title="">메뉴 관리 | test-phong</title>
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+    <!--<link rel="shortcut icon" type="image/ico" href="favicon.ico" />-->
+
+    <!-- build:css(.) styles/vendor.css -->
+    <!-- bower:css -->
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-loading-bar/src/loading-bar.css">
+    <link rel="stylesheet" href="/_res/_common/fonts/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/_res/_common/js/jquery/plugin/scrollbar/jquery.mCustomScrollbar.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/material-design-iconic-font/dist/css/material-design-iconic-font.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/jquery-ui/themes/smoothness/jquery-ui.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/metisMenu/dist/metisMenu.css"> 
+    <link rel="stylesheet" href="/_res/_common/bower_components/animate.css/animate.css">
+
+    <link rel="stylesheet" href="/_res/_common/bower_components/sweetalert/dist/sweetalert.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/sweetalert/dist/swalExtend.css">
+    <link rel="stylesheet" href="/_res/_common/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/bootstrap-touchspin/dist/jquery.bootstrap-touchspin.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-ui-tree/dist/angular-ui-tree.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-ui-select/dist/select.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-ui-select/dist/select2.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/ng-tags-input/ng-tags-input.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/ng-tags-input/ng-tags-input.bootstrap.css">
+    <!-- <link rel="stylesheet" href="/_res/_common/bower_components/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css" /> -->
+	<link rel="stylesheet" href="/_res/_common/bower_components/angular-ui-switch/angular-ui-switch.css">
+
+    <!-- <link rel="stylesheet" href="/_res/_common/bower_components/chartist/custom/chartist.css" /> -->
+    <link rel="stylesheet" href="/_res/_common/bower_components/c3/c3.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/Chart.js/latest/Chart.min.css">
+<!--     <link rel="stylesheet" href="/_res/_common/bower_components/opentip/css/opentip.css" />  tooltip -->
+    <link rel="stylesheet" href="/_res/_common/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/clockpicker/dist/bootstrap-clockpicker.min.css">
+    <link rel="stylesheet" href="/_res/_common/bower_components/ladda/dist/ladda-themeless.min.css"> 
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-wizard/angular-wizard.min.css"> 
+
+    <link rel="stylesheet" href="/_res/_common/bower_components/jstree/dist/themes/default/style.min.css">
+     
+    <link rel="stylesheet" href="/_res/_common/bower_components/highlight/styles/agate.css"> 
+
+    <link rel="stylesheet" href="/_res/_common/css/toastr.min.css">
+
+	<link rel="stylesheet" href="/_res/_common/bower_components/floating-menu/floating-menu.css">
+
+    <link rel="stylesheet" href="/_res/_common/bower_components/angular-xeditable/css/xeditable.min.css">
+    <!-- endbower -->
+    <!-- endbuild -->
+
+    <!-- build:css({.tmp,app}) /_res/_common/css/angular/style.css -->
+    <link rel="stylesheet" href="/_res/_common/fonts/pe-icon-7-stroke/css/pe-icon-7-stroke.css">
+    <link rel="stylesheet" href="/_res/_common/fonts/pe-icon-7-stroke/css/helper.css">
+    <link rel="stylesheet" href="/_res/_common/css/han-font.css">
+
+    <link rel="stylesheet" href="/_res/_common/angular/css/style.css">
+    <link rel="stylesheet" href="/_res/_common/angular/css/custom.css">
+    <link rel="stylesheet" href="./styles/app.css">
+    <link rel="stylesheet" href="/_res/_common/angular/css/define.css">
+    <!-- endbuild -->
+
+	<link rel="stylesheet" href="/_res/_common/_plugin/froala-editor/latest/css/froala_style.min.css">
+
+    <script type="text/javascript">
+    	var ctx = '';
+    	var isFrontEditorMode = false;
+    	var devHost = '';
+    </script>
+
+<style type="text/css"></style><style media="all" id="injectCSSContainer" type="text/css">.CodeMirror pre {
+	font-size: 14px !important;
+	font-family: "Courier New";
+	letter-spacing: undefinedpx;
+}
+</style><script src="../_res/_common/bower_components/ui-sortable/sortable.min.js"></script><script src="scripts/factories/dashboard-service.js"></script><script src="scripts/controllers/dashboard/dashboard-controller.js"></script><script src="scripts/factories/stats-service.js"></script><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style><script src="scripts/controllers/widget/widget.js"></script><script src="scripts/controllers/resource/image-controller.js"></script><link type="text/css" rel="stylesheet" href="../_res/_common/_plugin/code-mirror/jwcustom/codemirror.pkg.css"><link type="text/css" rel="stylesheet" href="../_res/_common/_plugin/froala-editor/latest/css/froala_editor.pkgd.min.css"><script src="scripts/controllers/editor/component.js"></script><script src="scripts/factories/editor-service.js"></script><script src="scripts/controllers/page/page-controller.js"></script><script src="scripts/controllers/menu/menu-controller.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/lib/codemirror.js"></script><script src="scripts/lib/froala-plugin/froala_editor.js"></script><script src="scripts/factories/widget-service.js"></script><script src="scripts/factories/resource-service.js"></script><script src="scripts/controllers/editor/menu.js"></script><script src="scripts/factories/content-service.js"></script><script src="scripts/factories/page-service.js"></script><script src="scripts/factories/menu-service.js"></script><script src="../_res/_common/_plugin/code-mirror/jwcustom/code-mirror.pkg.min.js"></script><script src="../_res/_common/bower_components/range-slider/slider.js"></script><link type="text/css" rel="stylesheet" href="../_res/_common/bower_components/blueimp-gallery/css/blueimp-gallery.min.css"><link type="text/css" rel="stylesheet" href="../_res/_common/bower_components/range-slider/slider.css"><script src="scripts/factories/popup-service.js"></script><script src="scripts/controllers/editor/component-define.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/mode/javascript/javascript.js"></script><link type="text/css" rel="stylesheet" href="../_res/_common/_plugin/template-editor/css/cms-editor.css"><script src="../_res/_common/_plugin/template-editor/component/component.js"></script><script src="scripts/controllers/editor/component-widget.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/mode/sql/sql.js"></script><script src="../_res/_common/_plugin/template-editor/component/component-define.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/addon/dialog/dialog.js"></script><script src="../_res/_common/bower_components/resize-sensor/ResizeSensor.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/addon/hint/html-hint.js"></script><script src="../_res/_common/bower_components/resize-sensor/ElementQueries.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/addon/search/jump-to-line.js"></script><script src="../_res/_common/_plugin/code-mirror/latest/addon/mode/multiplex.js"></script><script src="../_res/_common/_plugin/code-mirror/jwcustom/formatting.js"></script><script src="scripts/factories/img-import-service.js"></script><script src="scripts/lib/froala-plugin/froala-plugin.pkg.min.js"></script><script src="scripts/lib/froala-plugin/image.js"></script><script src="scripts/lib/froala-plugin/video.js"></script><script src="scripts/lib/froala-plugin/code_view.js"></script><script src="scripts/lib/froala-plugin/cms-image.js"></script><script src="scripts/lib/froala-plugin/font_family.js"></script><script src="scripts/lib/froala-plugin/jsp-code.js"></script><script src="scripts/lib/froala-plugin/shortcut.js"></script><script src="scripts/lib/froala-plugin/cms-widget.js"></script><script src="scripts/lib/froala-plugin/line_breaker.js"></script><script src="scripts/lib/froala-plugin/cms-resource-file.js"></script><script src="scripts/lib/froala-plugin/cms-menu-link.js"></script><script src="scripts/lib/froala-plugin/cms-natural-lang.js"></script><script src="scripts/lib/froala-plugin/table.js"></script><script src="/_res/_common/_plugin/froala-editor/latest/js/plugins/block-template.js"></script><link type="text/css" rel="stylesheet" href="/_res/_common/_plugin/froala-editor/latest/css/plugins/block-template.css"><script src="/_res/_common/_plugin/froala-editor/custom-plugins/ai/ai-plugin-v2.js"></script><style type="text/css">/* Chart.js */
+@keyframes chartjs-render-animation{from{opacity:.99}to{opacity:1}}.chartjs-render-monitor{animation:chartjs-render-animation 1ms}.chartjs-size-monitor,.chartjs-size-monitor-expand,.chartjs-size-monitor-shrink{position:absolute;direction:ltr;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none;visibility:hidden;z-index:-1}.chartjs-size-monitor-expand>div{position:absolute;width:1000000px;height:1000000px;left:0;top:0}.chartjs-size-monitor-shrink>div{position:absolute;width:200%;height:200%;left:0;top:0}</style></head>
+
+<!-- Body -->
+<!-- appCtrl controller with serveral data used in theme on diferent view -->
+<!-- landing-scrollspy is directive for scrollspy used in landing page -->
+
+
+<body x-ng-controller="appCtrl as mainCtrl" class="ko scrollbar show-sidebar  show-scroll chrome" x-landing-scrollspy="" x-backdrop="true">
+
+
+
+<div class="splash" style="display: none;">
+	<div class="color-line"></div>
+	<div class="splash-title">
+		<h1>JiniWorks v2.0</h1>
+		<p>Web contents management system</p><p>애플리케이션을 로딩 중 입니다.</p>
+		<div class="spinner"> 
+			<div class="rect1"></div> 
+			<div class="rect2"></div> 
+			<div class="rect3"></div> 
+			<div class="rect4"></div> 
+			<div class="rect5"></div> 
+		</div> 
+	</div> 
+</div>
+
+
+
+<!--[if lte IE 10]>
+	
+
+            <div class="ie-warning">
+                <h1 class="c-white">브라우저 호환성 오류</h1>
+                <p>웹표준을 지원하지 않는 IE11 이하 버전의 인터넷 익스프롤러는 지원하지 않습니다. 현재 사이트를 이용 하시려면 다음 웹 브라우저 중 하나로 접속 하시기 바랍니다. </p>
+                <div class="iew-container">
+                    <ul class="iew-download">
+                        <li>
+                            <a href="http://www.google.com/chrome/">
+                                <img src="/_res/_common/img/browsers/chrome.png" alt="">
+                                <div>Chrome</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.mozilla.org/en-US/firefox/new/">
+                                <img src="/_res/_common/img/browsers/firefox.png" alt="">
+                                <div>Firefox</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://www.opera.com">
+                                <img src="/_res/_common/img/browsers/opera.png" alt="">
+                                <div>Opera</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.apple.com/safari/">
+                                <img src="/_res/_common/img/browsers/safari.png" alt="">
+                                <div>Safari</div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://windows.microsoft.com/en-us/internet-explorer/download-ie">
+                                <img src="/_res/_common/img/browsers/ie.png" alt="">
+                                <div>IE (New)</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <p>불변을 드려 죄송합니다.</p>
+            </div>
+<script type="text/javascript">
+	document.close();
+</script>
+<![endif]-->
+
+<div class="boxed-wrapper">
+
+	<!-- Header -->
+	<div id="header">
+		
+
+
+
+
+
+
+<!-- /index.do -->
+<div class="color-line">
+</div>
+<div id="logo" class="light-version font-en">
+        <span>
+            JiniWorks v2.0
+        </span>
+</div>
+<nav role="navigation">
+        <div class="header-link hide-menu"><i class="fa fa-bars"></i></div>
+    <div class="small-logo">
+        <span class="text-primary font-en">JiniWorks</span>
+    </div>
+
+
+    <div class="mobile-menu">
+        <button type="button" class="navbar-toggle mobile-menu-toggle" data-toggle="collapse" data-target="#mobile-collapse">
+            <i class="fa fa-chevron-down"></i>
+        </button>
+        <div class="collapse mobile-navbar" id="mobile-collapse">
+            <ul class="nav navbar-nav">
+                   <li><a ng-click="mainCtrl.editMemberSelf()" class="ng-binding"> <i class="fa fa-user"></i> 개인정보 수정</a></li>
+		        	 	<!-- ngIf: ::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') && $root.adminToolType == 'SITE' --><li ng-if="::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') &amp;&amp; $root.adminToolType == 'SITE'" class="ng-scope">
+			        		<a href="./index.do" class="ng-binding">
+		                    <i class="pe-7s-refresh"></i> 통합 관리로 전환
+		                </a>
+			        </li><!-- end ngIf: ::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') && $root.adminToolType == 'SITE' -->
+                   <li><a href="./logOut.do" class="ng-binding"> <i class="fa fa-sign-out"></i> 로그아웃</a></li>
+
+            </ul>
+        </div>
+    </div>
+    <div class="navbar-right pull-left">
+        <ul class="nav navbar-nav no-borders">
+        	 	<li>
+	           <div class="dropdown m-t-md" uib-dropdown="">
+	           	   <i class="fs-14 fa fa-user m-r-xs text-info"></i>
+	               <a uib-dropdown-toggle="" href="javascript:;" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+	                   <span ng-bind="::$root.admin.adminTypeNm | translate" class="ng-binding">통합관리자</span> ( <span class="text-primary ng-binding" ng-bind="::$root.admin.userId">webadmin</span> ) <b class="caret"></b>
+	               </a>
+	               <ul class="animated flipInX m-t-xs dropdown-menu" uib-dropdown-menu="">
+                   <li><a ng-click="mainCtrl.editMemberSelf()"> <i class="fa fa-user"></i> <span ng-bind=":: '개인정보수정' | translate" class="ng-binding">개인정보 수정</span></a></li>
+	                   <li class="divider"></li>
+                   <li><a href="./logOut.do"> <i class="fa fa-sign-out"></i> <span ng-bind="::'로그아웃' | translate" class="ng-binding">로그아웃</span></a></li>
+	               </ul>
+	           </div>
+           </li>
+       	 	<li>
+        		<!-- ngIf: ::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') && ($root.adminToolType == 'SITE' || $root.adminToolType == 'EDITOR') --><a href="./index.do" ng-if="::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') &amp;&amp; ($root.adminToolType == 'SITE' || $root.adminToolType == 'EDITOR')" uib-tooltip="통합 관리로 전환" class="ng-scope">
+                   <i class="pe-7s-refresh"></i>
+               </a><!-- end ngIf: ::($root.admin.adminType == 'SUPER' || $root.admin.adminType == 'SYSTEM_DEVELOP') && ($root.adminToolType == 'SITE' || $root.adminToolType == 'EDITOR') -->
+
+           </li><li>
+	        	<!-- ngIf: ::!$root.isFrontEditorMode --><a ng-if="::!$root.isFrontEditorMode" onclick="window.open(location.href)" class="ng-scope">
+                    <i class="pe-7s-monitor" uib-tooltip="새창으로 관리툴 열기"></i>
+                </a><!-- end ngIf: ::!$root.isFrontEditorMode -->
+	        	<!-- ngIf: ::$root.isFrontEditorMode -->
+           </li>
+           
+           <!-- ngIf: $root.isLocalDevelopMode && $root.admin.adminType == 'SYSTEM_DEVELOP' -->
+		</ul>
+
+   </div>
+
+
+
+    <div class="navbar-right">
+        <ul class="nav navbar-nav no-borders">
+
+        		<!-- ngIf: ::$root.adminToolType == 'SITE' --><li ng-if="::$root.adminToolType == 'SITE'" class="ng-scope">
+	        		<a ng-click="mainCtrl.gotoMain()">
+                    <i class="pe-7s-home" uib-tooltip="메인 페이지 열기"></i>
+                </a>
+        		</li><!-- end ngIf: ::$root.adminToolType == 'SITE' -->
+
+			<li>
+				<a uib-tooltip="사용시간" class="time-btn"><i class="pe-7s-clock fs-14 m-r-xs txt-danger"></i><span class="run-timer fs-16">00:00:08</span></a>
+			</li>
+
+        		<!-- ngIf: ::$root.adminToolType !== 'CONTENT' && adminToolType !== 'EDITOR' --><li ng-if="::$root.adminToolType !== 'CONTENT' &amp;&amp; adminToolType !== 'EDITOR'" class="ng-scope">
+	        		<a href="#!dashboard">
+                    <i class="pe-7s-graph1" uib-tooltip="대시보드"></i>
+                </a>
+        		</li><!-- end ngIf: ::$root.adminToolType !== 'CONTENT' && adminToolType !== 'EDITOR' -->
+
+            <li>
+                <a uib-tooltip="로그아웃" href="./logOut.do">
+                    <i class="pe-7s-upload pe-rotate-90"></i>
+                </a>
+            </li>
+
+
+        </ul>
+    </div>
+</nav>
+
+
+
+
+
+	</div>
+
+	<!-- Navigation -->
+	<aside id="menu">
+		
+
+
+
+
+
+
+<!-- /index.do -->
+
+
+
+<div id="navigation">
+
+
+    <!-- ngIf: ::$root.cmsConfig['log.page'] !== 'N' --><div class="profile-picture ng-scope" ng-if="::$root.cmsConfig['log.page'] !== 'N'">
+
+        <div class="stats-label text-color">
+			<div>
+	            <div class="small-chart m-t-sm m-b-sm">
+	            	<div sparkline="" spark-data="mainCtrl.stats.fortnight" spark-options="mainCtrl.barProfileOptions"><canvas width="149" height="40" style="display: inline-block; width: 149px; height: 40px; vertical-align: top;"></canvas></div>
+	            </div>
+	            <div class="row m-b-xs tx-a-c">
+	            	<div class="col-xs-6 border-right">
+	            		<h4 class="m-b-xs ng-binding">0 <small><!-- ngIf: ::mainCtrl.stats.today > mainCtrl.stats.yesterday --><!-- ngIf: ::mainCtrl.stats.today < mainCtrl.stats.yesterday --></small></h4>
+	            		<small><i class="fa fa-bolt"></i> Today</small>
+	            	</div>
+	            	<div class="col-xs-6">
+	            		<h4 class="m-b-xs ng-binding">112 <small><!-- ngIf: ::mainCtrl.stats.month > mainCtrl.stats.prevMonth --><i ng-if="::mainCtrl.stats.month &gt; mainCtrl.stats.prevMonth" class="fa fa-level-up text-success ng-scope"></i><!-- end ngIf: ::mainCtrl.stats.month > mainCtrl.stats.prevMonth --><!-- ngIf: ::mainCtrl.stats.month < mainCtrl.stats.prevMonth --></small></h4>
+	            		<small><i class="fa fa-bolt"></i> Month</small>
+	            	</div>
+	                <h4 class="font-extra-bold m-b-xs">
+	                </h4>
+	                <!-- <small class="text-muted"></small> -->
+	            </div>
+            </div>
+        </div>
+    </div><!-- end ngIf: ::$root.cmsConfig['log.page'] !== 'N' -->
+
+    <div class="lnb-fix">
+	    <!-- ngIf: ::!$root.admin.isContentAdmin --><div class="select-site ng-scope" ng-if="::!$root.admin.isContentAdmin" ng-class="::{'bd-t-n':$root.cmsConfig['log.page'] == 'N'}">
+		   	<div class="ui-select-container select2 select2-container ng-untouched ng-valid ng-scope ng-not-empty ng-dirty ng-valid-parse" ng-class="{'select2-container-active select2-dropdown-open open': $select.open, 'select2-container-disabled': $select.disabled, 'select2-container-active': $select.focus, 'select2-allowclear': $select.allowClear &amp;&amp; !$select.isEmpty()}" ng-model="mainCtrl.selectedSiteId" theme="select2" on-select="mainCtrl.onSelectedSite($select.selected.siteId)" ng-model-options="{ debounce: 0 }" style=""><a class="select2-choice ui-select-match ng-scope" ng-class="{'select2-default': $select.isEmpty()}" ng-click="$select.toggle($event)" aria-label="Select box select" placeholder="사이트 선택"><span ng-show="$select.isEmpty()" class="select2-chosen ng-binding ng-hide">사이트 선택</span> <span ng-hide="$select.isEmpty()" class="select2-chosen" ng-transclude="">test-phong (test-phong)</span> <!-- ngIf: $select.allowClear && !$select.isEmpty() --> <span class="select2-arrow ui-select-toggle"><b></b></span></a><div class="ui-select-dropdown select2-drop select2-with-searchbox select2-drop-active select2-display-none" ng-class="{'select2-display-none': !$select.open}"><div class="select2-search" ng-show="$select.searchEnabled"><input type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="true" aria-owns="ui-select-choices-0" aria-label="Select box" aria-activedescendant="ui-select-choices-row-0-0" class="ui-select-search select2-input ng-pristine ng-untouched ng-valid ng-empty" ng-model="$select.search" style="width: 10px;"></div><ul tabindex="-1" class="ui-select-choices ui-select-choices-content select2-results ng-scope" group-by="$root.getSiteGroupFn" repeat="site.siteId as site in  $root.siteAuthList  | propsFilter: {siteNm: $select.search, siteId: $select.search} | orderBy:$root.siteListOrderBy track by (site.siteId + site.siteNm)"><!-- ngRepeat: $group in $select.groups --><li class="ui-select-choices-group ng-scope select2-result-with-children" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }" ng-repeat="$group in $select.groups" style=""><div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label ng-binding" ng-bind="$group.name">- 서비스사이트</div><ul role="listbox" id="ui-select-choices-0" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }" class="select2-result-sub"><!-- ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --></ul></li><!-- end ngRepeat: $group in $select.groups --><li class="ui-select-choices-group ng-scope select2-result-with-children" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }" ng-repeat="$group in $select.groups"><div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label ng-binding" ng-bind="$group.name">- 템플릿 사이트</div><ul role="listbox" id="ui-select-choices-0" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }" class="select2-result-sub"><!-- ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --></ul></li><!-- end ngRepeat: $group in $select.groups --><li class="ui-select-choices-group ng-scope select2-result-with-children" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }" ng-repeat="$group in $select.groups"><div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label ng-binding" ng-bind="$group.name">- 공유 사이트</div><ul role="listbox" id="ui-select-choices-0" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }" class="select2-result-sub"><!-- ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --><!-- ngIf: $select.open --><!-- end ngRepeat: site in $group.items track by (site.siteId + site.siteNm) --></ul></li><!-- end ngRepeat: $group in $select.groups --></ul><div class="ui-select-no-choice"></div></div><ui-select-single></ui-select-single><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-0" aria-label="Select box focus" aria-haspopup="true" role="button"><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-0" aria-label="Select box focus" aria-haspopup="true" role="button"></div>
+	    </div><!-- end ngIf: ::!$root.admin.isContentAdmin -->
+	    <!-- ngIf: ::$root.appConstant.cmsConfig.isMenuSearch !== 'N' --><div class="select-site mnu ng-scope" ng-if="::$root.appConstant.cmsConfig.isMenuSearch !== 'N'" ng-class="::{'bd-t-n':$root.cmsConfig['log.page'] == 'N'}">
+              <div class="adm-menu-search ui-select-container ui-select-bootstrap dropdown ng-pristine ng-untouched ng-valid ng-scope ng-empty" ng-class="{open: $select.open}" ng-model="mainCtrl.findMenuId" focus-on="menuFindFocus" theme="bootstrap" on-select="mainCtrl.onAdmMenuSelect($select.selected)" ng-model-options="{ debounce: 0 }"><div class="ui-select-match ng-scope" ng-hide="$select.open &amp;&amp; $select.searchEnabled" ng-disabled="$select.disabled" ng-class="{'btn-default-focus':$select.focus}" placeholder="메뉴빨리찾기 Ctrl+E, Cmd+E"><span tabindex="-1" class="btn btn-default form-control ui-select-toggle" aria-label="Select box activate" ng-disabled="$select.disabled" ng-click="$select.activate()" style="outline: 0;"><span ng-show="$select.isEmpty()" class="ui-select-placeholder text-muted ng-binding">메뉴빨리찾기 Ctrl+E, Cmd+E</span> <span ng-hide="$select.isEmpty()" class="ui-select-match-text pull-left ng-hide" ng-class="{'ui-select-allow-clear': $select.allowClear &amp;&amp; !$select.isEmpty()}" ng-transclude=""><i class=""></i> </span> <i class="caret pull-right" ng-click="$select.toggle($event)"></i> <a ng-show="$select.allowClear &amp;&amp; !$select.isEmpty() &amp;&amp; ($select.disabled !== true)" aria-label="Select box clear" style="margin-right: 10px" ng-click="$select.clear($event)" class="btn btn-xs btn-link pull-right ng-hide"><i class="glyphicon glyphicon-remove" aria-hidden="true"></i></a></span></div><input type="search" autocomplete="off" tabindex="-1" aria-expanded="true" aria-label="Select box" aria-owns="ui-select-choices-1" aria-activedescendant="ui-select-choices-row-1-0" class="form-control ui-select-search ng-pristine ng-untouched ng-valid ng-empty ng-hide" placeholder="메뉴빨리찾기 Ctrl+E, Cmd+E" ng-model="$select.search" ng-show="$select.searchEnabled &amp;&amp; $select.open" style="width: 10px;"><ul class="ui-select-choices ui-select-choices-content ui-select-dropdown dropdown-menu ng-scope ng-hide" role="listbox" ng-show="$select.open &amp;&amp; $select.items.length &gt; 0" refresh="mainCtrl.searchMenu($select.search)" repeat="item.menuStack as item in mainCtrl.menuSearchList"><li class="ui-select-choices-group" id="ui-select-choices-1"><div class="divider ng-hide" ng-show="$select.isGrouped &amp;&amp; $index &gt; 0"></div><div ng-show="$select.isGrouped" class="ui-select-choices-group-label dropdown-header ng-binding ng-hide" ng-bind="$group.name"></div><!-- ngRepeat: item in $select.items --></li></ul><div class="ui-select-no-choice"></div><ui-select-single></ui-select-single><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-1" aria-label="Select box focus" aria-haspopup="true" role="button"><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-1" aria-label="Select box focus" aria-haspopup="true" role="button"></div>
+	    </div><!-- end ngIf: ::$root.appConstant.cmsConfig.isMenuSearch !== 'N' -->
+
+	
+		<script>
+		var excludeMenus = [];
+		</script>
+		<div side-navigation-wrap="" custom-scrollbar="" cs-axis="y" cs-scrollbar-position="outside" class="side-menu-wrap mCustomScrollbar _mCS_1 mCS-autoHide" style="position: relative; overflow: visible; height: 431.609px;"><div id="mCSB_1" class="mCustomScrollBox mCS-dark-2 mCSB_vertical mCSB_outside" style="max-height: none;" tabindex="0"><div id="mCSB_1_container" class="mCSB_container mCS_y_hidden mCS_no_scrollbar_y" style="position:relative; top:0; left:0;" dir="ltr">
+		    <ul side-navigation="" class="nav metismenu depth-1" id="side-menu">
+
+			    	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" " id="menu-siteManage">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!siteManage" class="lnb-mnu-txt" title="사이트 관리">
+       		<i class="mnu-icon fa fa-folder-o"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'사이트관리T' | translate" class="ng-binding">사이트 관리</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-2 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-site">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!site" class="lnb-mnu-txt" title="서비스 사이트 관리">
+       		<i class="mnu-icon zmdi zmdi-globe"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'서비스사이트관리T' | translate" class="ng-binding">서비스 사이트 관리</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-template-site">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!template-site" class="lnb-mnu-txt" title="템플릿 사이트 관리">
+       		<i class="mnu-icon zmdi zmdi-globe-alt"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'템플릿사이트관리T' | translate" class="ng-binding">템플릿 사이트 관리</span> </span></a>
+		
+
+			</li></ul>
+			
+        </li><li class="active" id="menu-dev_menu">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!dev_menu" class="lnb-mnu-txt" title="사이트 개발" aria-expanded="true">
+       		<i class="mnu-icon zmdi zmdi-wrench"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'사이트개발T' | translate" class="ng-binding">사이트 개발</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-2 collapse in" aria-expanded="true" style="height: auto;">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class="leaf active" id="menu-menu">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!menu" class="lnb-mnu-txt active" title="메뉴 관리" aria-expanded="true">
+       		<i class="mnu-icon zmdi zmdi-hc-fw zmdi-menu"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'메뉴관리T' | translate" class="ng-binding">메뉴 관리</span> </span></a>
+		
+        </li><li class=" " id="menu-page-wrap">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!page-wrap" class="lnb-mnu-txt" title="페이지 / SEO 관리">
+       		<i class="mnu-icon zmdi zmdi-collection-item"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'페이지/SEO관리' | translate" class="ng-binding">페이지 / SEO 관리</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-3 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-page">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!page" class="lnb-mnu-txt" title="페이지 / SEO 등록">
+       		<i class="mnu-icon zmdi zmdi-collection-text"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'페이지/SEO등록' | translate" class="ng-binding">페이지 / SEO 등록</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-res-head">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-head" class="lnb-mnu-txt" title="HTML head 작성">
+       		<i class="mnu-icon fa fa-file-code-o"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'HTML head 작성' | translate" class="ng-binding">HTML head 작성</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-res-layout">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-layout" class="lnb-mnu-txt" title="레이아웃 템플릿">
+       		<i class="mnu-icon fa fa-object-group"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'레이아웃템플릿L' | translate" class="ng-binding">레이아웃 템플릿</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-seo-config">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!seo-config" class="lnb-mnu-txt" title="SEO 기본설정">
+       		<i class="mnu-icon fa fa-share-alt"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'SEO기본설정' | translate" class="ng-binding">SEO 기본설정</span> </span></a>
+		
+
+			</li></ul>
+			
+        </li><li class=" leaf" id="menu-content">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!content" class="lnb-mnu-txt" title="콘텐츠관리">
+       		<i class="mnu-icon fa fa-cubes"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'콘텐츠관리' | translate" class="ng-binding">콘텐츠관리</span> </span></a>
+		
+				<script>excludeMenus['template_menu'] = true;</script>
+				
+        </li><li class=" " id="menu-resource">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!resource" class="lnb-mnu-txt" title="리소스 관리">
+       		<i class="mnu-icon zmdi zmdi-collection-folder-image"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'리소스관리T' | translate" class="ng-binding">리소스 관리</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-3 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-res-css">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-css" class="lnb-mnu-txt" title="CSS 편집">
+       		<i class="mnu-icon zmdi zmdi-hc-fw zmdi-language-css3"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'CSS편집' | translate" class="ng-binding">CSS 편집</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-res-js">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-js" class="lnb-mnu-txt" title="JS 편집">
+       		<i class="mnu-icon  zmdi zmdi-hc-fw zmdi-language-javascript"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'JS편집' | translate" class="ng-binding">JS 편집</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-res-img">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-img" class="lnb-mnu-txt" title="이미지">
+       		<i class="mnu-icon fa fa-file-image-o"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'이미지L' | translate" class="ng-binding">이미지</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-res-file">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!res-file" class="lnb-mnu-txt" title="기타 리소스">
+       		<i class="mnu-icon fa fa-archive"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'기타 리소스' | translate" class="ng-binding">기타 리소스</span> </span></a>
+		
+
+			</li></ul>
+			
+        </li><li class=" leaf" id="menu-popup">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!popup" class="lnb-mnu-txt" title="팝업 관리">
+       		<i class="mnu-icon zmdi zmdi-notifications-active"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'팝업관리T' | translate" class="ng-binding">팝업 관리</span> </span></a>
+		
+        </li><li class=" " id="menu-widget-top">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!widget-top" class="lnb-mnu-txt" title="위젯 관리">
+       		<i class="mnu-icon zmdi zmdi-view-dashboard"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'위젯관리' | translate" class="ng-binding">위젯 관리</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-3 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-widget">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!widget" class="lnb-mnu-txt" title="위젯 등록">
+       		<i class="mnu-icon zmdi zmdi-widgets"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'위젯 등록' | translate" class="ng-binding">위젯 등록</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-widget-data">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!widget-data" class="lnb-mnu-txt" title="위젯 데이타 등록">
+       		<i class="mnu-icon fa fa-database"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'위젯 데이타 등록' | translate" class="ng-binding">위젯 데이타 등록</span> </span></a>
+		
+
+			</li></ul>
+			
+
+			</li></ul>
+			
+        </li><li class=" " id="menu-op_menu">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!op_menu" class="lnb-mnu-txt" title="사이트 운영">
+       		<i class="mnu-icon fa fa-cogs"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'사이트운영T' | translate" class="ng-binding">사이트 운영</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-2 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-member">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!member" class="lnb-mnu-txt" title="회원 관리">
+       		<i class="mnu-icon zmdi zmdi-accounts"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'회원관리T' | translate" class="ng-binding">회원 관리</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-category-mst">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!category-mst" class="lnb-mnu-txt" title="카테고리 등록">
+       		<i class="mnu-icon fa fa-tags"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'카테고리 등록' | translate" class="ng-binding">카테고리 등록</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-board">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!board" class="lnb-mnu-txt" title="게시판 관리">
+       		<i class="mnu-icon zmdi zmdi-hc-fw zmdi-comment-alt-text"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'게시판관리T' | translate" class="ng-binding">게시판 관리</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-article">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!article" class="lnb-mnu-txt" title="게시물 관리">
+       		<i class="mnu-icon fa fa-commenting"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'게시물 관리' | translate" class="ng-binding">게시물 관리</span> </span></a>
+		
+				<script>excludeMenus['banned-words'] = true;</script>
+				
+        </li></ul>
+			
+        </li><li class=" " id="menu-log">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!log" class="lnb-mnu-txt" title="애널리틱스">
+       		<i class="mnu-icon fa fa-bar-chart"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'애널리틱스' | translate" class="ng-binding">애널리틱스</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-2 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-stats-visit">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!stats-visit" class="lnb-mnu-txt" title="방문현황">
+       		<i class="mnu-icon zmdi zmdi-accounts-alt"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'방문현황' | translate" class="ng-binding">방문현황</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-stats-page">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!stats-page" class="lnb-mnu-txt" title="페이지뷰현황">
+       		<i class="mnu-icon zmdi zmdi-mouse"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'페이지뷰현황' | translate" class="ng-binding">페이지뷰현황</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-stats-referer">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!stats-referer" class="lnb-mnu-txt" title="유입현황">
+       		<i class="mnu-icon zmdi zmdi-square-right"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'유입현황' | translate" class="ng-binding">유입현황</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-stats-device">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!stats-device" class="lnb-mnu-txt" title="접속환경분석">
+       		<i class="mnu-icon zmdi zmdi-wifi-alt"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'접속환경분석' | translate" class="ng-binding">접속환경분석</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-stats-voc">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!stats-voc" class="lnb-mnu-txt" title="고객 만족도 통계">
+       		<i class="mnu-icon fa fa-commenting"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'고객 만족도 통계' | translate" class="ng-binding">고객 만족도 통계</span> </span></a>
+		
+
+			</li></ul>
+			
+				<script>excludeMenus['oauth-config'] = true;</script>
+				
+        </li><li class=" " id="menu-deploy-svr">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!deploy-svr" class="lnb-mnu-txt" title="배포 관리">
+       		<i class="mnu-icon fa fa-random"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'배포 관리' | translate" class="ng-binding">배포 관리</span> <span class="fa arrow"></span></span></a>
+		
+			<ul class="nav depth-2 collapse" aria-expanded="false">
+		     	
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <li class=" leaf" id="menu-deploy-server">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!deploy-server" class="lnb-mnu-txt" title="콘텐츠 배포 승인">
+       		<i class="mnu-icon fa fa-usb"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'콘텐츠 배포 승인' | translate" class="ng-binding">콘텐츠 배포 승인</span> </span></a>
+		
+        </li><li class=" leaf" id="menu-deploy-svr-history">
+        	
+        		
+        		
+					
+					
+        		
+        	
+        	<a href="#!deploy-svr-history" class="lnb-mnu-txt" title="배포 내역">
+       		<i class="mnu-icon zmdi zmdi-devices zmdi-hc-fw"></i>
+        	<span class="mnu-txt-wrap"><span ng-bind="::'배포 내역' | translate" class="ng-binding">배포 내역</span> </span></a>
+		
+
+			</li></ul>
+			
+
+				</li></ul>
+
+		</div></div><div id="mCSB_1_scrollbar_vertical" class="mCSB_scrollTools mCSB_1_scrollbar mCS-dark-2 mCSB_scrollTools_vertical" style="display: none;"><a href="#" class="mCSB_buttonUp"></a><div class="mCSB_draggerContainer"><div id="mCSB_1_dragger_vertical" class="mCSB_dragger" style="position: absolute; min-height: 30px; height: 0px; top: 0px;"><div class="mCSB_dragger_bar" style="line-height: 30px;"></div></div><div class="mCSB_draggerRail"></div></div><a href="#" class="mCSB_buttonDown"></a></div></div>
+	</div>
+
+</div>
+
+	</aside>
+
+	<!-- Main Wrapper -->
+	<div id="wrapper">
+
+	    <div class="content">
+
+	        <div class="hpanel index-tab">
+	            <div class="tab-scroll main-tab jw-tab-set ng-isolate-scope tab-haed-scroll" tab-active-observer="" ng-class="{'hide-dropdown': tabset.hideDropdown}" deco-route-tabset="mainCtrl.tabs" deco-tab-heading-scroll="mainCtrl.tabs">
+  <!-- ngIf: tabset.isScrollBtnShow -->
+  <div class="nav-tabs-wrap no-scroll" ng-class="{'scroll': tabset.isScrollBtnShow, 'no-scroll' : !tabset.isScrollBtnShow}" style="height: 40px;">
+    <ul class="nav nav-tabs" ng-class="::{'nav-stacked': vertical, 'nav-justified': justified}" ng-transclude="" style="width: auto;">
+						<!-- ngRepeat: tab in mainCtrl.tabs track by tab.path --><li ng-class="[{active: active, disabled: disabled}, classes]" class="rout-tab uib-tab nav-item ng-scope ng-isolate-scope" ng-repeat="tab in mainCtrl.tabs track by tab.path" select="selectedRoutTab(tab)" style="">
+  <a href="" ng-click="select($event)" class="nav-link ng-binding" uib-tab-heading-transclude=""><uib-tab-heading path="/dashboard" uib-popover="대시보드" popover-trigger="mouseenter" popover-placement="top" class="ng-scope">
+							<span ng-bind="::tab.data.title | translate" class="ng-binding">대시보드</span><!-- ngIf: mainCtrl.tabs.length > 1 --><i ng-if="mainCtrl.tabs.length &gt; 1" class="glyphicon glyphicon-remove ng-scope" ng-click="removeTab($event,tab)" style=""></i><!-- end ngIf: mainCtrl.tabs.length > 1 -->
+							</uib-tab-heading></a>
+</li><!-- end ngRepeat: tab in mainCtrl.tabs track by tab.path --><li ng-class="[{active: active, disabled: disabled}, classes]" class="rout-tab uib-tab nav-item ng-isolate-scope active" ng-repeat="tab in mainCtrl.tabs track by tab.path" select="selectedRoutTab(tab)" style="">
+  <a href="" ng-click="select($event)" class="nav-link ng-binding" uib-tab-heading-transclude=""><uib-tab-heading path="/menu" uib-popover="메뉴 관리 &lt; 사이트 개발" popover-trigger="mouseenter" popover-placement="top" class="ng-scope">
+							<span ng-bind="::tab.data.title | translate" class="ng-binding">메뉴 관리</span><!-- ngIf: mainCtrl.tabs.length > 1 --><i ng-if="mainCtrl.tabs.length &gt; 1" class="glyphicon glyphicon-remove ng-scope" ng-click="removeTab($event,tab)"></i><!-- end ngIf: mainCtrl.tabs.length > 1 -->
+							</uib-tab-heading></a>
+</li><!-- end ngRepeat: tab in mainCtrl.tabs track by tab.path -->
+	            </ul>
+  </div>
+  <!-- ngIf: tabset.isScrollBtnShow -->
+<!-- ngIf: tabset.tabs && tabset.dynamicTabset.isRoute --><div id="main-route-tab" uib-dropdown="" ng-if="tabset.tabs &amp;&amp; tabset.dynamicTabset.isRoute" class="ng-scope dropdown">				  <a href="" class="dropdown-toggle" uib-dropdown-toggle="" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars"></i></a> 				  <ul class="dropdown-menu dropdown-menu-right ng-pristine ng-untouched ng-valid ng-not-empty" uib-dropdown-menu="" show-check="" ng-model="tabset.active" style="">  					<!-- ngIf: ::tabset.dynamicTabset.tabClose !== false --><li ng-if="::tabset.dynamicTabset.tabClose !== false" class="ng-scope"><a href="" ng-click="tabset.closeAll()" class="ng-binding"><i class="fa blank"></i>모든탭닫기</a></li><!-- end ngIf: ::tabset.dynamicTabset.tabClose !== false -->					<!-- ngIf: ::tabset.dynamicTabset.tabClose !== false --><li ng-if="::tabset.dynamicTabset.tabClose !== false" role="separator" class="divider ng-scope"></li><!-- end ngIf: ::tabset.dynamicTabset.tabClose !== false -->		            <!-- ngRepeat: tab in tabset.tabs --><li ng-repeat="tab in tabset.tabs" class="ng-scope" style=""> 		              <a href="#!/dashboard" dropdown-value="0" class="ng-binding">대시보드</a> 		          	</li><!-- end ngRepeat: tab in tabset.tabs --><li ng-repeat="tab in tabset.tabs" class="ng-scope" style=""> 		              <a href="#!/menu" dropdown-value="1" class="ng-binding active">메뉴 관리</a> 		          	</li><!-- end ngRepeat: tab in tabset.tabs --> 		          </ul> 		      </div><!-- end ngIf: tabset.tabs && tabset.dynamicTabset.isRoute --><!-- ngIf: !tabset.dynamicTabset.isRoute -->  <div class="main-tab tab-content">
+    <!-- ngRepeat: tab in tabset.tabs --><div class="tab-pane ng-scope" ng-repeat="tab in tabset.tabs" ng-class="{active: tabset.active === tab.index}" uib-tab-content-transclude="tab" deco-tab-active="" style="">
+    
+							
+							
+							
+							<div class="tab panel-body ng-scope">
+								<!-- tabView: {{::tab.path}} --><div tab-view="/dashboard" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/dashboard.jsp -->
+<div class="dashboard ng-scope" el-to-scope="dash.$el">
+
+	<div x-cms-fixed-toolbar="" class="toolbar">
+		<div class="row">
+			<div class="col-sm-3">
+				<div class="btn-group">
+					<button class="btn btn-xs btn-default" uib-tooltip="패널 전체접기" ng-click="dash.collapse()"><i class="fa fa-angle-up"></i></button>
+					<button class="btn btn-xs btn-default" uib-tooltip="패널 전체펼치기" ng-click="dash.expand()"><i class="fa fa-angle-down"></i></button>
+					<button class="btn btn-xs btn-default" uib-tooltip="대시보드 초기화" ng-click="dash.init()"><i class="fa fa-refresh"></i></button>
+				</div>
+			</div>
+			<div class="col-sm-9 tx-a-r">
+				<div class="closed-panel">
+					<!-- ngRepeat: item in dash.removeItems track by item.id -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<hr class="line-full">
+
+	<div class="row" animate-panel="" child=".dashboard-panel">
+
+		<div class="col-lg-6 ng-pristine ng-untouched ng-valid ng-isolate-scope ui-sortable ng-not-empty" ui-sortable="dash.sortableOptions" ng-model="dash.items">
+			<!-- ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'left' --><div ng-if="!item.hide &amp;&amp; item.dir == 'left'" class="ng-scope">
+					<div inject-panel-item="::item" cms-include-deco="views/dashboard/modules/visit-today.jsp" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/modules/visit-today.jsp -->
+
+		        <div class="hpanel hgreen">
+		            <div class="panel-heading">
+               <div panel-tools="" collapse="false"><div class="panel-tools">					    <a class="show-hide"><i class="fa fa-chevron-up"></i></a>					    <a class="refresh"><i class="fa fa-refresh"></i></a>						<a class="close-ibox"><i class="fa fa-times"></i></a>					</div></div>
+
+		                <h5><i class="pe-7s-user fa-2x text-gray"></i> <cite class="p-l-xs text-blue ng-binding">Today</cite></h5>
+		            </div>
+		            <div class="panel-body ">
+		                <div class="row">
+
+		                    <div class="col-md-6">
+                            	   <h5>오늘 방문자<!-- <small class="fs-12 m-l-sm text-muted">30분단위 방문 기록</small> --></h5>
+		                        <div class="m-t-md" style="height:185px;"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+		                        <canvas class="chart chart-doughnut ng-isolate-scope chartjs-render-monitor" chart-data="module.perChartData" chart-labels="module.perChartLabels" chart-colors="module.perChartColors" width="212" height="185" style="display: block; width: 212px; height: 185px;"></canvas>
+		                        </div>
+		                    </div>
+
+		                    <div class="col-md-6">
+                            	   <h5>접속 디바이스 <!-- <small class="fs-12 m-l-sm text-muted">30분단위 방문 기록</small> --></h5>
+		                        <div class="m-t-md" style="height:185px;"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+									<canvas class="chart chart-doughnut ng-isolate-scope chartjs-render-monitor" chart-data="module.dvChartData" chart-labels="module.dvChartLabels" chart-colors="module.dvChartColors" width="212" height="185" style="display: block; width: 212px; height: 185px;"></canvas>
+
+		                        </div>
+		                    </div>
+
+
+		                </div>
+		            </div>
+
+					<div class="panel-footer p-xs">
+						<div class="row">
+	                    		<div class="col-sm-3 border-right">
+	                    			<div class="contact-stat">
+	                    				<span>오늘 신규 방문자</span>
+	                    				<strong class="fs-20 ng-binding">0</strong>
+	                    				<i class="fa text-danger fa-level-down" ng-class="module.data.todayPersonNew &gt; module.data.yesterPersonNew ? 'text-success fa-level-up' : 'text-danger fa-level-down'" style=""></i>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-3 border-right">
+	                    			<div class="contact-stat"><span>오늘 재 방문자</span> <strong class="fs-20 ng-binding">1</strong>
+	                    			<i class="fa text-success fa-level-up" ng-class="module.data.todayPersonRe &gt; module.data.yesterPersonRe ? 'text-success fa-level-up' : 'text-danger fa-level-down'" style=""></i>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-3 border-right">
+	                    			<div class="contact-stat"><span>오늘 방문횟수</span> <strong class="fs-20 ng-binding">1</strong>
+	                    			<i class="fa text-success fa-level-up" ng-class="module.data.todayVisit &gt; module.data.yesterVisit ? 'text-success fa-level-up' : 'text-danger fa-level-down'" style=""></i>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-3">
+	                    			<div class="contact-stat"><span>오늘 페이지뷰</span> <strong class="fs-20 ng-binding">1</strong>
+	                    			<i class="fa text-success fa-level-up" ng-class="module.data.todayPageView &gt; module.data.yesterPageView ? 'text-success fa-level-up' : 'text-danger fa-level-down'" style=""></i>
+	                    			</div>
+	                    		</div>
+	                		</div>
+
+					</div>
+		        </div>
+
+
+</div>
+				</div><!-- end ngIf: !item.hide && item.dir == 'left' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'left' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'left' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'left' --><div ng-if="!item.hide &amp;&amp; item.dir == 'left'" class="ng-scope">
+					<div inject-panel-item="::item" cms-include-deco="views/dashboard/modules/popular-article.jsp" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/modules/popular-article.jsp -->
+       <div class="hpanel hgreen">
+           <div class="panel-heading">
+               <div panel-tools="" collapse="false"><div class="panel-tools">					    <a class="show-hide"><i class="fa fa-chevron-up"></i></a>					    <a class="refresh"><i class="fa fa-refresh"></i></a>						<a class="close-ibox"><i class="fa fa-times"></i></a>					</div></div>
+
+               <h5><i class="pe-7s-display2 fa-2x text-gray"></i> <cite class="p-l-xs text-blue ng-binding">인기 게시글 Top 5</cite></h5>
+           </div>
+           <div class="panel-body list">
+           		<div class="list-item-container pull-none">
+           			<div class="list-item">
+                       <div class="pull-right m-sm m-t-n p-t-xs">
+		                 <div class="btn-group m-t-xs m-l-sm">
+		                     <label class="btn btn-xs btn-success toggle ng-pristine ng-untouched ng-valid ng-not-empty" ng-model="module.showMode" uib-btn-radio="'1'" ng-click="module.getData()" style="">오늘</label>
+		                     <label class="btn btn-xs btn-success toggle ng-pristine ng-untouched ng-valid active ng-not-empty" ng-model="module.showMode" uib-btn-radio="'7'" ng-click="module.getData()" style="">일주일간</label>
+		                 </div>
+
+                       </div>
+						<div class="m m-r-lg">
+							<div>
+								<!-- ngRepeat: item in module.items -->
+							</div>
+						</div>
+					</div>
+				</div>
+           </div>
+       </div>
+
+
+</div>
+				</div><!-- end ngIf: !item.hide && item.dir == 'left' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'left' --><div ng-if="!item.hide &amp;&amp; item.dir == 'left'" class="ng-scope">
+					<div inject-panel-item="::item" cms-include-deco="views/dashboard/modules/attach-info.jsp" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/modules/attach-info.jsp -->
+       <div class="hpanel hgreen">
+           <div class="panel-heading">
+               <div panel-tools="" collapse="false"><div class="panel-tools">					    <a class="show-hide"><i class="fa fa-chevron-up"></i></a>					    <a class="refresh"><i class="fa fa-refresh"></i></a>						<a class="close-ibox"><i class="fa fa-times"></i></a>					</div></div>
+
+               <h5><i class="pe-7s-diskette fa-2x text-gray"></i> <cite class="p-l-xs text-blue ng-binding">첨부파일 용량 정보</cite></h5>
+           </div>
+ 			<div class="panel-body list">
+ 				<div class="list-item-container pull-none">
+	 				<div class="list-item">
+		                <div class="clearfix">
+			                <div class="stats-title pull-left">
+			                    <h5>첨부파일 사용량</h5>
+			                </div>
+			                <div class="stats-icon pull-right">
+			                    <i class="pe-7s-diskette fa-3x text-gray"></i>
+			                </div>
+		                </div>
+		                <div class="">
+		                	<div class="row">
+		                		<div class="col-xs-4">
+				                    <h3 class="m-b-xs ng-binding text-info" ng-class="::module.info.file.avg &gt; 50 ? 'text-warning' : module.info.file.avg &gt; 80 ? 'text-danger blink':'text-info'" style="">
+				                    	0 <small class="l-bar ng-binding">0 개</small></h3>
+				                    <span class="font-bold no-margins">
+				                        사용량
+				                    </span>
+				                </div>
+		                		<div class="col-xs-4 tx-a-c">
+		                			<div><i class="pe-7s-graph fa-5x text-green"></i></div>
+				                    <span class="font-bold no-margins fs-20 ng-binding">
+				                        0.0%
+				                    </span>
+		                		</div>
+		                		<div class="col-xs-4 tx-a-r">
+				                    <h3 class="m-b-xs ng-binding">∞</h3>
+				                    <span class="font-bold no-margins ng-binding">
+				                        허용량
+				                    </span>
+				                </div>
+							</div>
+
+							<div>
+								<div class="m-t-sm progress-striped full progress ng-isolate-scope" style="height:25px;font-size:16px;" value=" module.info.file.avg | number:1" type="success">
+  <div class="progress-bar progress-bar-success" ng-class="type &amp;&amp; 'progress-bar-' + type" role="progressbar" aria-valuenow="0.0" aria-valuemin="0" aria-valuemax="100" ng-style="{width: (percent &lt; 100 ? percent : 100) + '%'}" aria-valuetext="0%" aria-labelledby="progressbar" ng-transclude="" style="width: 0%;">
+								0.0%
+								</div>
+</div>
+							</div>
+
+		                </div>
+	                </div>
+	 				<div class="list-item">
+		                <div class="clearfix">
+			                <div class="stats-title pull-left">
+			                    <h5>파일 종류별 사용량</h5>
+			                </div>
+			                <div class="stats-icon pull-right">
+			                    <i class="pe-7s-ticket fa-3x text-gray"></i>
+			                </div>
+		                </div>
+		                <div class="">
+		                	<div class="row">
+
+		                		<!-- ngRepeat: (key,value) in module.detailInfo --><div class="col-xs-3 tx-a-r ng-scope" ng-repeat="(key,value) in module.detailInfo" style="">
+				                    <h5 class="m-b-xs clearfix ng-binding"><span class="pull-left fs-13 tx-a-l"><i class="fs-25 text-gray fa fa-file-image-o" ng-class="::value.icon"></i> <br><small class="ng-binding">이미지</small></span> 0 <br><small class="ng-binding">0 개</small></h5>
+									<div>
+										<div class="m-t-sm progress-striped full progress ng-isolate-scope" value="  module.info[key].avg | number:1  " type="success" style="background-color:#d3d4d5">
+  <div class="progress-bar progress-bar-success" ng-class="type &amp;&amp; 'progress-bar-' + type" role="progressbar" aria-valuenow="0.0" aria-valuemin="0" aria-valuemax="100" ng-style="{width: (percent &lt; 100 ? percent : 100) + '%'}" aria-valuetext="0%" aria-labelledby="progressbar" ng-transclude="" style="width: 0%;">
+										0.0%
+										</div>
+</div>
+									</div>
+				                </div><!-- end ngRepeat: (key,value) in module.detailInfo --><div class="col-xs-3 tx-a-r ng-scope" ng-repeat="(key,value) in module.detailInfo">
+				                    <h5 class="m-b-xs clearfix ng-binding"><span class="pull-left fs-13 tx-a-l"><i class="fs-25 text-gray fa fa-file-movie-o" ng-class="::value.icon"></i> <br><small class="ng-binding">비디오</small></span> 0 <br><small class="ng-binding">0 개</small></h5>
+									<div>
+										<div class="m-t-sm progress-striped full progress ng-isolate-scope" value="  module.info[key].avg | number:1  " type="info" style="background-color:#d3d4d5">
+  <div class="progress-bar progress-bar-info" ng-class="type &amp;&amp; 'progress-bar-' + type" role="progressbar" aria-valuenow="0.0" aria-valuemin="0" aria-valuemax="100" ng-style="{width: (percent &lt; 100 ? percent : 100) + '%'}" aria-valuetext="0%" aria-labelledby="progressbar" ng-transclude="" style="width: 0%;">
+										0.0%
+										</div>
+</div>
+									</div>
+				                </div><!-- end ngRepeat: (key,value) in module.detailInfo --><div class="col-xs-3 tx-a-r ng-scope" ng-repeat="(key,value) in module.detailInfo">
+				                    <h5 class="m-b-xs clearfix ng-binding"><span class="pull-left fs-13 tx-a-l"><i class="fs-25 text-gray fa fa-file-word-o" ng-class="::value.icon"></i> <br><small class="ng-binding">문서</small></span> 0 <br><small class="ng-binding">0 개</small></h5>
+									<div>
+										<div class="m-t-sm progress-striped full progress ng-isolate-scope" value="  module.info[key].avg | number:1  " type="danger" style="background-color:#d3d4d5">
+  <div class="progress-bar progress-bar-danger" ng-class="type &amp;&amp; 'progress-bar-' + type" role="progressbar" aria-valuenow="0.0" aria-valuemin="0" aria-valuemax="100" ng-style="{width: (percent &lt; 100 ? percent : 100) + '%'}" aria-valuetext="0%" aria-labelledby="progressbar" ng-transclude="" style="width: 0%;">
+										0.0%
+										</div>
+</div>
+									</div>
+				                </div><!-- end ngRepeat: (key,value) in module.detailInfo --><div class="col-xs-3 tx-a-r ng-scope" ng-repeat="(key,value) in module.detailInfo">
+				                    <h5 class="m-b-xs clearfix ng-binding"><span class="pull-left fs-13 tx-a-l"><i class="fs-25 text-gray fa fa-file-zip-o" ng-class="::value.icon"></i> <br><small class="ng-binding">기타</small></span> 0 <br><small class="ng-binding">0 개</small></h5>
+									<div>
+										<div class="m-t-sm progress-striped full progress ng-isolate-scope" value="  module.info[key].avg | number:1  " type="warning" style="background-color:#d3d4d5">
+  <div class="progress-bar progress-bar-warning" ng-class="type &amp;&amp; 'progress-bar-' + type" role="progressbar" aria-valuenow="0.0" aria-valuemin="0" aria-valuemax="100" ng-style="{width: (percent &lt; 100 ? percent : 100) + '%'}" aria-valuetext="0%" aria-labelledby="progressbar" ng-transclude="" style="width: 0%;">
+										0.0%
+										</div>
+</div>
+									</div>
+				                </div><!-- end ngRepeat: (key,value) in module.detailInfo -->
+
+							</div>
+						</div>
+					</div>
+                </div>
+
+            </div>
+       </div>
+
+
+</div>
+				</div><!-- end ngIf: !item.hide && item.dir == 'left' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id -->
+		</div>
+
+		<div class="col-lg-6 ng-pristine ng-untouched ng-valid ng-isolate-scope ui-sortable ng-not-empty" ui-sortable="dash.sortableOptions" ng-model="dash.items">
+			<!-- ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort  ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'right' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort  ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'right' --><div ng-if="!item.hide &amp;&amp; item.dir == 'right'" class="ng-scope">
+					<div inject-panel-item="::item" cms-include-deco="views/dashboard/modules/visit-7days.jsp" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/modules/visit-7days.jsp -->
+
+		        <div class="hpanel hgreen">
+		            <div class="panel-heading">
+	               <div panel-tools="" collapse="false"><div class="panel-tools">					    <a class="show-hide"><i class="fa fa-chevron-up"></i></a>					    <a class="refresh"><i class="fa fa-refresh"></i></a>						<a class="close-ibox"><i class="fa fa-times"></i></a>					</div></div>
+
+		                <h5><i class="pe-7s-users fa-2x text-gray"></i> <cite class="p-l-xs text-blue ng-binding">방문현황</cite></h5>
+		            </div>
+		            <div class="panel-body ">
+		                <div class="row">
+
+		                    <div class="col-md-12">
+		                    	   <small class="pull-right ng-binding"><i class="fa fa-clock-o"></i> 2026-07-21 ~ 2026-07-27</small>
+                            	   <h5>일주일간 방문현황 <!-- <small class="fs-12 m-l-sm text-muted">30분단위 방문 기록</small> --></h5>
+		                        <div class="m-t-md" style="height:300px;"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+		                            <canvas class="chart chart-line ng-isolate-scope chartjs-render-monitor" chart-data="module.chartData" chart-labels="module.chartLabels" chart-series="module.chartSeries" chart-dataset-override="module.chartDatasetOverride" chart-colors="module.chartColors" chart-options="{legend:{display:false}}" width="455" height="300" style="display: block; width: 455px; height: 300px;"></canvas>
+		                        </div>
+		                    </div>
+		                </div>
+		            </div>
+					<div class="panel-footer p-xs">
+						<div class="row">
+	                    		<div class="col-sm-2 border-right">
+	                    			<div class="contact-stat">
+	                    				<span>신규 방문자</span>
+	                    				<strong class="fs-20 ng-binding">23</strong>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-3 border-right">
+	                    			<div class="contact-stat"><span>재 방문자</span> <strong class="fs-20 ng-binding">2</strong>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-3 border-right">
+	                    			<div class="contact-stat"><span>방문횟수</span> <strong class="fs-20 ng-binding">30</strong>
+	                    			</div>
+	                    		</div>
+	                    		<div class="col-md-4">
+	                    			<div class="contact-stat"><span>페이지뷰</span>
+	                    				<div class="row">
+	                    					<div class="col-xs-6 tx-a-r"><strong class="fs-20 ng-binding">44</strong></div>
+										<div class="col-xs-6 tx-a-l"><h5 class="m-t-xs" sparkline="" spark-data="module.pageViewChartData" spark-options="module.barProfileOptions"><canvas width="41" height="20" style="display: inline-block; width: 41px; height: 20px; vertical-align: top;"></canvas></h5></div>
+
+	                    				</div>
+	                    			</div>
+	                    		</div>
+	                		</div>
+
+					</div>
+		        </div>
+
+
+</div>
+				</div><!-- end ngIf: !item.hide && item.dir == 'right' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort  ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'right' --><div ng-if="!item.hide &amp;&amp; item.dir == 'right'" class="ng-scope">
+					<div inject-panel-item="::item" cms-include-deco="views/dashboard/modules/popular-page.jsp" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/dashboard/modules/popular-page.jsp -->
+       <div class="hpanel hgreen">
+           <div class="panel-heading">
+               <div panel-tools="" collapse="false"><div class="panel-tools">					    <a class="show-hide"><i class="fa fa-chevron-up"></i></a>					    <a class="refresh"><i class="fa fa-refresh"></i></a>						<a class="close-ibox"><i class="fa fa-times"></i></a>					</div></div>
+               <h5><i class="pe-7s-global fa-2x text-gray"></i> <cite class="p-l-xs text-blue ng-binding">인기 페이지 Top 5</cite></h5>
+           </div>
+           <div class="panel-body list">
+           		<div class="list-item-container pull-none">
+           			<div class="list-item">
+                       <div class="pull-right m-sm m-t-n p-t-xs">
+		                 <div class="btn-group m-t-xs m-l-sm">
+		                     <label class="btn btn-xs btn-success toggle ng-pristine ng-untouched ng-valid ng-not-empty" ng-model="module.showMode" uib-btn-radio="'1'" ng-click="module.getData()" style="">오늘</label>
+		                     <label class="btn btn-xs btn-success toggle ng-pristine ng-untouched ng-valid active ng-not-empty" ng-model="module.showMode" uib-btn-radio="'7'" ng-click="module.getData()" style="">일주일간</label>
+		                 </div>
+
+                       </div>
+						<div class="m m-r-lg">
+							<div>
+								<!-- ngRepeat: item in module.items | orderBy:'total':true --><div ng-repeat="item in module.items | orderBy:'total':true" class="ng-scope" style="">
+									<h4 ng-class="$index &lt;= 1 ? 'text-success':'text-primary2'" class="text-success"><cite class="ng-binding">1 <!-- ngIf: $index <= 1 --><small ng-if="$index &lt;= 1" class="text-info circle-text ng-scope">hit</small><!-- end ngIf: $index <= 1 --></cite></h4>
+									<div class="pull-right text-gray"><span class="r-bar ng-binding" ng-bind="::item.siteNm">test-phong</span><span ng-bind="::item.updateDt | dt" class="ng-binding">2026-07-27</span></div>
+									<div class="tx-over"><a href="/test-phong/test-menu.do" target="_new"><span class="text-primary fs-16 ng-binding">Test Menu</span> <span class="l-bar ng-binding">/test-phong/test-menu.do</span></a></div>
+								</div><!-- end ngRepeat: item in module.items | orderBy:'total':true -->
+							</div>
+						</div>
+					</div>
+				</div>
+           </div>
+       </div>
+
+
+</div>
+				</div><!-- end ngIf: !item.hide && item.dir == 'right' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort  ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'right' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id --><div ng-repeat="item in dash.items track by item.id" class="dashboard-panel enable-sort  ng-scope stagger animated-panel zoomIn" style="">
+				<!-- ngIf: !item.hide && item.dir == 'right' -->
+			</div><!-- end ngRepeat: item in dash.items track by item.id -->
+		</div>
+
+	</div>
+
+</div></div>
+							</div>
+						</div><!-- end ngRepeat: tab in tabset.tabs --><div class="tab-pane ng-scope active" ng-repeat="tab in tabset.tabs" ng-class="{active: tabset.active === tab.index}" uib-tab-content-transclude="tab" deco-tab-active="" style="">
+    
+							
+							
+							
+							<div class="tab panel-body ng-scope">
+								<!-- tabView: {{::tab.path}} --><div tab-view="/menu" class="ng-scope">
+
+
+
+
+
+
+<!-- /views/menu/menu-tree.jsp -->
+<div class="menu ng-scope">
+	<div x-cms-fixed-toolbar="" class="toolbar">
+		<div class="row">
+			<div class="col-lg-6">
+		   		<h5 class="ng-binding"><i class="fa fa-home"></i> </h5>
+			</div>
+			<div class="col-lg-6">
+                <div class="ui-select-container ui-select-bootstrap dropdown ng-pristine ng-untouched ng-valid ng-scope ng-empty" ng-class="{open: $select.open}" ng-model="ctrl.findMenuCd" theme="bootstrap" ng-model-options="{ debounce: 0 }"><div class="ui-select-match ng-scope" ng-hide="$select.open &amp;&amp; $select.searchEnabled" ng-disabled="$select.disabled" ng-class="{'btn-default-focus':$select.focus}" placeholder="메뉴 빨리 찾기 - 메뉴의 일부를 입력하세요"><span tabindex="-1" class="btn btn-default form-control ui-select-toggle" aria-label="Select box activate" ng-disabled="$select.disabled" ng-click="$select.activate()" style="outline: 0;"><span ng-show="$select.isEmpty()" class="ui-select-placeholder text-muted ng-binding">메뉴 빨리 찾기 - 메뉴의 일부를 입력하세요</span> <span ng-hide="$select.isEmpty()" class="ui-select-match-text pull-left ng-hide" ng-class="{'ui-select-allow-clear': $select.allowClear &amp;&amp; !$select.isEmpty()}" ng-transclude=""> ()</span> <i class="caret pull-right" ng-click="$select.toggle($event)"></i> <a ng-show="$select.allowClear &amp;&amp; !$select.isEmpty() &amp;&amp; ($select.disabled !== true)" aria-label="Select box clear" style="margin-right: 10px" ng-click="$select.clear($event)" class="btn btn-xs btn-link pull-right ng-hide"><i class="glyphicon glyphicon-remove" aria-hidden="true"></i></a></span></div><input type="search" autocomplete="off" tabindex="-1" aria-expanded="true" aria-label="Select box" aria-owns="ui-select-choices-2" aria-activedescendant="ui-select-choices-row-2-0" class="form-control ui-select-search ng-pristine ng-untouched ng-valid ng-empty ng-hide" placeholder="메뉴 빨리 찾기 - 메뉴의 일부를 입력하세요" ng-model="$select.search" ng-show="$select.searchEnabled &amp;&amp; $select.open" style="width: 10px;"><ul class="ui-select-choices ui-select-choices-content ui-select-dropdown dropdown-menu ng-scope ng-hide" role="listbox" ng-show="$select.open &amp;&amp; $select.items.length &gt; 0" refresh="ctrl.searchMenu($select.search)" repeat="item.menuStack as item in ctrl.menuSearchList track by item.menuCd"><li class="ui-select-choices-group" id="ui-select-choices-2"><div class="divider ng-hide" ng-show="$select.isGrouped &amp;&amp; $index &gt; 0"></div><div ng-show="$select.isGrouped" class="ui-select-choices-group-label dropdown-header ng-binding ng-hide" ng-bind="$group.name"></div><!-- ngRepeat: item in $select.items track by item.menuCd --></li></ul><div class="ui-select-no-choice"></div><ui-select-single></ui-select-single><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-2" aria-label="Select box focus" aria-haspopup="true" role="button"><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-2" aria-label="Select box focus" aria-haspopup="true" role="button"></div>
+			</div>
+		</div>
+	</div>
+	<hr class="m-b-sm line-full">
+
+	<div class="row">
+	    <div class="col-sm-6">
+	        <div class="hpanel">
+	            <!-- div class="panel-heading">
+
+	            </div -->
+				<div class="panel-heading">
+		            <button class="btn btn-sm btn-success btn-circle btn-shadow" ng-click="ctrl.getList()" uib-tooltip="새로고침"><i class="fa fa-refresh"></i></button>
+		            <button class="btn btn-sm btn-default btn-circle btn-shadow" ng-click="ctrl.expandAll()" uib-tooltip="트리 펼치기"><i class="fa fa-chevron-down"></i></button>
+		            <button class="btn btn-sm btn-default btn-circle btn-shadow" ng-click="ctrl.collapseAll()" uib-tooltip="트리 접기"><i class="fa fa-chevron-up"></i></button>
+
+					<button class="pull-right btn btn-info btn-sm ng-binding" ng-click="ctrl.firstAdd()"><i class="fa fa-plus"></i> 최상위 메뉴 추가</button>
+				</div>
+
+	                <!-- list node template   -->
+	                <script type="text/ng-template" id="menu_nodes_renderer.html">
+                    <div class="tree-node tree-node-content" ng-click="ctrl.onNodeClick(this)" menu-mouseenter="this"  >
+
+						<span ng-if="node.menuCd">
+	                        <a class="pull-right btn btn-success btn-xs btn-outline" target="_new" ng-click="ctrl.openLink(node)" uib-tooltip="새창열기"><span class="fa fa-external-link"></span></a>
+	                        <a class="pull-right btn btn-warning2 btn-xs btn-outline" ng-click="ctrl.remove(this)" ><span class="fa fa-trash"></span></a>
+	                        <a class="pull-right btn btn-xs btn-outline" ng-class="{'btn-danger':node.authKey, 'btn-warning':ctrl.hasParentAuth(this), 'btn-default':!node.authKey}" ng-click="ctrl.setAuth(this)" uib-tooltip="{{::'권한설정' | translate}}"><span class="fa" ng-class="{'fa-lock':node.authKey || ctrl.hasParentAuth(this), 'fa-unlock-alt':!node.authKey}"></span></a>
+	                        <a class="pull-right btn btn-info btn-xs btn-outline" ng-click="ctrl.newSubItem(this)" uib-tooltip="{{::'하위메뉴추가' | translate}}"><span class="fa fa-plus"></span></a>
+						</span>
+
+                        <a ng-if="node.children && node.children.length > 0" class="btn btn-primary btn-xs" ng-click="ctrl.toggle(this)"><span class="fa" ng-class="{'fa-angle-down': this.collapsed, 'fa-angle-right': !this.collapsed}"></span></a>
+
+						<a class="btn btn-xs move" ui-tree-handle ><span class="fa fa-arrows-alt " ></span></a>
+                        <span is-show-xeditor="{{::node.isNew}}" editable-text="node.menuNm" onhide="ctrl.checkRemoveValue($data,node)" oncancel="ctrl.checkRemoveValue($data,node)" onbeforesave="ctrl.checkValid($data)" onaftersave="ctrl.update(this,node)" >{{node.menuNm}}</span>
+						<small class="m-l-sm">{{::node.menuCd}}</small>
+
+                    </div>
+                    <ol ui-tree-nodes="" ng-model="node.children" ng-if="!collapsed" g-class="{'hidden':collapsed}">
+                        <li ng-repeat="node in node.children" ui-tree-node ng-include="::'menu_nodes_renderer.html'" data-collapsed ="true" on-select="ctrl.onSelect(this)"></li>
+                    </ol>
+
+                </script>
+                <div ui-tree="ctrl.treeOptions" class="menu-tree ng-scope angular-ui-tree" search-node-model="ctrl.findMenuCd" search-node-key="menuCd">
+                    <ol ui-tree-nodes="" ng-model="ctrl.items" class="ng-pristine ng-untouched ng-valid ng-scope angular-ui-tree-nodes ng-not-empty" style="">
+                        <!-- ngRepeat: node in ctrl.items --><!-- ngInclude: ::'menu_nodes_renderer.html' --><li ng-repeat="node in ctrl.items" ui-tree-node="" ng-include="::'menu_nodes_renderer.html'" data-collapsed="true" on-select="ctrl.onSelect(this)" class="ng-scope angular-ui-tree-node" expand-on-hover="false" style="">
+                    <div class="tree-node tree-node-content ng-scope" ng-click="ctrl.onNodeClick(this)" menu-mouseenter="this">
+
+						<!-- ngIf: node.menuCd --><span ng-if="node.menuCd" class="ng-scope">
+	                        <a class="pull-right btn btn-success btn-xs btn-outline" target="_new" ng-click="ctrl.openLink(node)" uib-tooltip="새창열기"><span class="fa fa-external-link"></span></a>
+	                        <a class="pull-right btn btn-warning2 btn-xs btn-outline" ng-click="ctrl.remove(this)"><span class="fa fa-trash"></span></a>
+	                        <a class="pull-right btn btn-xs btn-outline btn-default" ng-class="{'btn-danger':node.authKey, 'btn-warning':ctrl.hasParentAuth(this), 'btn-default':!node.authKey}" ng-click="ctrl.setAuth(this)" uib-tooltip="권한설정"><span class="fa fa-unlock-alt" ng-class="{'fa-lock':node.authKey || ctrl.hasParentAuth(this), 'fa-unlock-alt':!node.authKey}"></span></a>
+	                        <a class="pull-right btn btn-info btn-xs btn-outline" ng-click="ctrl.newSubItem(this)" uib-tooltip="하위 메뉴 추가"><span class="fa fa-plus"></span></a>
+						</span><!-- end ngIf: node.menuCd -->
+
+                        <!-- ngIf: node.children && node.children.length > 0 -->
+
+						<a class="btn btn-xs move ng-scope angular-ui-tree-handle" ui-tree-handle=""><span class="fa fa-arrows-alt "></span></a>
+                        <span is-show-xeditor="" editable-text="node.menuNm" onhide="ctrl.checkRemoveValue($data,node)" oncancel="ctrl.checkRemoveValue($data,node)" onbeforesave="ctrl.checkValid($data)" onaftersave="ctrl.update(this,node)" class="ng-scope ng-binding editable editable-click">Test Menu</span>
+						<small class="m-l-sm ng-binding">5961</small>
+
+                    </div>
+                    <!-- ngIf: !collapsed -->
+
+                </li><!-- end ngRepeat: node in ctrl.items -->
+                    </ol>
+                </div>
+               	<div class="menu-help">
+	               	<i class="fa fa-lock text-danger"></i><span class="shelp r-bar ng-binding">직접 권한</span>
+	               	<i class="fa fa-lock text-warning"></i><span class="shelp r-bar ng-binding">상위 권한 사용</span>
+	               	<i class="fa fa-unlock-alt"></i><span class="shelp ng-binding">권한 없음</span>
+				</div>
+
+	        </div>
+	    </div>
+	    <div class="col-sm-6">
+           	<form name="menuForm" class="form-horizontal ng-pristine ng-invalid ng-invalid-required" novalidate="" ng-submit="ctrl.save($event)">
+           	<fieldset ng-disabled="!ctrl.editItem" disabled="disabled">
+		        <div cms-fixed-box="" class="hpanel hgreen menu-edit fixedbox overflow-y bd-dotted" style="height: 515.5px;">
+					<div class="panel-heading hbuilt">
+		           		<strong class="ng-binding"> </strong>
+					</div>
+		            <div class="panel-body">
+			                <div class="form-group"><label class="col-sm-4 control-label">URL</label>
+			                    <div class="col-sm-8 control-text">
+			                    	<button type="button" class="pull-right btn btn-xs btn-info" uib-tooltip="메뉴주소 새로고침 [메뉴에 주소가 잘못됐을 경우 정리]" ng-click="ctrl.refreshMenuUrl(ctrl.editItem.menuCd)"><i class="fa fa-refresh"></i></button>
+			                    <a href="../" target="_blank" class="ng-binding"></a>
+
+			                    </div>
+			                </div>
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">태그 아이디 <i class="fa fa-question-circle help" uib-tooltip="링크 태그의 아이디 이며 공백일 경우는 menu-[메뉴코드]가 이이디가 됩니다."></i></label>
+			                    <div class="col-sm-3"><input ng-model="ctrl.editItem.menuTagId" type="text" name="menuTagId" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                	<label class="col-sm-2 control-label ng-binding">태그 클래스 </label>
+			                    <div class="col-sm-3"><input ng-model="ctrl.editItem.menuTagClass" type="text" name="menuTagClass" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                </div>
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">외부링크 URL <i class="fa fa-question-circle help" uib-tooltip="사이트 내부 링크 외에 메뉴에 외부링크를 사용 할 경우에 입력합니다."></i></label>
+			                    <div class="col-sm-8"><input ng-model="ctrl.editItem.extLinkUrl" type="text" name="extLinkUrl" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                </div>
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">외부링크 텍스트</label>
+			                    <div class="col-sm-8"><input ng-model="ctrl.editItem.extLinkText" type="text" name="extLinkText" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                </div>
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">외부링크 타이틀</label>
+			                    <div class="col-sm-3"><input ng-model="ctrl.editItem.extLinkTitle" name="extLinkTitle" type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                	<label class="col-sm-2 control-label ng-binding">링크 타겟</label>
+			                    <div class="col-sm-3"><input ng-model="ctrl.editItem.linkTarget" name="linkTarget" type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+			                </div>
+							<!-- <div class="hr-line-dashed"></div> -->
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">메뉴 표시 옵션</label>
+			                    <div class="col-sm-8">
+					                <div class="ui-select-container select2 select2-container ng-pristine ng-untouched ng-scope ng-empty ng-invalid ng-invalid-required" ng-class="{'select2-container-active select2-dropdown-open open': $select.open, 'select2-container-disabled': $select.disabled, 'select2-container-active': $select.focus, 'select2-allowclear': $select.allowClear &amp;&amp; !$select.isEmpty()}" name="show_menu_opt" ng-model="ctrl.editItem.showMenuOpt" theme="select2" ng-required="::true" search-enabled="false" ng-model-options="{ debounce: 0 }" required="required"><a class="select2-choice ui-select-match ng-scope select2-default" ng-class="{'select2-default': $select.isEmpty()}" ng-click="$select.toggle($event)" aria-label="Select box select"><span ng-show="$select.isEmpty()" class="select2-chosen ng-binding"></span> <span ng-hide="$select.isEmpty()" class="select2-chosen ng-hide" ng-transclude=""></span> <!-- ngIf: $select.allowClear && !$select.isEmpty() --> <span class="select2-arrow ui-select-toggle"><b></b></span></a><div class="ui-select-dropdown select2-drop select2-with-searchbox select2-drop-active select2-display-none" ng-class="{'select2-display-none': !$select.open}"><div class="select2-search ng-hide" ng-show="$select.searchEnabled"><input type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="true" aria-owns="ui-select-choices-3" aria-label="Select box" aria-activedescendant="ui-select-choices-row-3-0" class="ui-select-search select2-input ng-pristine ng-untouched ng-valid ng-empty" ng-model="$select.search" style="width: 10px;"></div><ul tabindex="-1" class="ui-select-choices ui-select-choices-content select2-results ng-scope" repeat="item.value as item in ::ctrl.showMenuOptions"><li class="ui-select-choices-group" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }"><div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label ng-binding ng-hide" ng-bind="$group.name"></div><ul role="listbox" id="ui-select-choices-3" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }" class="select2-result-single"><!-- ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --></ul></li></ul><div class="ui-select-no-choice"></div></div><ui-select-single></ui-select-single><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-3" aria-label="Select box focus" aria-haspopup="true" role="button"><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-3" aria-label="Select box focus" aria-haspopup="true" role="button"></div>
+			                    </div>
+			                </div>
+			                <!-- ngIf: ctrl.editItem.showMenuOpt == 'E' -->
+
+		                    <!-- ngIf: ctrl.parentMenuOpt -->
+
+
+			                <div class="form-group"><label class="col-sm-4 control-label ng-binding">사이트맵 표시 옵션</label>
+			                    <div class="col-sm-8">
+					                <div class="ui-select-container select2 select2-container ng-pristine ng-untouched ng-scope ng-empty ng-invalid ng-invalid-required" ng-class="{'select2-container-active select2-dropdown-open open': $select.open, 'select2-container-disabled': $select.disabled, 'select2-container-active': $select.focus, 'select2-allowclear': $select.allowClear &amp;&amp; !$select.isEmpty()}" name="show_sitemap_opt" ng-model="ctrl.editItem.showSitemapOpt" theme="select2" ng-required="::true" search-enabled="false" ng-model-options="{ debounce: 0 }" required="required"><a class="select2-choice ui-select-match ng-scope select2-default" ng-class="{'select2-default': $select.isEmpty()}" ng-click="$select.toggle($event)" aria-label="Select box select"><span ng-show="$select.isEmpty()" class="select2-chosen ng-binding"></span> <span ng-hide="$select.isEmpty()" class="select2-chosen ng-hide" ng-transclude=""></span> <!-- ngIf: $select.allowClear && !$select.isEmpty() --> <span class="select2-arrow ui-select-toggle"><b></b></span></a><div class="ui-select-dropdown select2-drop select2-with-searchbox select2-drop-active select2-display-none" ng-class="{'select2-display-none': !$select.open}"><div class="select2-search ng-hide" ng-show="$select.searchEnabled"><input type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="true" aria-owns="ui-select-choices-4" aria-label="Select box" aria-activedescendant="ui-select-choices-row-4-0" class="ui-select-search select2-input ng-pristine ng-untouched ng-valid ng-empty" ng-model="$select.search" style="width: 10px;"></div><ul tabindex="-1" class="ui-select-choices ui-select-choices-content select2-results ng-scope" repeat="item.value as item in ::ctrl.showMenuOptions"><li class="ui-select-choices-group" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }"><div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label ng-binding ng-hide" ng-bind="$group.name"></div><ul role="listbox" id="ui-select-choices-4" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }" class="select2-result-single"><!-- ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --><!-- ngIf: $select.open --><!-- end ngRepeat: item in $select.items --></ul></li></ul><div class="ui-select-no-choice"></div></div><ui-select-single></ui-select-single><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-4" aria-label="Select box focus" aria-haspopup="true" role="button"><input ng-disabled="$select.disabled" class="ui-select-focusser ui-select-offscreen ng-scope" type="text" id="focusser-4" aria-label="Select box focus" aria-haspopup="true" role="button"></div>
+			                    </div>
+			                </div>
+			                <!-- ngIf: ctrl.editItem.showSitemapOpt == 'E' -->
+
+		                    <!-- ngIf: ctrl.parentSitemapOpt -->
+
+							<fieldset ng-disabled="ctrl.isParentLnbHide">
+				                <div class="form-group"><label class="col-sm-4 control-label ng-binding">LNB출력시 하위메뉴 제외 <i class="fa fa-question-circle help" uib-tooltip="LNB출력시 이메뉴의 모든 하위메뉴는 출력에서 제외합니다."></i></label>
+				                    <!-- ngIf: ctrl.isParentLnbHide -->
+
+				                    <!-- ngIf: !ctrl.isParentLnbHide --><div class="col-sm-8 ng-scope" ng-if="!ctrl.isParentLnbHide">
+			                            <div class="radio-info radio-inline radio">
+
+			                                <label class="ng-binding"> <input radio="" name="hideLnbChildYn" type="radio" value="Y" ng-model="ctrl.editItem.hideLnbChildYn" class="ng-pristine ng-untouched ng-valid ng-empty"><i class="input-helper"></i> 예 </label>
+			                            </div>
+			                            <div class="radio-inline radio">
+
+			                                <label class="ng-binding"> <input radio="" name="hideLnbChildYn" type="radio" value="N" ng-model="ctrl.editItem.hideLnbChildYn" class="ng-pristine ng-untouched ng-valid ng-empty"><i class="input-helper"></i> 아니오 </label>
+			                            </div>
+				                    </div><!-- end ngIf: !ctrl.isParentLnbHide -->
+
+				                </div>
+			                </fieldset>
+
+							
+							<div class="form-group">
+								<label class="col-sm-4 control-label ng-binding">메뉴 설명</label>
+							    <div class="col-sm-8">
+							    	<textarea ng-model="ctrl.editItem.menuText" name="menuText" type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty" rows="3"></textarea>
+							    </div>
+							</div>
+
+
+							
+
+							<!-- ngInclude: ::'views/menu/menu-custom-field.jsp' --><div ng-include="::'views/menu/menu-custom-field.jsp'" class="ng-scope" style="">
+
+
+
+
+
+
+<!-- /views/menu/menu-custom-field.jsp -->
+
+ 샘플
+<div class="hr-line-dashed ng-scope"></div>
+<div class="form-group ng-scope"><label class="col-sm-3 control-label">커스텀필드</label>
+    <div class="col-sm-9"><input ng-model="ctrl.editItem.customField.test1" type="text" class="form-control ng-pristine ng-untouched ng-valid ng-empty"></div>
+</div>
+<div class="form-group ng-scope"><label class="col-sm-3 control-label">커스텀필드</label>
+	<div class="col-sm-9"><div froala="$root.froalaOptions | extend: { height: 200 }" ng-model="ctrl.editItem.customField.memo" class="ng-pristine ng-untouched ng-valid ng-isolate-scope ng-empty fr-box fr-ltr gray-theme fr-basic fr-top" id="froala-0" role="application"><div class="fr-toolbar gray-theme fr-ltr fr-desktop fr-top fr-basic"><button id="insertImage-1" type="button" tabindex="-1" role="button" title="이미지 삽입 (Ctrl+P)" class="fr-command fr-btn fr-btn-font_awesome fr-hidden" data-cmd="insertImage" data-popup="true"><i class="fa fa-image" aria-hidden="true"></i><span class="fr-sr-only">이미지 삽입</span></button><button id="insertHR-1" type="button" tabindex="-1" role="button" title="수평선을 삽입" class="fr-command fr-btn fr-btn-font_awesome fr-hidden" data-cmd="insertHR"><i class="fa fa-minus" aria-hidden="true"></i><span class="fr-sr-only">수평선을 삽입</span></button><button id="selectAll-1" type="button" tabindex="-1" role="button" title="전체선택" class="fr-command fr-btn fr-btn-font_awesome fr-hidden" data-cmd="selectAll"><i class="fa fa-mouse-pointer" aria-hidden="true"></i><span class="fr-sr-only">전체선택</span></button><button id="html-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="코드보기" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="html"><i class="fa fa-code" aria-hidden="true"></i><span class="fr-sr-only">코드보기</span></button><button id="fullscreen-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="전체 화면" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="fullscreen"><i class="fa fa-expand" aria-hidden="true"></i><span class="fr-sr-only">전체 화면</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="aiContent-1" type="button" tabindex="-1" role="button" title="AI 콘텐츠 생성" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="aiContent"><i class="fa fa-magic" aria-hidden="true"></i><span class="fr-sr-only">AI 콘텐츠 생성</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="insertCmsImage-1" type="button" tabindex="-1" role="button" title="이미지 삽입 (Ctrl+I)" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="insertCmsImage"><i class="fa fa-image" aria-hidden="true"></i><span class="fr-sr-only">이미지 삽입</span></button><button id="cmsResourceDownloadLink-1" type="button" tabindex="-1" role="button" title="기타리소스 다운로드링크 삽입" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="cmsResourceDownloadLink"><i class="fa fa-archive" aria-hidden="true"></i><span class="fr-sr-only">기타리소스 다운로드링크 삽입</span></button><button id="cmsMenuLink-1" type="button" tabindex="-1" role="button" title="메뉴 링크 삽입" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="cmsMenuLink"><i class="fa fa-external-link-square" aria-hidden="true"></i><span class="fr-sr-only">메뉴 링크 삽입</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="insertLink-1" type="button" tabindex="-1" role="button" title="링크 삽입 (Ctrl+K)" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="insertLink" data-popup="true"><i class="fa fa-link" aria-hidden="true"></i><span class="fr-sr-only">링크 삽입</span></button><button id="insertVideo-1" type="button" tabindex="-1" role="button" title="동영상 삽입" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="insertVideo" data-popup="true"><i class="fa fa-video-camera" aria-hidden="true"></i><span class="fr-sr-only">동영상 삽입</span></button><button id="insertTable-1" type="button" tabindex="-1" role="button" title="표 삽입" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="insertTable" data-popup="true"><i class="fa fa-table" aria-hidden="true"></i><span class="fr-sr-only">표 삽입</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="fontFamily-1" type="button" tabindex="-1" role="button" aria-controls="dropdown-menu-fontFamily-1" aria-expanded="false" aria-haspopup="true" title="글꼴" class="fr-command fr-btn fr-dropdown fr-btn-font_awesome fr-selection" data-cmd="fontFamily"><i class="fa fa-font" aria-hidden="true"></i><span class="fr-sr-only">글꼴</span></button><div id="dropdown-menu-fontFamily-1" class="fr-dropdown-menu" role="listbox" aria-labelledby="fontFamily-1" aria-hidden="true"><div class="fr-dropdown-wrapper" role="presentation"><div class="fr-dropdown-content" role="presentation"><ul class="fr-dropdown-list" role="presentation"><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="'Nanum Gothic', '나눔고딕'" style="font-family: 'Nanum Gothic', '나눔고딕'" title="나눔고딕">나눔고딕</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="'돋움', '돋움체', 'Dotum','DotumChe'" style="font-family: '돋움', '돋움체', 'Dotum','DotumChe'" title="돋움">돋움</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="'굴림', '굴림체', 'Gulim','GulimChe'" style="font-family: '굴림', '굴림체', 'Gulim','GulimChe'" title="굴림">굴림</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="'궁서', '궁서체', 'Gungsuh','GungsuhChe'" style="font-family: '궁서', '궁서체', 'Gungsuh','GungsuhChe'" title="궁서">궁서</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="Arial,Helvetica,sans-serif" style="font-family: Arial,Helvetica,sans-serif" title="Arial">Arial</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="Georgia,serif" style="font-family: Georgia,serif" title="Georgia">Georgia</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="Impact,Charcoal,sans-serif" style="font-family: Impact,Charcoal,sans-serif" title="Impact">Impact</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="Tahoma,Geneva,sans-serif" style="font-family: Tahoma,Geneva,sans-serif" title="Tahoma">Tahoma</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="'Times New Roman',Times,serif" style="font-family: 'Times New Roman',Times,serif" title="Times New Roman">Times New Roman</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontFamily" data-param1="Verdana,Geneva,sans-serif" style="font-family: Verdana,Geneva,sans-serif" title="Verdana">Verdana</a></li></ul></div></div></div><button id="fontSize-1" type="button" tabindex="-1" role="button" aria-controls="dropdown-menu-fontSize-1" aria-expanded="false" aria-haspopup="true" title="폰트 크기" class="fr-command fr-btn fr-dropdown fr-btn-font_awesome fr-selection" data-cmd="fontSize"><i class="fa fa-text-height" aria-hidden="true"></i><span class="fr-sr-only">폰트 크기</span></button><div id="dropdown-menu-fontSize-1" class="fr-dropdown-menu" role="listbox" aria-labelledby="fontSize-1" aria-hidden="true"><div class="fr-dropdown-wrapper" role="presentation"><div class="fr-dropdown-content" role="presentation"><ul class="fr-dropdown-list" role="presentation"><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="8px" title="8">8</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="9px" title="9">9</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="10px" title="10">10</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="11px" title="11">11</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="12px" title="12">12</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="14px" title="14">14</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="18px" title="18">18</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="24px" title="24">24</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="30px" title="30">30</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="36px" title="36">36</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="48px" title="48">48</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="60px" title="60">60</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="72px" title="72">72</a></li><li role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="fontSize" data-param1="96px" title="96">96</a></li></ul></div></div></div><button id="color-1" type="button" tabindex="-1" role="button" title="색상" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="color" data-popup="true"><i class="fa fa-tint" aria-hidden="true"></i><span class="fr-sr-only">색상</span></button><button id="bold-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="굵게 (Ctrl+B)" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="bold"><i class="fa fa-bold" aria-hidden="true"></i><span class="fr-sr-only">굵게</span></button><button id="italic-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="기울임꼴" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="italic"><i class="fa fa-italic" aria-hidden="true"></i><span class="fr-sr-only">기울임꼴</span></button><button id="underline-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="밑줄 (Ctrl+U)" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="underline"><i class="fa fa-underline" aria-hidden="true"></i><span class="fr-sr-only">밑줄</span></button><button id="strikeThrough-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="취소선" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="strikeThrough"><i class="fa fa-strikethrough" aria-hidden="true"></i><span class="fr-sr-only">취소선</span></button><button id="subscript-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="아래 첨자" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="subscript"><i class="fa fa-subscript" aria-hidden="true"></i><span class="fr-sr-only">아래 첨자</span></button><button id="superscript-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="위 첨자" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="superscript"><i class="fa fa-superscript" aria-hidden="true"></i><span class="fr-sr-only">위 첨자</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="paragraphFormat-1" type="button" tabindex="-1" role="button" aria-controls="dropdown-menu-paragraphFormat-1" aria-expanded="false" aria-haspopup="true" title="단락" class="fr-command fr-btn fr-dropdown fr-btn-font_awesome fr-selection" data-cmd="paragraphFormat"><i class="fa fa-paragraph" aria-hidden="true"></i><span class="fr-sr-only">단락</span></button><div id="dropdown-menu-paragraphFormat-1" class="fr-dropdown-menu" role="listbox" aria-labelledby="paragraphFormat-1" aria-hidden="true"><div class="fr-dropdown-wrapper" role="presentation"><div class="fr-dropdown-content" role="presentation"><ul class="fr-dropdown-list" role="presentation"><li role="presentation"><p style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="N" title="표준">표준</a></p></li><li role="presentation"><h1 style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="H1" title="제목 1">제목 1</a></h1></li><li role="presentation"><h2 style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="H2" title="제목 2">제목 2</a></h2></li><li role="presentation"><h3 style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="H3" title="제목 3">제목 3</a></h3></li><li role="presentation"><h4 style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="H4" title="제목 4">제목 4</a></h4></li><li role="presentation"><pre style="padding: 0 !important; margin: 0 !important;" role="presentation"><a class="fr-command" tabindex="-1" role="option" data-cmd="paragraphFormat" data-param1="PRE" title="코드">코드</a></pre></li></ul></div></div></div><button id="lineHeight-1" type="button" tabindex="-1" role="button" aria-controls="dropdown-menu-lineHeight-1" aria-expanded="false" aria-haspopup="true" title="Line Height" class="fr-command fr-btn fr-dropdown fr-btn-font_awesome" data-cmd="lineHeight"><i class="fa fa-arrows-v" aria-hidden="true"></i><span class="fr-sr-only">Line Height</span></button><div id="dropdown-menu-lineHeight-1" class="fr-dropdown-menu" role="listbox" aria-labelledby="lineHeight-1" aria-hidden="true"><div class="fr-dropdown-wrapper" role="presentation"><div class="fr-dropdown-content" role="presentation"><ul class="fr-dropdown-list" role="presentation"><li role="presentation"><a class="fr-command Default" tabindex="-1" role="option" data-cmd="lineHeight" data-param1="" title="Default">Default</a></li><li role="presentation"><a class="fr-command Single" tabindex="-1" role="option" data-cmd="lineHeight" data-param1="1" title="Single">Single</a></li><li role="presentation"><a class="fr-command 1.15" tabindex="-1" role="option" data-cmd="lineHeight" data-param1="1.15" title="1.15">1.15</a></li><li role="presentation"><a class="fr-command 1.5" tabindex="-1" role="option" data-cmd="lineHeight" data-param1="1.5" title="1.5">1.5</a></li><li role="presentation"><a class="fr-command Double" tabindex="-1" role="option" data-cmd="lineHeight" data-param1="2" title="Double">Double</a></li></ul></div></div></div><button id="align-1" type="button" tabindex="-1" role="button" aria-controls="dropdown-menu-align-1" aria-expanded="false" aria-haspopup="true" title="정렬" class="fr-command fr-btn fr-dropdown fr-btn-font_awesome" data-cmd="align"><i class="fa fa-align-left" aria-hidden="true"></i><span class="fr-sr-only">정렬</span></button><div id="dropdown-menu-align-1" class="fr-dropdown-menu" role="listbox" aria-labelledby="align-1" aria-hidden="true"><div class="fr-dropdown-wrapper" role="presentation"><div class="fr-dropdown-content" role="presentation"><ul class="fr-dropdown-list" role="presentation"><li role="presentation"><a class="fr-command fr-title" tabindex="-1" role="option" data-cmd="align" data-param1="left" title="왼쪽정렬"><i class="fa fa-align-left" aria-hidden="true"></i><span class="fr-sr-only">왼쪽정렬</span></a></li><li role="presentation"><a class="fr-command fr-title" tabindex="-1" role="option" data-cmd="align" data-param1="center" title="가운데정렬"><i class="fa fa-align-center" aria-hidden="true"></i><span class="fr-sr-only">가운데정렬</span></a></li><li role="presentation"><a class="fr-command fr-title" tabindex="-1" role="option" data-cmd="align" data-param1="right" title="오른쪽정렬"><i class="fa fa-align-right" aria-hidden="true"></i><span class="fr-sr-only">오른쪽정렬</span></a></li><li role="presentation"><a class="fr-command fr-title" tabindex="-1" role="option" data-cmd="align" data-param1="justify" title="양쪽정렬"><i class="fa fa-align-justify" aria-hidden="true"></i><span class="fr-sr-only">양쪽정렬</span></a></li></ul></div></div></div><button id="formatOL-1" type="button" tabindex="-1" role="button" title="숫자 리스트" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="formatOL"><i class="fa fa-list-ol" aria-hidden="true"></i><span class="fr-sr-only">숫자 리스트</span></button><button id="formatUL-1" type="button" tabindex="-1" role="button" title="점 리스트" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="formatUL"><i class="fa fa-list-ul" aria-hidden="true"></i><span class="fr-sr-only">점 리스트</span></button><button id="outdent-1" type="button" tabindex="-1" role="button" title="내어쓰기 (Ctrl+[)" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="outdent"><i class="fa fa-outdent" aria-hidden="true"></i><span class="fr-sr-only">내어쓰기</span></button><button id="indent-1" type="button" tabindex="-1" role="button" title="들여쓰기 (Ctrl+])" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="indent"><i class="fa fa-indent" aria-hidden="true"></i><span class="fr-sr-only">들여쓰기</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="specialCharacters-1" type="button" tabindex="-1" role="button" title="특수 문자" class="fr-command fr-btn fr-btn-text" data-cmd="specialCharacters" data-modal="true"><span style="text-align: center;">Ω</span><span class="fr-sr-only">특수 문자</span></button><button id="clearFormatting-1" type="button" tabindex="-1" role="button" title="서식 제거" class="fr-command fr-btn fr-btn-font_awesome" data-cmd="clearFormatting"><i class="fa fa-eraser" aria-hidden="true"></i><span class="fr-sr-only">서식 제거</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="undo-1" type="button" tabindex="-1" role="button" aria-disabled="true" title="실행 취소 (Ctrl+Z)" class="fr-command fr-btn fr-btn-font_awesome fr-disabled" data-cmd="undo"><i class="fa fa-rotate-left" aria-hidden="true"></i><span class="fr-sr-only">실행 취소</span></button><button id="redo-1" type="button" tabindex="-1" role="button" aria-disabled="true" title="되돌리기 (Ctrl+Shift+Z)" class="fr-command fr-btn fr-btn-font_awesome fr-disabled" data-cmd="redo"><i class="fa fa-rotate-right" aria-hidden="true"></i><span class="fr-sr-only">되돌리기</span></button><div class="fr-separator fr-vs" role="separator" aria-orientation="vertical"></div><button id="cmsBlockTemplate-1" type="button" tabindex="-1" role="button" aria-pressed="false" title="템플릿" class="fr-command fr-btn fr-btn-font_awesome hide" data-cmd="cmsBlockTemplate"><i class="fa fa-newspaper-o" aria-hidden="true"></i><span class="fr-sr-only">템플릿</span></button></div><div class="fr-wrapper show-placeholder" dir="ltr" style="height: 200px; overflow: auto;"><iframe src="about:blank" frameborder="0" class="fr-iframe" style="height: 200px;"></iframe><span class="fr-placeholder" style="font-size: 16px; line-height: normal; margin-top: 16px; padding-top: 10px; padding-left: 10px; margin-left: 0px; padding-right: 10px; margin-right: 0px; text-align: start;">내용을 입력하세요</span></div></div></div>
+	
+</div>
+
+</div>
+
+		            </div>
+					<div class="panel-footer tx-a-r">
+			        	<button type="submit" class="btn btn-primary ng-binding" ng-class="{'btn-danger animated infinite pulse':ctrl.modified}">저장</button>
+			        	<button type="button" class="btn btn-default ng-binding" ng-disabled="!ctrl.modified" ng-click="ctrl.onSelect(ctrl.selectedNodeScope)" disabled="disabled">취소</button>
+					</div>
+		        </div>
+            </fieldset>
+            </form>
+	 	</div>
+	</div>
+</div></div>
+							</div>
+						</div><!-- end ngRepeat: tab in tabset.tabs -->
+  </div>
+</div>
+			</div>
+
+	    </div>
+
+	    <!-- Right sidebar -->
+	    <!-- <div id="right-sidebar" ng-include="'views/common/right_sidebar.html'" class="sidebar-open" ng-show="rightSidebar"></div> -->
+
+	    <!-- Footer -->
+	    <!-- <footer class="footer" ng-include="'views/common/footer.html'"></footer> -->
+	</div>
+
+</div>
+
+
+<!-- build:js(.) scripts/vendor.js -->
+<script src="/_res/_common/bower_components/compress/lz-string.min.js"></script>
+<script src="/_res/_common/js/jquery/jquery-latest.min.js"></script>
+<script src="/_res/_common/bower_components/jquery/dist/jquery.requestanimationframe.min.js"></script> 
+<script src="/_res/_common/js/iframe/iframeResizer.min.js"></script>
+<script src="/_res/_common/js/jquery/plugin/scrollbar/jquery.mCustomScrollbar.concat.min.js"></script>
+<script src="/_res/_common/js/jquery/plugin/drag-swipe-scroll/jquery.dragscroll.min.js"></script>
+
+
+<script src="/_res/_common/bower_components/jquery-ui/jquery-ui.min.js"></script>
+<script src="/_res/_common/bower_components/html2canvas/html2canvas.js"></script>
+<script src="/_res/_common/bower_components/highlight/highlight.pack.js"></script>
+<script src="/_res/_common/bower_components/Chart.js/latest/Chart.min.js"></script>
+
+<script src="/_res/_common/angular/latest/angular.min.js"></script>
+<script>
+angular.lowercase = function(val) { return val ? val.toLowerCase() : val;  }
+</script>
+<script src="/_res/_common/angular/latest/angular-route.js"></script>
+
+<script src="/_res/_common/js/3rd/ez.countimer.min.js"></script>
+
+
+<script src="/_res/_common/bower_components/oclazyload/dist/ocLazyLoad.js"></script>
+<script src="/_res/_common/bower_components/angular-translate/angular-translate.min.js"></script>
+<script src="/_res/_common/bower_components/angular-dynamic-locale/tmhDynamicLocale.min.js"></script> 
+<script src="/_res/_common/bower_components/angular-loading-bar/src/loading-bar.js"></script>
+<script src="/_res/_common/angular/latest/angular-sanitize.min.js"></script>
+<script src="/_res/_common/angular/latest/angular-animate.min.js"></script>
+<script src="/_res/_common/bower_components/angular-http-auth/src/http-auth-interceptor.js"></script>
+<script src="/_res/_common/bower_components/angular-wizard/angular-wizard.min.js"></script>
+
+<script src="/_res/_common/bower_components/angular-chart/angular-chart.js"></script>
+
+<script src="/_res/_common/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+<script src="/_res/_common/bootstrap/js/bootstrap.js"></script>
+<script src="/_res/_common/bower_components/bootstrap-touchspin/dist/jquery.bootstrap-touchspin.min.js"></script>
+
+<script src="/_res/_common/bower_components/slimScroll/jquery.slimscroll.min.js"></script>
+
+<script src="/_res/_common/bower_components/flow.js/flow-jini.js"></script> 
+<script src="/_res/_common/bower_components/ng-flow/ng-flow.js"></script> 
+
+<script src="/_res/_common/js/jquery/plugin/scroll/jquery.scrollUp.min.js"></script> <!--  상단으로 스크롤 -->
+<script src="/_res/_common/js/jquery/plugin/scroll/jquery.scrollTo.min.js"></script> <!--  타겟으로 스크롤 -->
+
+ <!-- Placeholder for IE9 -->
+ <!--[if IE 9 ]>
+     
+ <![endif]-->
+<script src="/_res/_common/js/cookie/js.cookie.js"></script>
+<script src="/_res/_common/bower_components/metisMenu/dist/metisMenu.min.js"></script>
+<script src="/_res/_common/bower_components/sweetalert/dist/sweetalert-dev.js"></script>
+<script src="/_res/_common/bower_components/sweetalert/dist/swalExtend.js"></script>
+<script src="/_res/_common/bower_components/iCheck/icheck.min.js"></script>
+<script src="/_res/_common/bower_components/sparkline/index.js"></script> 
+ 
+ 
+<script src="/_res/_common/bower_components/moment/min/moment-with-locales.min.js"></script> 
+<script src="/_res/_common/bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
+
+<script src="/_res/_common/bower_components/angular-ui-select/dist/select.min.js"></script>
+<script src="/_res/_common/bower_components/ng-tags-input/ng-tags-input.min.js"></script>
+
+<script src="/_res/_common/bower_components/angular-xeditable/js/xeditable.min.js"></script>
+
+
+
+<script src="/_res/_common/bower_components/jstree/latest/jstree.js"></script>
+<script src="/_res/_common/bower_components/ng-js-tree/dist/ngJsTree.js"></script>
+
+
+<script src="/_res/_common/bower_components/ngInfiniteScroll/build/ng-infinite-scroll.js"></script>
+
+<script src="/_res/_common/bower_components/floating-menu/floating-menu.js"></script>
+
+<script src="/_res/_common/bower_components/angular-ui-switch/angular-ui-switch.js"></script>
+
+
+<script src="/_res/_common/bower_components/angular-froala-master/src/angular-froala.js"></script>
+<script src="/_res/_common/bower_components/angular-ui-codemirror/ui-codemirror.js"></script>
+
+<script src="/_res/_common/bower_components/angular-file-upload/dist/angular-file-upload.min.js"></script>
+
+<script src="/_res/_common/bower_components/clockpicker/dist/bootstrap-clockpicker.min.js"></script>
+<script src="/_res/_common/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+<script src="/_res/_common/bower_components/ladda/dist/spin.min.js"></script>  
+<script src="/_res/_common/bower_components/ladda/dist/ladda.min.js"></script> 
+<script src="/_res/_common/bower_components/ladda/dist/ladda.jquery.min.js"></script> 
+<script src="/_res/_common/bower_components/angular-ladda/dist/angular-ladda.min.js"></script> 
+
+ 
+
+<!--  tooltip -->
+<!--
+<script src="/_res/_common/bower_components/opentip/lib/opentip.js"></script>
+<script src="/_res/_common/bower_components/opentip/lib/adapter-jquery.js"></script>
+-->
+
+ <script src="/_res/_common/js/toastr.min.js"></script>
+
+
+<!-- build:js({.tmp,app}) scripts/scripts.js -->
+<script src="/_res/_common/angular/app/lib/common.js"></script> 
+<script src="scripts/init.js"></script> 
+<script src="scripts/module-resources.js"></script> 
+<script src="scripts/language.js"></script> 
+<script src="scripts/app.js"></script>
+<script src="scripts/constant.js"></script>
+<script src="/_res/_common/angular/app/common-config.js"></script>
+<script src="scripts/config.js"></script>
+
+<script src="scripts/dev_config.js"></script>
+
+
+<script src="scripts/login/login-dialog.js"></script>
+<script src="/_res/_common/angular/app/template/template.js"></script>
+<script src="scripts/translations.js"></script>
+
+
+<script src="_widget/param-directive/widget-param-directive.js"></script>
+
+
+
+<script src="/_res/_common/angular/app/directive/ui-directives.js"></script>
+<script src="scripts/directives/app-directives.js"></script>
+
+<script src="/_res/_common/angular/app/directive/errorMsg.js"></script>
+<script src="/_res/_common/angular/app/filter/props.js"></script>
+<script src="/_res/_common/angular/app/factories/service-simplification.js"></script>
+<script src="/_res/_common/angular/app/factories/modal-extend.js"></script>
+
+<script src="scripts/factories/environment-service.js"></script>
+<script src="/_res/_common/angular/app/factories/sweet-alert.js"></script>
+
+<script src="scripts/factories/common-service.js"></script> 
+<script src="scripts/factories/site-service.js"></script> 
+<script src="scripts/factories/menu-service.js"></script> 
+<script src="scripts/factories/save-common-service.js"></script> 
+
+<script src="scripts/controllers/main.js"></script>
+
+
+
+<script src="scripts/factories/auth-manage-service.js"></script>
+
+
+
+<div class="sweet-overlay" tabindex="-1" style="opacity: -0.2; display: none;"></div><div class="sweet-alert hideSweetAlert" style="opacity: -0.2; display: none;"><div class="sa-icon sa-error">
+      <span class="sa-x-mark">
+        <span class="sa-line sa-left"></span>
+        <span class="sa-line sa-right"></span>
+      </span>
+    </div><div class="sa-icon sa-warning">
+      <span class="sa-body"></span>
+      <span class="sa-dot"></span>
+    </div><div class="sa-icon sa-info"></div><div class="sa-icon sa-success">
+      <span class="sa-line sa-tip"></span>
+      <span class="sa-line sa-long"></span>
+
+      <div class="sa-placeholder"></div>
+      <div class="sa-fix"></div>
+    </div><div class="sa-icon sa-custom"></div><h2>Title</h2>
+    <p>Text</p>
+    <fieldset>
+      <input type="text" tabindex="3">
+      <div class="sa-input-error"></div>
+    </fieldset><div class="sa-error-container">
+      <div class="icon">!</div>
+      <p>Not valid!</p>
+    </div><div class="sa-button-container">
+      <button class="cancel" tabindex="2">Cancel</button>
+      <div class="sa-confirm-button-container">
+        <button class="confirm" tabindex="1">OK</button><div class="la-ball-fall">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    </div></div><a id="scrollUp" href="#top" style="display: none; position: fixed; z-index: 2147483647;">^</a></body></html>

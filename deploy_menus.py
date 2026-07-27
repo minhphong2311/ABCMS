@@ -1,4 +1,5 @@
 import asyncio
+import os
 from playwright.async_api import async_playwright
 
 async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None):
@@ -16,8 +17,12 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
     menus = sorted(menus, key=lambda x: (get_depth(x), x.get('order', 999)))
     
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, slow_mo=200)
-        context = await browser.new_context(ignore_https_errors=True)
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            viewport={'width': 1920, 'height': 1080}, 
+            ignore_https_errors=True,
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        )
         page = await context.new_page()
         
         try:
@@ -179,9 +184,90 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                 if folders_created:
                     print("Folders created successfully.")
             
+            # --- UPLOAD IMAGE TO RES-IMG ---
+            try:
+                if progress_cb:
+                    progress_cb(90, "Uploading img-ready.png to CMS...")
+                
+                print("Navigating to res-img...")
+                target_url_res = f'{site_url}/index.do?siteId={site_id}#!/res-img'
+                
+                # Navigate robustly (page was already logged in)
+                await page.goto(target_url_res)
+                await page.wait_for_load_state('networkidle')
+                await asyncio.sleep(5)
+
+                # The img folder path uses 'kookmin' (org), not the login username
+                res_org = 'kookmin'
+                root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
+                content_folder_id = f'/_res/{res_org}/{site_id}/img/content_anchor'
+                
+                print(f"Waiting for root folder: {root_folder_id}")
+                await page.wait_for_selector(f'[id="{root_folder_id}"]', timeout=10000)
+                
+                # Check if content folder exists
+                content_exists = await page.locator(f'[id="{content_folder_id}"]').count() > 0
+                
+                if not content_exists:
+                    print("Folder 'content' not found. Creating via right-click context menu...")
+                    # Right-click root folder to open context menu
+                    await page.click(f'[id="{root_folder_id}"]', button='right')
+                    await asyncio.sleep(1)
+                    
+                    # Context menu shows "추가" (Add) - click it to create a subfolder
+                    # The context menu item has class with fa-plus icon
+                    await page.locator('.vakata-context li a:has(.fa-plus), .jstree-contextmenu li a:has(.fa-plus)').first.click()
+                    await asyncio.sleep(1)
+                    
+                    # JSTree inline rename input appears - type 'content' and confirm
+                    await page.locator('.jstree-rename-input').fill('content')
+                    await asyncio.sleep(0.3)
+                    await page.keyboard.press('Enter')
+                    await asyncio.sleep(2)
+                    print("Folder 'content' created.")
+                
+                # Click content folder to select it (try ID first, fallback to text)
+                print("Selecting 'content' folder...")
+                try:
+                    await page.wait_for_selector(f'[id="{content_folder_id}"]', timeout=5000)
+                    await page.click(f'[id="{content_folder_id}"]')
+                except Exception:
+                    print("ID-based selector failed, trying text-based selector...")
+                    await page.locator('.jstree-anchor').filter(has_text='content').last.click()
+                await asyncio.sleep(2)
+                
+                # Build image path relative to deploy_menus.py location
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                image_path = os.path.join(base_dir, 'data', 'img', 'content', 'img-ready.png')
+                if os.path.exists(image_path):
+                    print(f"Uploading {image_path}...")
+                    
+                    # Click the upload button (ng-click="img.upload()") to open modal
+                    await page.click('button[ng-click="img.upload()"]')
+                    await asyncio.sleep(2)
+                    
+                    # In the modal: set file directly to the flow-btn file input
+                    file_input = page.locator('input[type="file"][flow-btn]').first
+                    await file_input.set_input_files(image_path)
+                    await asyncio.sleep(2)
+                    
+                    # Click the "업로드" button in the modal footer to confirm upload
+                    upload_confirm = page.locator('button:has(.fa-cloud-upload), button:text("업로드")').first
+                    await upload_confirm.click()
+                    await asyncio.sleep(4)
+                    print("img-ready.png uploaded successfully!")
+                else:
+                    print(f"Image file not found at: {image_path}")
+
+            except Exception as e:
+                print(f"Error during res-img upload: {e}")
+
+
+
             if progress_cb:
                 progress_cb(100, "Completed!")
             return {'success': True, 'message': 'Menus and folders deployed successfully!'}
+
         except Exception as e:
             print(f'Menu deploy ERROR: {e}')
             return {'success': False, 'message': f'Menu deploy error: {str(e)}'}
