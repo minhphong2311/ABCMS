@@ -9,6 +9,7 @@ import threading
 from flask import Blueprint, request, jsonify
 from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
 from automation import run_deploy
+from deploy_menus import run_deploy_menus
 
 deploy_bp = Blueprint('deploy', __name__)
 
@@ -117,3 +118,54 @@ def api_deploy():
 @deploy_bp.route('/api/deploy_status', methods=['GET'])
 def api_deploy_status():
     return jsonify(DEPLOY_TASKS)
+
+def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus):
+    DEPLOY_TASKS[task_id] = {"status": "running"}
+    try:
+        result = run_deploy_menus(
+            site_url=site_url,
+            site_id=site_id,
+            username=username,
+            password=password,
+            menus=menus
+        )
+        DEPLOY_TASKS[task_id] = {
+            "status": "success" if result.get('success') else "error",
+            "message": result.get('message', '')
+        }
+    except Exception as e:
+        DEPLOY_TASKS[task_id] = {"status": "error", "message": str(e)}
+
+@deploy_bp.route('/api/deploy_menus', methods=['POST'])
+def api_deploy_menus():
+    data = request.json or {}
+    site_id = data.get('site_id')
+
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'success': False, 'message': 'Site not found!'})
+
+    menus = site.get('menus', [])
+    if not menus:
+        return jsonify({'success': False, 'message': 'No menus to deploy!'})
+
+    task_id = f"{site_id}--deploy-menus"
+    if DEPLOY_TASKS.get(task_id, {}).get('status') == 'running':
+        return jsonify({'success': False, 'message': 'Menu deployment is already running!'})
+
+    thread = threading.Thread(
+        target=run_deploy_menus_async,
+        args=(
+            task_id,
+            site['url'],
+            site_id,
+            site.get('username', ''),
+            site.get('password', ''),
+            menus
+        )
+    )
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({'success': True, 'message': 'Background menu deploy started'})
