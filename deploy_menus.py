@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-async def deploy_menus_task_async(site_url, site_id, username, password, menus):
+async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None):
     # Calculate depth to ensure parents are always created before children
     menu_map = {m['id']: m for m in menus}
     def get_depth(m):
@@ -57,7 +57,25 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
 
             created_menu_cds = {}
 
+            unique_folders = set()
             for m in menus:
+                if m.get('folder'):
+                    unique_folders.add(m.get('folder'))
+                elif not m.get('parent_id') and m.get('slug'):
+                    unique_folders.add(m.get('slug'))
+            unique_folders_list = sorted(list(unique_folders))
+            
+            total_items = len(menus) + len(unique_folders_list) + 1
+            current_item = 0
+            
+            def report(msg):
+                nonlocal current_item
+                current_item += 1
+                if progress_cb:
+                    progress_cb(min(100, int((current_item / max(1, total_items)) * 100)), msg)
+
+            for m in menus:
+                report(f"Deploying menu: {m['name']}")
                 cms_menus = await get_cms_menus()
                 
                 # Determine expected parent menu CD
@@ -126,17 +144,8 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
             print("Finished deploying menus!")
             
             # --- CREATE FOLDERS IN PAGE MANAGER ---
-            unique_folders = set()
-            for m in menus:
-                if m.get('folder'):
-                    unique_folders.add(m.get('folder'))
-                elif not m.get('parent_id') and m.get('slug'):
-                    unique_folders.add(m.get('slug'))
-            
-            unique_folders = sorted(list(unique_folders))
-            
-            if unique_folders:
-                print(f"Creating folders in Page Manager: {unique_folders}")
+            if unique_folders_list:
+                print(f"Creating folders in Page Manager: {unique_folders_list}")
                 target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
                 await page.goto(target_url_page)
                 await page.wait_for_load_state('networkidle')
@@ -150,7 +159,8 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
                 await asyncio.sleep(2)
                 
                 folders_created = False
-                for folder in unique_folders:
+                for folder in unique_folders_list:
+                    report(f"Creating folder: {folder}")
                     folder_anchor_id = f'/{site_id}/{folder}_anchor'
                     try:
                         await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
@@ -169,6 +179,8 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
                 if folders_created:
                     print("Folders created successfully.")
             
+            if progress_cb:
+                progress_cb(100, "Completed!")
             return {'success': True, 'message': 'Menus and folders deployed successfully!'}
         except Exception as e:
             print(f'Menu deploy ERROR: {e}')
@@ -176,5 +188,5 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus):
         finally:
             await browser.close()
 
-def run_deploy_menus(site_url, site_id, username, password, menus):
-    return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus))
+def run_deploy_menus(site_url, site_id, username, password, menus, progress_cb=None):
+    return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb))

@@ -1,85 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}Site Details - {{ site.name }}
+{% block title %}Site Details - {{ site.name }}{% endblock %}
 
 
-<script>
-let deployMenuCheckInterval = null;
-function checkDeployMenuStatus(siteId) {
-    if (deployMenuCheckInterval) clearInterval(deployMenuCheckInterval);
-    
-    deployMenuCheckInterval = setInterval(() => {
-        fetch('/api/deploy_status')
-            .then(r => r.json())
-            .then(data => {
-                const taskId = `${siteId}--deploy-menus`;
-                const task = data[taskId];
-                if (task) {
-                    if (task.status === 'success') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Success', 
-                            text: task.message || 'Menus deployed successfully!', 
-                            icon: 'success',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    } else if (task.status === 'error') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Error', 
-                            text: task.message || 'An error occurred during menu deployment.', 
-                            icon: 'error',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error polling deploy status', err);
-            });
-    }, 2000);
-}
 
-function deployMenus(siteId) {
-  fetch('/api/deploy_menus', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ site_id: siteId })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.success) {
-      Swal.fire({
-          title: 'Deploying Menus...',
-          text: 'Please wait while the menu structure is created on the CMS. This may take a minute.',
-          allowOutsideClick: false,
-          background: '#343a40',
-          color: '#fff',
-          didOpen: () => { Swal.showLoading(); }
-      });
-      checkDeployMenuStatus(siteId);
-    } else {
-      $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: data.message
-      });
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: 'An unexpected error occurred.'
-    });
-  });
-}
-</script>
-
-{% endblock %}
 
 {% block content %}
 
@@ -785,81 +709,7 @@ function deployMenus(siteId) {
 
 
 
-<script>
-let deployMenuCheckInterval = null;
-function checkDeployMenuStatus(siteId) {
-    if (deployMenuCheckInterval) clearInterval(deployMenuCheckInterval);
-    
-    deployMenuCheckInterval = setInterval(() => {
-        fetch('/api/deploy_status')
-            .then(r => r.json())
-            .then(data => {
-                const taskId = `${siteId}--deploy-menus`;
-                const task = data[taskId];
-                if (task) {
-                    if (task.status === 'success') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Success', 
-                            text: task.message || 'Menus deployed successfully!', 
-                            icon: 'success',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    } else if (task.status === 'error') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Error', 
-                            text: task.message || 'An error occurred during menu deployment.', 
-                            icon: 'error',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error polling deploy status', err);
-            });
-    }, 2000);
-}
 
-function deployMenus(siteId) {
-  fetch('/api/deploy_menus', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ site_id: siteId })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.success) {
-      Swal.fire({
-          title: 'Deploying Menus...',
-          text: 'Please wait while the menu structure is created on the CMS. This may take a minute.',
-          allowOutsideClick: false,
-          background: '#343a40',
-          color: '#fff',
-          didOpen: () => { Swal.showLoading(); }
-      });
-      checkDeployMenuStatus(siteId);
-    } else {
-      $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: data.message
-      });
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: 'An unexpected error occurred.'
-    });
-  });
-}
-</script>
 
 {% endblock %}
 
@@ -953,6 +803,11 @@ body.dark-mode #pages-count-wrapper.text-secondary {
 
 
 
+
+
+{% endblock %}
+
+{% block script %}
 <script>
 let deployMenuCheckInterval = null;
 function checkDeployMenuStatus(siteId) {
@@ -965,7 +820,17 @@ function checkDeployMenuStatus(siteId) {
                 const taskId = `${siteId}--deploy-menus`;
                 const task = data[taskId];
                 if (task) {
-                    if (task.status === 'success') {
+                    if (task.status === 'running') {
+                        const progress = task.progress || 0;
+                        const msg = task.message || 'Starting...';
+                        const htmlContainer = Swal.getHtmlContainer();
+                        if (htmlContainer) {
+                            const bar = htmlContainer.querySelector('.progress-bar');
+                            const text = htmlContainer.querySelector('#swal-progress-text');
+                            if (bar) { bar.style.width = progress + '%'; bar.innerText = progress + '%'; }
+                            if (text) text.innerText = msg;
+                        }
+                    } else if (task.status === 'success') {
                         clearInterval(deployMenuCheckInterval);
                         Swal.fire({
                             title: 'Success', 
@@ -1003,7 +868,9 @@ function deployMenus(siteId) {
     if(data.success) {
       Swal.fire({
           title: 'Deploying Menus...',
-          text: 'Please wait while the menu structure is created on the CMS. This may take a minute.',
+          html: '<div style="margin-bottom:15px; font-size: 0.9em; min-height: 20px;" id="swal-progress-text">Starting...</div>' +
+                '<div class="progress" style="height: 20px; background-color: #495057; border-radius: 4px;">' +
+                '<div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%; font-weight: bold;">0%</div></div>',
           allowOutsideClick: false,
           background: '#343a40',
           color: '#fff',
@@ -1028,10 +895,6 @@ function deployMenus(siteId) {
   });
 }
 </script>
-
-{% endblock %}
-
-{% block script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
 <script>
   // Initialize Page Filters on Load
@@ -1965,80 +1828,6 @@ function changePageSize() {
 
 
 
-<script>
-let deployMenuCheckInterval = null;
-function checkDeployMenuStatus(siteId) {
-    if (deployMenuCheckInterval) clearInterval(deployMenuCheckInterval);
-    
-    deployMenuCheckInterval = setInterval(() => {
-        fetch('/api/deploy_status')
-            .then(r => r.json())
-            .then(data => {
-                const taskId = `${siteId}--deploy-menus`;
-                const task = data[taskId];
-                if (task) {
-                    if (task.status === 'success') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Success', 
-                            text: task.message || 'Menus deployed successfully!', 
-                            icon: 'success',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    } else if (task.status === 'error') {
-                        clearInterval(deployMenuCheckInterval);
-                        Swal.fire({
-                            title: 'Error', 
-                            text: task.message || 'An error occurred during menu deployment.', 
-                            icon: 'error',
-                            background: '#343a40',
-                            color: '#fff'
-                        });
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error polling deploy status', err);
-            });
-    }, 2000);
-}
 
-function deployMenus(siteId) {
-  fetch('/api/deploy_menus', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ site_id: siteId })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.success) {
-      Swal.fire({
-          title: 'Deploying Menus...',
-          text: 'Please wait while the menu structure is created on the CMS. This may take a minute.',
-          allowOutsideClick: false,
-          background: '#343a40',
-          color: '#fff',
-          didOpen: () => { Swal.showLoading(); }
-      });
-      checkDeployMenuStatus(siteId);
-    } else {
-      $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: data.message
-      });
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: 'An unexpected error occurred.'
-    });
-  });
-}
-</script>
 
 {% endblock %}
