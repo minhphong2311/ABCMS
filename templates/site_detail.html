@@ -297,6 +297,7 @@
                 <th class="text-center border-top-0">Generated</th>
                 <th class="text-center border-top-0">Standard Layout</th>
                 <th class="text-center border-top-0">Tab Layout</th>
+                <th class="text-left border-top-0">Status</th>
                 <th class="text-right border-top-0">Actions</th>
               </tr>
             </thead>
@@ -338,6 +339,9 @@
                     <input type="radio" id="layout_tab_{{ menu.id }}" name="layout_{{ menu.id }}" value="sub-template-tab" class="custom-control-input" onchange="updateLayout('{{ site.id }}', '{{ menu.id }}', this.value)" {% if menu.layout == 'sub-template-tab' %}checked{% endif %}>
                     <label class="custom-control-label" for="layout_tab_{{ menu.id }}"></label>
                   </div>
+                </td>
+                <td class="text-left py-2" style="vertical-align: middle; min-width: 150px;">
+                  <div class="text-xs text-muted" id="build-status-info-list-{{ menu.folder or '' }}--{{ menu.slug }}"></div>
                 </td>
                 <td class="text-right py-2">
                   <div class="d-flex align-items-center justify-content-end">
@@ -820,6 +824,7 @@ function checkDeployStatus() {
                 let paramKey = (folder ? folder + '--' : '--') + slug;
                 let btn = document.getElementById(`deploy-form-${paramKey}`);
                 let statusInfo = document.getElementById(`build-status-info-${paramKey}`);
+                let listStatusInfo = document.getElementById(`build-status-info-list-${paramKey}`);
                 
                 if (info.status === 'running') {
                     if (btn && !btn.disabled) {
@@ -830,6 +835,9 @@ function checkDeployStatus() {
                     if (statusInfo) {
                         statusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Deploying in background...</span>';
                     }
+                    if (listStatusInfo) {
+                        listStatusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Deploying in background...</span>';
+                    }
                 } else if (info.status === 'success') {
                     if (btn) {
                         btn.disabled = false;
@@ -837,6 +845,9 @@ function checkDeployStatus() {
                     }
                     if (statusInfo) {
                         statusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
+                    }
+                    if (listStatusInfo) {
+                        listStatusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
                     }
                     if (knownTasks[taskId] === 'running') {
                         // Only alert if we saw it running before
@@ -852,6 +863,9 @@ function checkDeployStatus() {
                     }
                     if (statusInfo) {
                         statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
+                    }
+                    if (listStatusInfo) {
+                        listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
                     }
                     if (knownTasks[taskId] === 'running') {
                         Swal.fire({
@@ -876,8 +890,12 @@ function generateFiles(siteId, menuSlug, btnElement) {
     btnElement.disabled = true;
 
     const statusInfo = document.getElementById(`build-status-info-${menuSlug}`);
+    const listStatusInfo = document.getElementById(`build-status-info-list-${menuSlug}`);
     if (statusInfo) {
         statusInfo.innerHTML = '<span class="text-primary"><i class="fas fa-circle-notch fa-spin mr-1"></i> Starting...</span>';
+    }
+    if (listStatusInfo) {
+        listStatusInfo.innerHTML = '<span class="text-primary"><i class="fas fa-circle-notch fa-spin mr-1"></i> Starting...</span>';
     }
 
     $.ajax({
@@ -898,6 +916,7 @@ function generateFiles(siteId, menuSlug, btnElement) {
                 btnElement.innerHTML = originalContent;
                 btnElement.title = originalTitle;
                 if (statusInfo) statusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${response.message}</span>`;
+                if (listStatusInfo) listStatusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${response.message}</span>`;
                 Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Error', text: response.message });
             }
         },
@@ -906,6 +925,7 @@ function generateFiles(siteId, menuSlug, btnElement) {
             btnElement.innerHTML = originalContent;
             btnElement.title = originalTitle;
             if (statusInfo) statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Server connection error</span>';
+            if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Server connection error</span>';
             Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Connection Error', text: 'Please try again.' });
         }
     });
@@ -927,6 +947,7 @@ function cancelGenerate(taskId, btnElement, menuSlug, siteId) {
 function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
     if (generatePollingIntervals[taskId]) clearInterval(generatePollingIntervals[taskId]);
     const statusInfo = document.getElementById(`build-status-info-${menuSlug}`);
+    const listStatusInfo = document.getElementById(`build-status-info-list-${menuSlug}`);
     
     generatePollingIntervals[taskId] = setInterval(() => {
         $.ajax({
@@ -938,6 +959,7 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                 
                 if (task.status === 'running') {
                     if (statusInfo) statusInfo.innerHTML = `<span class="text-primary"><i class="fas fa-circle-notch fa-spin mr-1"></i> ${task.message || 'Generating...'}</span>`;
+                    if (listStatusInfo) listStatusInfo.innerHTML = `<span class="text-primary"><i class="fas fa-circle-notch fa-spin mr-1"></i> ${task.message || 'Generating...'}</span>`;
                 } else {
                     clearInterval(generatePollingIntervals[taskId]);
                     
@@ -956,6 +978,7 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                         if (badgeListContainer) badgeListContainer.innerHTML = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Page Generated</span>';
                         
                         if (statusInfo) statusInfo.innerHTML = `<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ${task.message}</span>`;
+                        if (listStatusInfo) listStatusInfo.innerHTML = `<span class="text-success"><i class="fas fa-check-circle mr-1"></i> ${task.message}</span>`;
                         
                         // Update Grid View Buttons
                         if(document.getElementById(`preview-btn-${menuSlug}`)) document.getElementById(`preview-btn-${menuSlug}`).style.display = 'inline-flex';
@@ -976,6 +999,7 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'success', title: 'Success!', text: task.message });
                     } else if (task.status === 'error' || task.status === 'cancelled') {
                         if (statusInfo) statusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${task.message}</span>`;
+                        if (listStatusInfo) listStatusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${task.message}</span>`;
                         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: task.status === 'cancelled' ? 'info' : 'error', title: task.status === 'cancelled' ? 'Cancelled' : 'Error', text: task.message });
                     }
                 }
@@ -992,8 +1016,12 @@ function deployFiles(siteId, menuSlug, folder, paramKey, btnElement) {
     
     // Status text block
     const statusInfo = document.getElementById(`build-status-info-${paramKey}`);
+    const listStatusInfo = document.getElementById(`build-status-info-list-${paramKey}`);
     if (statusInfo) {
         statusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Initializing deploy process...</span>';
+    }
+    if (listStatusInfo) {
+        listStatusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Initializing deploy process...</span>';
     }
 
     $.ajax({
@@ -1014,6 +1042,7 @@ function deployFiles(siteId, menuSlug, folder, paramKey, btnElement) {
                 btnElement.disabled = false;
                 btnElement.innerHTML = btnElement.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
                 if (statusInfo) statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + response.message + '</span>';
+                if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + response.message + '</span>';
                 Swal.fire({ icon: 'error', title: 'Error Deploy', text: response.message });
             }
         },
@@ -1021,6 +1050,7 @@ function deployFiles(siteId, menuSlug, folder, paramKey, btnElement) {
             btnElement.disabled = false;
             btnElement.innerHTML = btnElement.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
             if (statusInfo) statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Connection error during Deploy</span>';
+            if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Connection error during Deploy</span>';
             Swal.fire({
                 icon: 'error',
                 title: 'Connection Error',

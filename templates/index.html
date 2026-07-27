@@ -692,11 +692,13 @@ function createListElement(nodes, parentId) {
             row.innerHTML = `
                 <div class="mr-2 tree-caret-btn" onclick="toggleChildren('${node.id}')"><i class="fas ${caretIcon}"></i></div>
                 <div class="mr-2 tree-move-btn"><i class="fas fa-arrows-alt"></i></div>
-                <div class="flex-grow-1 font-weight-bold text-primary">${node.name} <span class="text-muted ml-2 font-weight-normal" style="font-size: 0.85em;">${node.slug}</span></div>
+                <div class="flex-grow-1" id="name-container-${node.id}">
+                    <span class="font-weight-bold text-primary" style="cursor: pointer; border-bottom: 1px dashed #007bff;" onclick="showInlineEdit('${node.id}')" id="name-text-${node.id}">${node.name}</span>
+                    <span class="text-muted ml-2 font-weight-normal" style="font-size: 0.85em;">${node.slug}</span>
+                </div>
                 <div class="actions">
                     <button class="btn btn-sm tree-action-btn tree-btn-add" onclick="showInlineAdd('${node.id}')" title="Add Child"><i class="fas fa-plus"></i></button>
                     <button class="btn btn-sm tree-action-btn tree-btn-delete" onclick="deleteMenu('${node.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                    <button class="btn btn-sm tree-action-btn tree-btn-edit" onclick="showInlineEdit('${node.id}')" title="Edit"><i class="fas fa-edit"></i></button>
                 </div>
             `;
             li.appendChild(row);
@@ -839,35 +841,61 @@ async function saveInlineAdd
     updateDataFromDOM(); // Sync orders
 }
 
+let currentEditingId = null;
+
+function handleOutsideClick(e) {
+    if (!currentEditingId) return;
+    const container = document.getElementById(`name-container-${currentEditingId}`);
+    // If the click is inside a SweetAlert (like loading/error), don't close
+    if (e.target.closest('.swal2-container')) return;
+    
+    if (container && !container.contains(e.target)) {
+        cancelInlineEdit(currentEditingId);
+    }
+}
+
 function showInlineEdit(id) {
+    if (currentEditingId && currentEditingId !== id) {
+        cancelInlineEdit(currentEditingId);
+    }
+    
     const menu = currentMenus.find(m => m.id === id);
     if(!menu) return;
     
-    const li = document.querySelector(`li[data-id="${id}"]`);
-    if (li.querySelector('.edit-row')) return; // Prevent multiple edit rows
+    const container = document.getElementById(`name-container-${id}`);
+    if (container.querySelector('.inline-edit-input')) return; // already editing
     
-    const row = li.querySelector('.menu-row');
-    row.style.display = 'none';
+    const originalContent = container.innerHTML;
+    container.dataset.original = originalContent;
     
-    const editDiv = document.createElement('div');
-    editDiv.className = 'd-flex align-items-center bg-white border border-info rounded p-2 mb-1 shadow-sm edit-row';
-    editDiv.innerHTML = `
-        <div class="mr-2 tree-caret-btn" style="opacity: 0; cursor: default;"><i class="fas fa-chevron-down"></i></div>
-        <div class="mr-2 tree-move-btn" style="opacity: 0.5; cursor: not-allowed;"><i class="fas fa-arrows-alt"></i></div>
-        <input type="text" class="form-control form-control-sm mr-2" value="${menu.name}" id="edit-name-${id}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
-        <input type="text" class="form-control form-control-sm mr-2" value="${menu.slug}" id="edit-slug-${id}" style="width: 150px;" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
-        <button class="btn btn-sm btn-info py-0 px-2 mr-1" onclick="saveInlineEdit('${id}')"><i class="fas fa-check text-white"></i></button>
-        <button class="btn btn-sm btn-secondary py-0 px-2" onclick="cancelInlineEdit('${id}')"><i class="fas fa-times"></i></button>
+    container.innerHTML = `
+        <div class="d-flex align-items-center">
+            <input type="text" class="form-control form-control-sm mr-2 inline-edit-input" value="${menu.name}" id="edit-name-${id}" style="width: 150px;" placeholder="Name" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
+            <input type="text" class="form-control form-control-sm mr-2" value="${menu.slug}" id="edit-slug-${id}" style="width: 150px;" placeholder="Slug" onkeydown="if(event.key === 'Enter') saveInlineEdit('${id}')">
+            <button class="btn btn-sm btn-info py-0 px-2 mr-1" onclick="saveInlineEdit('${id}')"><i class="fas fa-check text-white"></i></button>
+            <button class="btn btn-sm btn-secondary py-0 px-2 mr-2" onclick="cancelInlineEdit('${id}')"><i class="fas fa-times"></i></button>
+        </div>
     `;
-    li.insertBefore(editDiv, row);
+    
+    currentEditingId = id;
+    setTimeout(() => {
+        document.addEventListener('mousedown', handleOutsideClick);
+    }, 0);
+    
+    const input = document.getElementById(`edit-name-${id}`);
+    input.focus();
+    input.select();
 }
 
 function cancelInlineEdit(id) {
-    const li = document.querySelector(`li[data-id="${id}"]`);
-    const row = li.querySelector('.menu-row');
-    const editDiv = li.querySelector('.edit-row');
-    if(editDiv) editDiv.remove();
-    row.style.display = 'flex';
+    const container = document.getElementById(`name-container-${id}`);
+    if(container && container.dataset.original) {
+        container.innerHTML = container.dataset.original;
+    }
+    if (currentEditingId === id) {
+        currentEditingId = null;
+        document.removeEventListener('mousedown', handleOutsideClick);
+    }
 }
 
 async function saveInlineEdit(id) {
@@ -876,6 +904,7 @@ async function saveInlineEdit(id) {
     
     const name = $(`#edit-name-${id}`).val();
     let slug = $(`#edit-slug-${id}`).val();
+    
     if (!name) return;
     
     if (!slug) {
@@ -897,12 +926,18 @@ async function saveInlineEdit(id) {
             slug = 'auto-' + Date.now();
         }
     }
-    slug = makeUniqueSlug(slug, id);
     
     slug = makeUniqueSlug(slug, id);
     menu.name = name;
     menu.slug = slug;
+    
+    if (currentEditingId === id) {
+        currentEditingId = null;
+        document.removeEventListener('mousedown', handleOutsideClick);
+    }
+    
     renderTree();
+    updateDataFromDOM();
 }
 
 function deleteMenu(id) {
@@ -990,7 +1025,28 @@ function handleExcelUpload(event) {
     .then(data => {
         if(data.success) {
             Swal.fire('Success', data.message, 'success');
-            fetchMenus(); // Reload
+            
+            // Merge into currentMenus instead of reloading
+            const existingMenuIds = new Set(currentMenus.map(m => m.id));
+            
+            if (data.new_menus) {
+                data.new_menus.forEach(menu => {
+                    if (existingMenuIds.has(menu.id)) {
+                        // Update existing
+                        const idx = currentMenus.findIndex(m => m.id === menu.id);
+                        if (idx !== -1) currentMenus[idx] = { ...currentMenus[idx], ...menu };
+                    } else {
+                        currentMenus.push(menu);
+                    }
+                    
+                    if (menu.parent_id) {
+                        expandedMenuIds.add(menu.parent_id);
+                    }
+                });
+            }
+            
+            renderTree();
+            updateDataFromDOM();
         } else {
             Swal.fire('Error', data.error || 'Failed', 'error');
         }
