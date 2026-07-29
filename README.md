@@ -38,16 +38,15 @@ It helps developers preview designs and automatically push source code from thei
 
 ```text
 ├── app.py                # Main Flask server running the web builder dashboard
-├── automation.py         # Playwright script for CMS login and code deployment
-├── check_cms.py          # Script to inspect CMS DOM structure and connectivity
-├── check_folders.py      # Helper script for folder validation
-├── inspect_*.py          # Debugging scripts for UI, pages, and Figma
-├── test_deploy.py        # Sandbox script for testing deployment workflows
-├── data/                 # Local JSON database and configurations
-│   ├── sites.json        # Managed CMS site list
-│   └── config.json       # Global system settings (including Gemini API keys)
-├── templates/            # Flask Jinja2 HTML templates
-└── .gitignore            # Git exclusion rules
+├── deploy_menus.py       # Main script to orchestrate the deployment workflow
+├── deployer/             # Core deployment modules (site, menu, folder, upload, page)
+├── routes/               # Flask blueprints for API routes (menu, site, deploy, generate)
+├── assets/               # System resources (ai_prompts, layout templates, placeholder images)
+├── data/                 # Local JSON database and configs (sites, config, cache)
+├── scripts/              # Utility scripts for long-term usage (e.g., automation, translations)
+├── static/               # Flask static files (CSS, JS) for the Web UI
+├── templates/            # Flask Jinja2 HTML templates for the Web UI
+└── scratch/              # Temporary folder for tests, DOM dumps, and debugging
 ```
 
 ---
@@ -73,12 +72,6 @@ Then navigate to [http://localhost:5000](http://localhost:5000) in your web brow
 
 ### 4. Configuration
 Ensure you have set up your API keys in the dashboard's settings panel (e.g., Gemini API Key) to enable AI features.
-
-### 5. Automated Deployment (CLI)
-You can test the deployment workflow directly via the CLI:
-```bash
-python test_deploy.py
-```
 
 ---
 
