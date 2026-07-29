@@ -254,8 +254,8 @@ def api_chat():
 
     structure_template = ''
     table_template = ''
-    structure_path = os.path.join(app.root_path, 'data', 'ai_templates', 'structure-template.html')
-    table_path = os.path.join(app.root_path, 'data', 'ai_templates', 'table-template.html')
+    structure_path = os.path.join(app.root_path, 'assets', 'ai_prompts', 'structure-template.html')
+    table_path = os.path.join(app.root_path, 'assets', 'ai_prompts', 'table-template.html')
 
     if os.path.exists(structure_path):
         with open(structure_path, 'r', encoding='utf-8') as f:

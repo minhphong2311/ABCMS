@@ -708,8 +708,8 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     table_template = ''
     try:
         base = os.path.dirname(os.path.dirname(__file__))
-        structure_path = os.path.join(base, 'data', 'ai_templates', 'structure-template.html')
-        table_path = os.path.join(base, 'data', 'ai_templates', 'table-template.html')
+        structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
+        table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
         if os.path.exists(structure_path):
             with open(structure_path, 'r', encoding='utf-8') as f:
                 structure_template = f.read()
