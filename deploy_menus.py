@@ -1,8 +1,21 @@
 import asyncio
 import os
 from playwright.async_api import async_playwright
+import sys
+import codecs
 
 async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None):
+    # Safe print to avoid cp949 encode errors on Windows
+    def safe_print(*args, **kwargs):
+        msg = " ".join(str(a) for a in args)
+        sys.stdout.buffer.write((msg + "\n").encode('utf-8', errors='replace'))
+        sys.stdout.buffer.flush()
+    
+    # Store original print and override
+    import builtins
+    orig_print = builtins.print
+    builtins.print = safe_print
+
     # Calculate depth to ensure parents are always created before children
     menu_map = {m['id']: m for m in menus}
     def get_depth(m):
@@ -43,22 +56,126 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             await page.goto(target_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
             
+            # --- KIỂM TRA VÀ TẠO SITE NẾU CHƯA CÓ ---
+            print(f"Kiểm tra sự tồn tại của Site ID: {site_id}")
+            try:
+                site_check = await page.evaluate(f'''async () => {{
+                    try {{
+                        if (typeof window.angular === 'undefined') return false;
+                        let body = window.angular.element(document.body);
+                        if (!body) return false;
+                        let injector = body.injector();
+                        if (!injector || !injector.has('menuService')) return false;
+                        let menuMap = injector.get('menuService').getMenuMap('{site_id}');
+                        return menuMap !== null && menuMap !== undefined;
+                    }} catch(e) {{
+                        return false;
+                    }}
+                }}''')
+                
+                if not site_check:
+                    print(f"Site ID '{site_id}' không tồn tại. Đang tiến hành tạo mới tại trang Quản lý Site...")
+                    if progress_cb:
+                        progress_cb(10, f"Creating new Site ID: {site_id}...")
+                    
+                    # Truy cập trang quản lý site theo yêu cầu
+                    site_creation_url = f'{site_url}/index.do#!/site'
+                    
+                    if 'login.do' in page.url:
+                        print("Bị đẩy ra trang login, tiến hành login lại (webadmin) để tạo site...")
+                        await page.goto(f'{site_url}/index.do')
+                        await page.wait_for_selector('input[name="userId"]', timeout=15000)
+                        await page.fill('input[name="userId"]', 'webadmin')
+                        await page.fill('input[name="userPassword"]', '12andvina#$')
+                        await page.click('button[type="submit"]')
+                        await asyncio.sleep(4)
+                    
+                    print(f"Điều hướng đến: {site_creation_url}")
+                    await page.goto(site_creation_url, wait_until="domcontentloaded")
+                    await asyncio.sleep(5)
+
+                    print("Đang gọi API tạo Site trên hệ thống CMS...")
+                    res = await page.evaluate(f'''async () => {{
+                        try {{
+                            if (typeof window.angular === 'undefined') return "Angular undefined";
+                            let injector = window.angular.element(document.body).injector();
+                            if (!injector || !injector.has('siteService')) return "No siteService";
+                            
+                            let res = await injector.get('siteService').insert({{ siteId: '{site_id}', siteNm: '{site_id}' }});
+                            return res;
+                        }} catch (e) {{
+                            return "Error: " + e.message;
+                        }}
+                    }}''')
+                    print(f"Kết quả tạo Site: {res}")
+                    await asyncio.sleep(2)
+                    
+                    # Tải lại trang menu manager ban đầu
+                    print(f"Quay lại trang Menu Manager: {target_url}")
+                    # Phải login lại bằng user gốc vì hiện tại đang là webadmin
+                    await page.goto(f'{site_url}/logOut.do')
+                    await asyncio.sleep(2)
+                    await page.goto(f'{site_url}/index.do')
+                    await page.wait_for_selector('input[name="userId"]', timeout=15000)
+                    await page.fill('input[name="userId"]', username)
+                    await page.fill('input[name="userPassword"]', password)
+                    await page.click('button[type="submit"]')
+                    await asyncio.sleep(4)
+                    
+                    await page.goto(target_url, wait_until="domcontentloaded")
+                    await asyncio.sleep(5)
+                    
+                    # Xác minh lại xem site đã tạo thành công chưa
+                    if 'login.do' in page.url:
+                        raise Exception("Đăng nhập hoặc tự động tạo Site thất bại. URL vẫn bị đẩy về trang Login. Hãy kiểm tra lại tài khoản hệ thống hoặc tạo Site bằng tay.")
+                        
+                else:
+                    print(f"Site ID '{site_id}' đã tồn tại, tiếp tục deploy.")
+            except Exception as e:
+                raise Exception(f"Lỗi trong quá trình kiểm tra/tạo Site: {e}")
+            # -----------------------------------------
+
+            
             async def get_cms_menus():
                 res = await page.evaluate(f'''() => {{
-                    return window.angular.element(document.body).injector().get('menuService').getMenuMap('{site_id}');
+                    try {{
+                        if (typeof window.angular === 'undefined') return [];
+                        let body = window.angular.element(document.body);
+                        if (!body) return [];
+                        let injector = body.injector();
+                        if (!injector || !injector.has('menuService')) return [];
+                        let menuMap = injector.get('menuService').getMenuMap('{site_id}');
+                        return menuMap;
+                    }} catch(e) {{
+                        return null;
+                    }}
                 }}''')
                 return list(res.values()) if res and isinstance(res, dict) else []
 
             async def get_menu_info(menu_cd):
                 res = await page.evaluate(f'''(cd) => {{
-                    return window.angular.element(document.body).injector().get('menuService').getMenuInfo(cd);
+                    try {{
+                        if (typeof window.angular === 'undefined') return null;
+                        let body = window.angular.element(document.body);
+                        if (!body) return null;
+                        let injector = body.injector();
+                        if (!injector || !injector.has('menuService')) return null;
+                        return injector.get('menuService').getMenuInfo(cd);
+                    }} catch(e) {{ return null; }}
                 }}''', menu_cd)
                 return res
                 
             async def update_menu(data):
                 await page.evaluate(f'''async (d) => {{
-                    const s = window.angular.element(document.body).injector().get('menuService');
-                    try {{ await s.update(d); }} catch(e) {{}}
+                    try {{
+                        if (typeof window.angular === 'undefined') return false;
+                        let body = window.angular.element(document.body);
+                        if (!body) return false;
+                        let injector = body.injector();
+                        if (!injector || !injector.has('menuService')) return false;
+                        const s = injector.get('menuService');
+                        await s.update(d);
+                    }} catch(e) {{}}
                     return true;
                 }}''', data)
 
@@ -112,16 +229,27 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                     menu_cd = existing['menuCd']
                 else:
                     print(f"Creating menu '{m['name']}'...")
-                    add_res = None
-                    if not parent_menu_cd:
-                        add_res = await page.evaluate(f'''async () => {{
-                            return await window.angular.element(document.body).injector().get('menuService').addMenu('{site_id}', '{m['name']}');
-                        }}''')
-                    else:
-                        add_res = await page.evaluate(f'''async (pid) => {{
-                            return await window.angular.element(document.body).injector().get('menuService').addChildMenu('{site_id}', pid, '{m['name']}');
-                        }}''', parent_menu_cd)
-                        
+                    async def add_menu(m, pid=None):
+                        if pid is None:
+                            return await page.evaluate(f'''async () => {{
+                                try {{
+                                    if (typeof window.angular === 'undefined') return null;
+                                    let injector = window.angular.element(document.body).injector();
+                                    if (!injector || !injector.has('menuService')) return null;
+                                    return await injector.get('menuService').addMenu('{site_id}', '{m['name']}');
+                                }} catch (e) {{ return null; }}
+                            }}''')
+                        else:
+                            return await page.evaluate(f'''async (pid) => {{
+                                try {{
+                                    if (typeof window.angular === 'undefined') return null;
+                                    let injector = window.angular.element(document.body).injector();
+                                    if (!injector || !injector.has('menuService')) return null;
+                                    return await injector.get('menuService').addChildMenu('{site_id}', pid, '{m['name']}');
+                                }} catch (e) {{ return null; }}
+                            }}''', pid)
+                    
+                    add_res = await add_menu(m, parent_menu_cd)
                     await asyncio.sleep(1)
                     
                     if not add_res or not add_res.get('item'):
@@ -171,7 +299,11 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                     if not folder_el:
                         print(f"Folder '{folder}' not found. Creating...")
                         await page.evaluate(f'''async () => {{
-                            try {{ await window.angular.element(document.body).injector().get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}"); }} catch(e) {{}}
+                            try {{ 
+                                if (typeof window.angular === 'undefined') return;
+                                let injector = window.angular.element(document.body).injector();
+                                if (injector) await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}"); 
+                            }} catch(e) {{}}
                         }}''')
                         await asyncio.sleep(1.5)
                         folders_created = True
@@ -293,11 +425,11 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                     
                     target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
                     if page.url == target_url_page:
-                        print(f"[{slug}] Already on target page. Reloading browser for clean state...")
-                        await page.reload(wait_until="domcontentloaded")
+                        print(f"[{slug}] Already on target page. Skipping reload...")
+                        await asyncio.sleep(1)
                     else:
                         await page.goto(target_url_page, wait_until="domcontentloaded")
-                    await asyncio.sleep(6)
+                        await asyncio.sleep(4)
                     
 
                     
@@ -360,7 +492,6 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                     
                     page_was_created = False
                     if not page_exists:
-                        # Click Create Page button
                         print(f"[{slug}] Page does not exist. Clicking Create Page...")
                         await page.evaluate('''() => {
                             const btn = Array.from(document.querySelectorAll('button')).find(b =>
@@ -376,95 +507,118 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                             pass
                         await asyncio.sleep(1)
                         try:
-                            await page.screenshot(path=f"scratch/deploy_{slug}_1_modal_open.png")
+                            await page.screenshot(path=f"scratch/deploy_{slug}_1_before_modal.png")
                         except:
                             pass
-                        
-                        # 4. Fill modal filename and title
+                            
+                        # 4. Fill Modal Form
                         print(f"[{slug}] Assuring modal form is filled...")
-                        await page.evaluate('''async (args) => {
+                        # Pass folder name instead of ID
+                        await page.evaluate(f'''async (args) => {{
                             const slug = args[0];
                             const menuName = args[1];
                             const siteId = args[2];
                             const layoutName = args[3];
-                            const folderAnchorId = args[4];
+                            const folderName = args[4];
                             
                             // Expand the menu tree inside the modal
                             const treeEl = document.querySelector('.modal-dialog div[js-tree="menuTree.config"]');
-                            if (treeEl) {
-                                for (let i = 0; i < 20; i++) {
-                                    if (window.angular && window.angular.element(treeEl).jstree && window.angular.element(treeEl).jstree(true)) {
+                            if (treeEl) {{
+                                for (let i = 0; i < 20; i++) {{
+                                    if (window.angular && window.angular.element(treeEl).jstree && window.angular.element(treeEl).jstree(true)) {{
                                         window.angular.element(treeEl).jstree(true).open_all();
                                         break;
-                                    }
+                                    }}
                                     await new Promise(r => setTimeout(r, 500));
-                                }
-                            }
+                                }}
+                            }}
                             
                             // Expand the folder tree inside the modal
                             const folderTreeEl = document.querySelector('.modal-dialog div[js-tree="folderTree.config"], .modal-dialog div[js-tree="pg.folderTree"]');
-                            if (folderTreeEl) {
-                                for (let i = 0; i < 20; i++) {
-                                    if (window.angular && window.angular.element(folderTreeEl).jstree && window.angular.element(folderTreeEl).jstree(true)) {
+                            if (folderTreeEl) {{
+                                for (let i = 0; i < 20; i++) {{
+                                    if (window.angular && window.angular.element(folderTreeEl).jstree && window.angular.element(folderTreeEl).jstree(true)) {{
                                         window.angular.element(folderTreeEl).jstree(true).open_all();
                                         break;
-                                    }
+                                    }}
                                     await new Promise(r => setTimeout(r, 500));
-                                }
-                            }
+                                }}
+                            }}
                             
-                            // Wait a bit for DOM to update after expansion
                             await new Promise(r => setTimeout(r, 1000));
                             
-                            // Select matching folder in modal tree if available
-                            if (folderTreeEl && folderAnchorId) {
-                                const folderModalItem = folderTreeEl.querySelector(`[id="${folderAnchorId}"]`);
-                                if (folderModalItem) {
+                            // Select matching folder in modal tree by text
+                            if (folderTreeEl && folderName) {{
+                                const folderAnchors = Array.from(folderTreeEl.querySelectorAll('.jstree-anchor'));
+                                const folderModalItem = folderAnchors.find(a => a.innerText.trim() === folderName);
+                                if (folderModalItem) {{
                                     folderModalItem.click();
-                                }
-                            }
+                                }}
+                            }}
                             
                             const fnInput = document.querySelector('input[name="filename"]');
-                            if (fnInput) {
+                            if (fnInput) {{
                                 fnInput.value = slug;
-                                fnInput.dispatchEvent(new Event('input', {bubbles: true}));
-                            }
+                                fnInput.dispatchEvent(new Event('input', {{bubbles: true}}));
+                            }}
                             const titleInput = document.querySelector('input[name="title"]');
-                            if (titleInput) {
+                            if (titleInput) {{
                                 titleInput.value = menuName;
-                                titleInput.dispatchEvent(new Event('input', {bubbles: true}));
-                            }
+                                titleInput.dispatchEvent(new Event('input', {{bubbles: true}}));
+                            }}
                             
                             // Select matching menu in modal tree if available
                             const modalAnchors = Array.from(document.querySelectorAll('.modal-dialog .jstree-anchor'));
-                            const modalItem = modalAnchors.find(a => a.innerText.trim() === menuName);
-                            if (modalItem) {
+                            const menuId = args[5];
+                            const modalItem = modalAnchors.find(a => (menuId && a.innerText.includes(String(menuId))) || a.innerText.trim() === menuName);
+                            if (modalItem) {{
                                 modalItem.click();
-                            }
+                            }}
 
-                            const selectTpl = (name, fname) => {
-                                const el = document.querySelector(`[name="${name}"]`);
-                                if (el) {
-                                    const s = window.angular.element(el).scope();
-                                    const list = s.pg[`${name}List`] || [];
-                                    const item = list.find(t => t.filename === fname && t.siteId === siteId) || list.find(t => t.filename === fname);
-                                    if (item) window.angular.element(el).controller('uiSelect').select(item);
-                                }
-                            };
+                            const selectTpl = (name, fname) => {{
+                                const el = document.querySelector(`[name="${{name}}"]`);
+                                if (el) {{
+                                    try {{
+                                        const s = window.angular.element(el).scope();
+                                        const list = s.pg[`${{name}}List`] || [];
+                                        const item = list.find(t => t.filename === fname && t.siteId === siteId) || 
+                                                     list.find(t => t.filename === fname) || 
+                                                     list.find(t => t.filename.includes('sub.jsp')) || 
+                                                     list[0];
+                                        if (item) {{
+                                            window.angular.element(el).controller('uiSelect').select(item);
+                                        }}
+                                    }} catch (e) {{}}
+                                    
+                                    setTimeout(() => {{
+                                        const textSpan = el.querySelector('.ui-select-match-text');
+                                        if (!textSpan || textSpan.innerText.trim() === '' || textSpan.innerText.trim().includes('선택')) {{
+                                            const toggle = el.querySelector('.ui-select-toggle');
+                                            if (toggle) toggle.click();
+                                            setTimeout(() => {{
+                                                const choices = Array.from(document.querySelectorAll('.ui-select-choices-row-inner, .ui-select-choices-row'));
+                                                const choice = choices.find(c => c.innerText.includes(fname)) || choices.find(c => c.innerText.includes('sub.jsp')) || choices[0];
+                                                if (choice) choice.click();
+                                            }}, 500);
+                                        }}
+                                    }}, 200);
+                                }}
+                            }};
                             selectTpl('headTemplate', 'common.jsp');
-                            selectTpl('layoutTemplate', layoutName + '.jsp');
-                        }''', [slug, menu_name, site_id, layout, folder_anchor_id.replace('#', '')])
-                        await asyncio.sleep(1)
+                            setTimeout(() => {{ selectTpl('layoutTemplate', layoutName + '.jsp'); }}, 1000);
+                        }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', ''))])
+                        await asyncio.sleep(2.5)
                         try:
                             await page.screenshot(path=f"scratch/deploy_{slug}_2_modal_filled.png")
                         except:
                             pass
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(1)
                         
                         # Check duplicate warning in modal
                         has_warning = await page.evaluate('''() => {
-                            const body = document.body.innerText || '';
-                            return body.includes('동일한 파일이 존재') || body.includes('이미 존재');
+                            const modal = document.querySelector('.modal-dialog');
+                            if (!modal) return false;
+                            return modal.innerText.includes('동일한 파일이 존재') || modal.innerText.includes('이미 존재');
                         }''')
                         
                         if has_warning:
@@ -476,16 +630,16 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                             await asyncio.sleep(2)
                             page_exists = True
                         else:
-                            # 5. Save modal using "저장 후 편집" (Save & Edit)
-                            print(f"[{slug}] Saving modal using Save & Edit...")
+                            # 5. Save modal using "저장 후 편집" (Save)
+                            print(f"[{slug}] Saving modal using Save...")
                             try:
                                 await page.evaluate('''() => {
                                     const btn = Array.from(document.querySelectorAll('.modal-dialog button, .modal-dialog a')).find(b => 
-                                        b.innerText && b.innerText.includes('저장 후 편집')
+                                        b.innerText && (b.innerText.includes('저장 후 편집') || b.innerText.trim() === '저장 후 편집')
                                     ) || document.querySelector('.modal-dialog .modal-footer .btn-primary, .modal-dialog .btn-primary');
                                     if (btn) btn.click();
                                 }''')
-                                await asyncio.sleep(5)
+                                await asyncio.sleep(2)
                                 page_was_created = True
                             except Exception as e:
                                 print(f"Error saving modal: {e}")
@@ -496,104 +650,125 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
                                 pass
                             
                     if page_exists and not page_was_created:
-                        print(f"[{slug}] Page already exists. Opening editor directly...")
-                        # 6. Click Edit (Brush) button for the specific page
-                        print(f"[{slug}] Clicking Edit (Brush) button...")
-                        try:
-                            # Set pagination to 100 to ensure row is visible
-                            await page.evaluate('''() => {
+                        print(f"[{slug}] Page already exists. Proceeding to update HTML via API...")
+                    
+                    # 6. Save page HTML via API
+                    print(f"[{slug}] Inserting ready HTML via UI...")
+                    
+                    try:
+                        # We need to open the editor from the grid if not already open
+                        print(f"[{slug}] Opening editor for existing page...")
+                        err = await page.evaluate(f'''async (slug) => {{
+                            try {{
+                                const htmlBtn = document.querySelector('button[data-cmd="html"]');
+                                if (htmlBtn && htmlBtn.offsetParent !== null) return null; // Already open
+                                
                                 const btns = Array.from(document.querySelectorAll('.pagination-sm a'));
                                 const btn100 = btns.find(b => b.innerText.trim() === '100');
                                 if (btn100) btn100.click();
-                            }''')
-                            await asyncio.sleep(2)
-                            
-                            # Find the row and click its edit button
-                            await page.evaluate(f'''(slug) => {{
-                                const trs = Array.from(document.querySelectorAll('table tbody tr'));
-                                for (let tr of trs) {{
+                                await new Promise(r => setTimeout(r, 2000));
+                                
+                                const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
+                                if (searchInput) {{
+                                    searchInput.value = slug;
+                                    searchInput.dispatchEvent(new Event('input'));
+                                    searchInput.dispatchEvent(new Event('change'));
+                                    const searchBtn = document.querySelector('button[ng-click*="search"], .zmdi-search');
+                                    if (searchBtn) searchBtn.click();
+                                    await new Promise(r => setTimeout(r, 2000));
+                                }}
+                                
+                                const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                                for (let tr of rows) {{
                                     if (tr.innerText.includes(slug)) {{
-                                        const btn = tr.querySelector('.zmdi-brush');
-                                        if (btn) btn.click();
-                                        return;
+                                        const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
+                                        if (btn) {{
+                                            btn.click();
+                                            return null;
+                                        }}
                                     }}
                                 }}
                                 // Fallback if not found by slug
                                 const anyBtn = document.querySelector('.zmdi-brush');
-                                if (anyBtn) anyBtn.click();
-                            }}''', slug)
-                            await asyncio.sleep(5)
-                        except Exception as e:
-                            print(f"[{slug}] Error clicking edit button: {e}")
-                            continue
+                                if (anyBtn) {{
+                                    anyBtn.click();
+                                    return null;
+                                }}
+                                return "Edit button not found in row";
+                            }} catch(e) {{
+                                return "Error clicking edit: " + e.message;
+                            }}
+                        }}''', slug)
+                        if err: print(f"[{slug}] Warning opening editor: {err}")
+                        await asyncio.sleep(2)
+                            
+                        # Wait for modal/editor
+                        await asyncio.sleep(3)
+                        
+                        # 8. Paste HTML
+                        print(f"[{slug}] Clicking HTML Code View...")
                         try:
-                            await page.screenshot(path=f"scratch/deploy_{slug}_4_after_edit_click.png")
+                            # Click the HTML view button using Playwright mouse simulation (only targeting visible ones)
+                            await page.locator('button[data-cmd="html"] >> visible=true').first.click()
+                        except Exception as e:
+                            print(f"[{slug}] Could not click HTML view: {e}")
+                        await asyncio.sleep(2)
+                        
+                        print(f"[{slug}] Pasting HTML via Keyboard...")
+                        try:
+                            # Focus the visible textarea inside the editor
+                            await page.locator('textarea >> visible=true').first.focus()
+                            await asyncio.sleep(0.5)
+                            # Select all and replace content
+                            await page.keyboard.press("Control+A")
+                            await page.keyboard.press("Backspace")
+                            await page.keyboard.insert_text(ready_html)
+                        except Exception as e:
+                            print(f"[{slug}] Could not paste HTML: {e}")
+                        await asyncio.sleep(2)
+                        
+                        print(f"[{slug}] Clicking HTML Code View AGAIN...")
+                        try:
+                            await page.locator('button[data-cmd="html"] >> visible=true').first.click()
+                        except Exception as e:
+                            pass
+                        await asyncio.sleep(2)
+                        try:
+                            await page.screenshot(path=f"scratch/deploy_{slug}_5_after_html_paste.png")
+                        except:
+                            pass
+                        # 9. Save Editor
+                        print(f"[{slug}] Saving Editor...")
+                        try:
+                            saved = await page.evaluate('''() => {
+                                const btn1 = document.querySelector('button[x-ng-click="editor.save()"], button[ng-click="editor.save()"]');
+                                if (btn1) {
+                                    btn1.click();
+                                    return "editor.save clicked";
+                                }
+                                const btn2 = document.querySelector('button[x-ng-click="pg.save()"], button[ng-click="pg.save()"]');
+                                if (btn2) {
+                                    btn2.click();
+                                    return "pg.save clicked";
+                                }
+                                return "no save button found";
+                            }''')
+                            print(f"[{slug}] Save action result: {saved}")
+                            await asyncio.sleep(4)
+                        except Exception as e:
+                            print(f"[{slug}] Error saving editor: {e}")
+                            
+                        # Take screenshot for verification
+                        try:
+                            await page.screenshot(path=f"scratch/deploy_{slug}_6_after_editor_save.png")
                         except:
                             pass
                             
-                        await asyncio.sleep(3)     
-                    await asyncio.sleep(3)
-                    
-                    # 8. Paste HTML
-                    print(f"[{slug}] Clicking HTML Code View...")
-                    try:
-                        # Click the HTML view button using Playwright mouse simulation (only targeting visible ones)
-                        await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                     except Exception as e:
-                        print(f"[{slug}] Could not click HTML view: {e}")
-                    await asyncio.sleep(2)
+                        print(f"[{slug}] Error saving HTML via UI: {e}")
                     
-                    print(f"[{slug}] Pasting HTML via Keyboard...")
-                    try:
-                        # Focus the visible textarea inside the editor
-                        await page.locator('textarea >> visible=true').first.focus()
-                        await asyncio.sleep(0.5)
-                        # Select all and replace content
-                        await page.keyboard.press("Control+A")
-                        await page.keyboard.press("Backspace")
-                        await page.keyboard.insert_text(ready_html)
-                    except Exception as e:
-                        print(f"[{slug}] Could not paste HTML: {e}")
-                    await asyncio.sleep(2)
-                    
-                    print(f"[{slug}] Clicking HTML Code View AGAIN...")
-                    try:
-                        await page.locator('button[data-cmd="html"] >> visible=true').first.click()
-                    except Exception as e:
-                        pass
-                    await asyncio.sleep(2)
-                    try:
-                        await page.screenshot(path=f"scratch/deploy_{slug}_5_after_html_paste.png")
-                    except:
-                        pass
-                    # 9. Save Editor
-                    print(f"[{slug}] Saving Editor...")
-                    try:
-                        saved = await page.evaluate('''() => {
-                            const btn1 = document.querySelector('button[x-ng-click="editor.save()"], button[ng-click="editor.save()"]');
-                            if (btn1) {
-                                btn1.click();
-                                return "editor.save clicked";
-                            }
-                            const btn2 = document.querySelector('button[x-ng-click="pg.save()"], button[ng-click="pg.save()"]');
-                            if (btn2) {
-                                btn2.click();
-                                return "pg.save clicked";
-                            }
-                            return "no save button found";
-                        }''')
-                        print(f"[{slug}] Save action result: {saved}")
-                        await asyncio.sleep(4)
-                    except Exception as e:
-                        print(f"[{slug}] Error saving editor: {e}")
-                    
-                    try:
-                        await page.screenshot(path=f"scratch/deploy_{slug}_6_after_editor_save.png")
-                    except:
-                        pass
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(1)
                     print(f"[{slug}] Done deploying page.")
-                    print(f"[{slug}] Done.")
                     
                 except Exception as e:
                     print(f"[{slug}] Error: {e}")
@@ -607,6 +782,12 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             return {'success': False, 'message': f'Menu deploy error: {str(e)}'}
         finally:
             await browser.close()
+            # Restore original print
+            try:
+                import builtins
+                builtins.print = orig_print
+            except:
+                pass
 
 def run_deploy_menus(site_url, site_id, username, password, menus, progress_cb=None):
     return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb))
