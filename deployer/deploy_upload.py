@@ -68,12 +68,21 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None):
             await asyncio.sleep(2)
             
             # Click the "업로드" button in the modal footer to confirm upload
-            upload_confirm = page.locator('button:has(.fa-cloud-upload), button:text("업로드")').first
+            upload_confirm = page.locator('button:has(.fa-cloud-upload), button:has-text("업로드")').first
             await upload_confirm.click()
             await asyncio.sleep(4)
-            print("img-ready.png uploaded successfully!")
+            
+            # Verification Step
+            try:
+                await page.wait_for_function('''() => {
+                    return document.body.innerText.includes('img-ready.png');
+                }''', timeout=10000)
+                print("Xác minh thành công: img-ready.png đã tồn tại trong CMS!")
+            except Exception:
+                raise Exception("Kiểm tra lại thất bại: Hình ảnh 'img-ready.png' chưa được upload thành công sau 10 giây.")
         else:
             print(f"Image file not found at: {image_path}")
 
     except Exception as e:
         print(f"Error during res-img upload: {e}")
+        raise

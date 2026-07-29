@@ -1,6 +1,6 @@
 import asyncio
 
-async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item):
+async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None):
     print("Starting page deployment for menus...")
     if progress_cb:
         progress_cb(92, "Creating ready pages for menus (UI Mode)...")
@@ -354,6 +354,20 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     
             except Exception as e:
                 print(f"[{slug}] Error saving HTML via UI: {e}")
+            
+            # --- VERIFICATION STEP FOR PAGE ---
+            print(f"[{slug}] Verifying page creation in Page Manager...")
+            await page.goto(target_url, wait_until='domcontentloaded')
+            await asyncio.sleep(4)
+            verify_page = await page.evaluate(f'''(slug) => {{
+                const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                return rows.some(tr => tr.innerText.includes(slug));
+            }}''', slug)
+            
+            if not verify_page:
+                raise Exception(f"Kiểm tra lại thất bại: Page '{slug}' chưa được lưu thành công vào CMS.")
+            print(f"Xác minh thành công: Page '{slug}' đã tồn tại trong CMS!")
+            # ----------------------------------
             
             await asyncio.sleep(1)
             print(f"[{slug}] Done deploying page.")

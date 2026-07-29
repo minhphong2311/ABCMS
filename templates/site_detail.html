@@ -129,6 +129,9 @@
         <button type="button" id="btn-deploy-menus" class="btn btn-warning btn-sm text-white" style="margin-left: auto;" onclick="deployMenus('{{ site.id }}')" title="Deploy Menus">
           <i class="fas fa-cloud-upload-alt"></i>
         </button>
+        <button type="button" id="btn-cancel-deploy-menus" class="btn btn-danger btn-sm text-white ml-2" style="display:none;" onclick="cancelDeployMenus()" title="Cancel Deployment">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       <div class="card-body p-0 bg-white" id="site-menu-tree-container">
         <div class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading tree...</div>
@@ -850,6 +853,16 @@ function checkDeployMenuStatus(siteId) {
                             background: '#343a40',
                             color: '#fff'
                         });
+                    } else if (task.status === 'cancelled') {
+                        clearInterval(deployMenuCheckInterval);
+                        resetDeployMenuBtn();
+                        Swal.fire({
+                            title: 'Cancelled', 
+                            text: 'Menu deployment was cancelled.', 
+                            icon: 'info',
+                            background: '#343a40',
+                            color: '#fff'
+                        });
                     }
                 }
             })
@@ -865,6 +878,13 @@ function resetDeployMenuBtn() {
         btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i>';
         btn.disabled = false;
     }
+    const cancelBtn = document.getElementById('btn-cancel-deploy-menus');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+        cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+        cancelBtn.disabled = false;
+    }
+    currentDeployTaskId = null;
 }
 function setDeployMenuBtnRunning() {
     const btn = document.getElementById('btn-deploy-menus');

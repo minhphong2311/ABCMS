@@ -70,9 +70,10 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
             await page.goto(target_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
             
-            # Xác minh lại xem site đã tạo thành công chưa
-            if 'login.do' in page.url:
-                raise Exception("Đăng nhập hoặc tự động tạo Site thất bại. URL vẫn bị đẩy về trang Login. Hãy kiểm tra lại tài khoản hệ thống hoặc tạo Site bằng tay.")
+            # Xác minh bằng cách kiểm tra kết quả trả về từ API tạo site
+            if not isinstance(res, dict) or not res.get('success'):
+                raise Exception(f"Kiểm tra lại thất bại: Site ID '{site_id}' chưa được tạo thành công trên hệ thống CMS. Lỗi: {res}")
+            print(f"Xác minh thành công: Site ID '{site_id}' đã được API báo tạo thành công!")
                 
         else:
             print(f"Site ID '{site_id}' đã tồn tại, tiếp tục deploy.")

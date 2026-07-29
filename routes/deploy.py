@@ -127,6 +127,9 @@ def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus
             DEPLOY_TASKS[task_id]["progress"] = percent
             DEPLOY_TASKS[task_id]["message"] = msg
 
+    def is_cancelled():
+        return DEPLOY_TASKS.get(task_id, {}).get("status") == "cancelling"
+
     try:
         result = run_deploy_menus(
             site_url=site_url,
@@ -134,12 +137,17 @@ def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus
             username=username,
             password=password,
             menus=menus,
-            progress_cb=progress_callback
+            progress_cb=progress_callback,
+            is_cancelled=is_cancelled
         )
-        DEPLOY_TASKS[task_id] = {
-            "status": "success" if result.get('success') else "error",
-            "message": result.get('message', '')
-        }
+        
+        if is_cancelled():
+            DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": "Deploy cancelled by user"}
+        else:
+            DEPLOY_TASKS[task_id] = {
+                "status": "success" if result.get('success') else "error",
+                "message": result.get('message', '')
+            }
     except Exception as e:
         DEPLOY_TASKS[task_id] = {"status": "error", "message": str(e)}
 
@@ -176,3 +184,16 @@ def api_deploy_menus():
     thread.start()
 
     return jsonify({'success': True, 'message': 'Background menu deploy started'})
+
+@deploy_bp.route('/api/deploy_cancel', methods=['POST'])
+def api_deploy_cancel():
+    data = request.json or {}
+    task_id = data.get('task_id')
+    if not task_id:
+        return jsonify({'success': False, 'message': 'task_id required'})
+    
+    if task_id in DEPLOY_TASKS and DEPLOY_TASKS[task_id]['status'] == 'running':
+        DEPLOY_TASKS[task_id]['status'] = 'cancelling'
+        return jsonify({'success': True, 'message': 'Cancellation requested'})
+    
+    return jsonify({'success': False, 'message': 'Task not running'})

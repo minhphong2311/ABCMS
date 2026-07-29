@@ -36,6 +36,16 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             }}''')
             await asyncio.sleep(1.5)
             folders_created = True
+            
+            # Verification Step
+            # CMS tree needs a refresh to show new nodes created via API
+            await page.reload(wait_until="domcontentloaded")
+            await asyncio.sleep(4)
+            try:
+                await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)
+                print(f"Xác minh thành công: Thư mục '{folder}' đã tồn tại.")
+            except Exception:
+                raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
     
     if folders_created:
         print("Folders created successfully.")

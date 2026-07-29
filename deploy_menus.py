@@ -8,7 +8,7 @@ from deployer.deploy_folder import deploy_folders
 from deployer.deploy_upload import deploy_upload_image
 from deployer.deploy_page import deploy_pages
 
-async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None):
+async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
     # Safe print to avoid cp949 encode errors on Windows
     def safe_print(*args, **kwargs):
         msg = " ".join(str(a) for a in args)
@@ -37,14 +37,18 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
     
     async with async_playwright() as p:
         print("Playwright started...")
-        browser = await p.chromium.launch(headless=True)
-        print("Browser launched.")
+        # Launch browser in UI mode as requested by user
+        browser = await p.chromium.launch(headless=False, args=['--no-sandbox', '--disable-setuid-sandbox'])
+        print('Browser launched in UI mode.')
         context = await browser.new_context(
             viewport={'width': 1920, 'height': 1080}, 
             ignore_https_errors=True,
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
         )
         page = await context.new_page()
+        
+        # Auto-accept any dialogs (alerts, confirms) to prevent them from blocking the deployment
+        page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))
         
         try:
             print(f'Logging in to CMS for menu deploy: {site_url}')
@@ -83,14 +87,20 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             # --- 3. UPLOAD HÌNH ẢNH DÙNG CHUNG ---
             await deploy_upload_image(page, site_url, site_id, progress_cb)
             
+            # --- TẠO LAYOUT TEMPLATE ---
+            from deployer.deploy_layout import deploy_layouts
+            await deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled)
+            
             # --- 4. TẠO PAGE VÀ INJECT HTML ---
-            await deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item)
+            await deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled)
 
             if progress_cb:
                 progress_cb(100, "Completed!")
             return {'success': True, 'message': 'Menus, folders and ready pages deployed successfully!'}
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f'Menu deploy ERROR: {e}')
             return {'success': False, 'message': f'Menu deploy error: {str(e)}'}
         finally:
@@ -102,5 +112,5 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             except:
                 pass
 
-def run_deploy_menus(site_url, site_id, username, password, menus, progress_cb=None):
-    return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb))
+def run_deploy_menus(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
+    return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb, is_cancelled))

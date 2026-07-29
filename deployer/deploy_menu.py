@@ -129,6 +129,13 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 data['url'] = url
                 await update_menu(page, data)
                 await asyncio.sleep(1)
+                
+        # Verification Step
+        verify_menus = await get_cms_menus(page, site_id)
+        is_verified = any(str(cm.get('menuCd')) == str(menu_cd) for cm in verify_menus)
+        if not is_verified:
+            raise Exception(f"Kiểm tra lại thất bại: Menu '{m['name']}' chưa được tạo thành công trên hệ thống CMS.")
+        print(f"Xác minh thành công: Menu '{m['name']}' đã tồn tại (menuCd: {menu_cd}).")
 
     print("Finished deploying menus!")
     return created_menu_cds, current_item
