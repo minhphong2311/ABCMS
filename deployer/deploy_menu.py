@@ -38,6 +38,11 @@ async def update_menu(page, data):
             let injector = body.injector();
             if (!injector || !injector.has('menuService')) return false;
             const s = injector.get('menuService');
+            
+            // Clean up problematic fields before sending to Spring MVC
+            if (d.children) delete d.children;
+            if (d.nodes) delete d.nodes;
+            
             await s.update(d);
         }} catch(e) {{}}
         return true;
@@ -132,8 +137,21 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 data = info_res['item']
                 data['page'] = url
                 data['url'] = url
+                
+                # Delete children on python side as well to be safe
+                if 'children' in data: del data['children']
+                if 'nodes' in data: del data['nodes']
+                
                 await update_menu(page, data)
                 await asyncio.sleep(1)
+                
+                # Close any SweetAlert that might have popped up from Spring 500 error or success
+                try:
+                    await page.evaluate('''() => {
+                        const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
+                        if (confirmBtn) confirmBtn.click();
+                    }''')
+                except: pass
                 
         # Verification Step
         print(f"  2.5 Kiểm tra lại toàn bộ danh sách Menu để xác nhận...")
