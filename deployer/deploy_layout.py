@@ -2,12 +2,13 @@ import asyncio
 import os
 
 async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None):
+    print("\n" + "="*50)
+    print("5. KIỂM TRA LAYOUT")
+    print("="*50)
     if progress_cb:
         progress_cb(30, "Checking and creating layouts")
-    print(">>> Deploying Layouts")
     
     target_url = f"{site_url}/index.do?siteId={site_id}#!/res-layout"
-    print(f"Navigating to: {target_url}")
     try:
         await page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
     except Exception:
@@ -25,7 +26,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         if progress_cb:
             progress_cb(40, f"Checking layout: {layout_name}")
             
-        print(f"[{layout_name}] Ensuring we are on Layout Grid: {target_url}")
+        print(f"\n  5.1 Tìm kiếm Layout theo tên: '{layout_name}'...")
         try:
             await page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
         except Exception:
@@ -35,7 +36,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         
         local_html_path = os.path.join(layout_dir, f"{layout_name}.html")
         if not os.path.exists(local_html_path):
-            print(f"Local file {local_html_path} not found, skipping.")
+            print(f"  [Lỗi] File HTML chuẩn {local_html_path} không tồn tại, bỏ qua.")
             continue
             
         with open(local_html_path, 'r', encoding='utf-8') as f:
@@ -46,8 +47,10 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             return els.some(el => (el.innerText || el.textContent || '').trim() === layoutName || (el.innerText || el.textContent || '').trim() === layoutName + '.jsp');
         }}''', layout_name)
         
-        if not layout_exists:
-            print(f"[{layout_name}] Not found. Creating new layout...")
+        if layout_exists:
+            print(f"  5.2 Layout '{layout_name}' đã tồn tại → Chuyển sang bước kiểm tra HTML và tạo bước tiếp theo.")
+        else:
+            print(f"  5.3 Layout '{layout_name}' chưa tồn tại → Tiến hành Tạo Layout '{layout_name}'...")
             if progress_cb:
                 progress_cb(45, f"Creating layout: {layout_name}")
                 
@@ -58,10 +61,8 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (addBtn) addBtn.click();
             }''')
             await asyncio.sleep(2)
-            await page.screenshot(path=f"layout_creation_modal_opened_{layout_name}.png")
             
             try:
-                # Type slowly to ensure Angular registers it
                 inputs = await page.locator('.modal-dialog input[type="text"]').all()
                 if len(inputs) > 0 and await inputs[0].is_visible():
                     await inputs[0].click()
@@ -77,8 +78,8 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                         await inputs[1].press_sequentially(layout_name, delay=50)
                 await asyncio.sleep(1)
             except Exception as e:
-                print(f"Error filling form: {e}")
-            await page.screenshot(path=f"layout_creation_modal_filled_{layout_name}.png")
+                print(f"  Error filling form: {e}")
+
             await page.evaluate('''() => {
                 const saveBtn = Array.from(document.querySelectorAll('.modal-footer button, .btn-primary')).find(b => (b.innerText || '').includes('저장') || (b.innerText || '').includes('Save') || (b.innerText || '').includes('확인'));
                 if (saveBtn) saveBtn.click();
@@ -91,7 +92,6 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }''')
             await asyncio.sleep(2)
             
-            # Go back to layout grid in case it opens editor immediately
             await page.evaluate('''() => {
                 const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
                     (b.innerText || '').includes('목록으로') || 
@@ -102,15 +102,14 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }''')
             await asyncio.sleep(2)
 
-        print(f"[{layout_name}] Refreshing grid using UI button...")
+        print(f"  5.4 Kiểm tra lại Layout '{layout_name}' trong danh sách...")
         await page.evaluate('''() => {
             const refreshBtn = Array.from(document.querySelectorAll('button, a, span')).find(b => (b.innerText || '').includes('새로고침'));
             if (refreshBtn) refreshBtn.click();
         }''')
         await asyncio.sleep(4)
         
-        await page.screenshot(path=f"layout_grid_before_open_{layout_name}.png")
-        print(f"[{layout_name}] Opening editor...")
+        print(f"  5.5 Mở màn hình Edit Layout '{layout_name}'...")
         await page.evaluate(f'''(layoutName) => {{
             const titles = Array.from(document.querySelectorAll('h4, .card-title, .title'));
             const targetTitle = titles.find(t => t.textContent.trim() === layoutName + '.jsp' || t.textContent.trim() === layoutName);
@@ -129,8 +128,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         }}''', layout_name)
         await asyncio.sleep(4)
         
-        await page.screenshot(path=f"layout_editor_opened_{layout_name}.png")
-        print(f"[{layout_name}] Clicking Source Edit tab...")
+        print(f"  5.6 Chuyển sang tab HTML (소스 편집)...")
         await page.evaluate('''() => {
             const headings = Array.from(document.querySelectorAll('uib-tab-heading'));
             const target = headings.find(h => h.textContent.includes('소스 편집') || h.textContent.includes('Source'));
@@ -141,44 +139,48 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         }''')
         await asyncio.sleep(3)
         
-        await page.screenshot(path=f"layout_source_tab_clicked_{layout_name}.png")
-        print(f"[{layout_name}] Setting HTML via CodeMirror API...")
-        try:
-            # Set HTML directly into CodeMirror instance
-            success = await page.evaluate(f'''(html) => {{
+        print(f"  5.7 So sánh nội dung HTML với file HTML chuẩn...")
+        current_html = await page.evaluate('''() => {
+            try {
                 const cm = document.querySelector('.CodeMirror').CodeMirror;
-                if (cm) {{
-                    cm.setValue(html);
-                    return true;
-                }}
-                return false;
-            }}''', html_content)
-            
-            if success:
-                print(f"[{layout_name}] Set HTML via CodeMirror API successfully")
-            else:
-                print(f"[{layout_name}] Failed to set HTML via CodeMirror API")
-        except Exception as e:
-            print(f"[{layout_name}] Error setting HTML: {e}")
-            
-        await asyncio.sleep(2)
-        print(f"[{layout_name}] Saving...")
-        
-        await page.evaluate('''() => {
-            const btn = document.querySelector('button[ng-click*="edit.save()"], button[x-ng-click*="edit.save()"]');
-            if (btn) btn.click();
+                if (cm) return cm.getValue();
+            } catch(e) {}
+            return "";
         }''')
-        await asyncio.sleep(3)
-        
-        # Click SweetAlert confirm if it appears
-        await page.evaluate('''() => {
-            const confirmBtn = document.querySelector('.sweet-alert button.confirm');
-            if (confirmBtn) confirmBtn.click();
-        }''')
-        await asyncio.sleep(1)
-        
-        # --- VERIFICATION STEP FOR LAYOUT ---
-        print(f"[{layout_name}] Verifying HTML content...")
+
+        if current_html.strip() != html_content.strip():
+            print(f"  5.8 HTML chưa khớp → Cập nhật lại Layout '{layout_name}'...")
+            try:
+                success = await page.evaluate(f'''(html) => {{
+                    const cm = document.querySelector('.CodeMirror').CodeMirror;
+                    if (cm) {{
+                        cm.setValue(html);
+                        return true;
+                    }}
+                    return false;
+                }}''', html_content)
+                if success:
+                    print(f"  Cập nhật HTML vào CodeMirror editor thành công.")
+            except Exception as e:
+                print(f"  Error setting HTML: {e}")
+                
+            await asyncio.sleep(2)
+            print(f"  Lưu lại thay đổi Layout...")
+            await page.evaluate('''() => {
+                const btn = document.querySelector('button[ng-click*="edit.save()"], button[x-ng-click*="edit.save()"]');
+                if (btn) btn.click();
+            }''')
+            await asyncio.sleep(3)
+            
+            await page.evaluate('''() => {
+                const confirmBtn = document.querySelector('.sweet-alert button.confirm');
+                if (confirmBtn) confirmBtn.click();
+            }''')
+            await asyncio.sleep(1)
+        else:
+            print(f"  ✓ HTML đã khớp với file chuẩn.")
+
+        print(f"  5.9 Kiểm tra lại HTML để xác nhận đã khớp với file chuẩn...")
         cms_html = await page.evaluate('''() => {
             try {
                 const cm = document.querySelector('.CodeMirror').CodeMirror;
@@ -190,8 +192,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         if not cms_html or cms_html.strip() == "":
             raise Exception(f"Kiểm tra lại thất bại: Layout '{layout_name}' chưa được lưu HTML thành công vào CMS.")
         
-        print(f"Xác minh thành công: Layout '{layout_name}' đã được lưu HTML chính xác!")
-        # ------------------------------------
+        print(f"  ✓ 5.9 Kiểm tra lại THÀNH CÔNG: Layout '{layout_name}' HTML đã khớp hoàn tất!")
         
         await page.evaluate('''() => {
             const btns = Array.from(document.querySelectorAll('button, a'));
@@ -200,4 +201,5 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         }''')
         await asyncio.sleep(3)
         
-    print("<<< Layout deployment complete")
+    print("  ✓ Hoàn thành kiểm tra và cập nhật toàn bộ Layout.")
+

@@ -37,15 +37,33 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
     
     async with async_playwright() as p:
         print("Playwright started...")
-        # Launch browser in UI mode as requested by user
-        browser = await p.chromium.launch(headless=False, args=['--no-sandbox', '--disable-setuid-sandbox'])
-        print('Browser launched in UI mode.')
+        # Launch browser in visible UI mode (headless=False)
+        try:
+            browser = await p.chromium.launch(
+                headless=False,
+                channel="chrome",
+                slow_mo=500,
+                args=['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
+            )
+            print('Google Chrome launched in UI mode (headless=False).')
+        except Exception:
+            browser = await p.chromium.launch(
+                headless=False,
+                slow_mo=500,
+                args=['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
+            )
+            print('Chromium launched in UI mode (headless=False).')
+            
         context = await browser.new_context(
-            viewport={'width': 1920, 'height': 1080}, 
+            viewport=None, 
             ignore_https_errors=True,
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
         )
         page = await context.new_page()
+        try:
+            await page.bring_to_front()
+        except Exception:
+            pass
         
         # Auto-accept any dialogs (alerts, confirms) to prevent them from blocking the deployment
         page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))

@@ -1,7 +1,12 @@
 import asyncio
 
 async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item):
+    print("\n" + "="*50)
+    print("3. KIỂM TRA FOLDER")
+    print("="*50)
+    print("  3.1 Mở danh sách Folder.")
     if not unique_folders_list:
+        print("  Không có folder riêng biệt cần tạo.")
         return current_item
         
     def report(msg):
@@ -10,14 +15,14 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         if progress_cb:
             progress_cb(min(100, int((current_item / max(1, total_items)) * 100)), msg)
 
-    print(f"Creating folders in Page Manager: {unique_folders_list}")
     target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
     await page.goto(target_url_page, wait_until="domcontentloaded")
     await asyncio.sleep(6)
     
     folders_created = False
     for folder in unique_folders_list:
-        report(f"Creating folder: {folder}")
+        report(f"Checking folder: {folder}")
+        print(f"\n  3.2 Kiểm tra Folder '{folder}' theo thứ tự Menu...")
         folder_anchor_id = f'/{site_id}/{folder}_anchor'
         try:
             await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
@@ -25,8 +30,10 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         except Exception:
             folder_el = False
         
-        if not folder_el:
-            print(f"Folder '{folder}' not found. Creating...")
+        if folder_el:
+            print(f"  3.3 Folder '{folder}' đã tồn tại → Kiểm tra Folder của Menu tiếp theo.")
+        else:
+            print(f"  3.4 Folder '{folder}' chưa tồn tại → Tiến hành tạo Folder '{folder}'...")
             await page.evaluate(f'''async () => {{
                 try {{ 
                     if (typeof window.angular === 'undefined') return;
@@ -38,16 +45,15 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             folders_created = True
             
             # Verification Step
-            # CMS tree needs a refresh to show new nodes created via API
             await page.reload(wait_until="domcontentloaded")
             await asyncio.sleep(4)
+            print(f"  3.5 Kiểm tra lại Folder '{folder}' trong danh sách...")
             try:
                 await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)
-                print(f"Xác minh thành công: Thư mục '{folder}' đã tồn tại.")
+                print(f"  ✓ 3.5 Kiểm tra lại THÀNH CÔNG: Thư mục '{folder}' đã tồn tại.")
             except Exception:
                 raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
     
-    if folders_created:
-        print("Folders created successfully.")
-        
+    print("  ✓ 3.5 Hoàn thành kiểm tra và xác nhận lại toàn bộ Folder theo đúng thứ tự.")
     return current_item
+

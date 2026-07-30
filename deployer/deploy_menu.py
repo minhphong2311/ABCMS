@@ -44,6 +44,10 @@ async def update_menu(page, data):
     }}''', data)
 
 async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item):
+    print("\n" + "="*50)
+    print("2. KIỂM TRA MENU")
+    print("="*50)
+    print("  2.1 Mở danh sách Menu.")
     created_menu_cds = {}
     
     def report(msg):
@@ -54,6 +58,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
 
     for m in menus:
         report(f"Deploying menu: {m['name']}")
+        print(f"\n  2.2 Kiểm tra Menu '{m['name']}' trong danh sách Menu...")
         cms_menus = await get_cms_menus(page, site_id)
         
         # Determine expected parent menu CD
@@ -61,7 +66,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
         if m.get('parent_id'):
             parent_menu_cd = created_menu_cds.get(m['parent_id'])
             if not parent_menu_cd:
-                print(f"Parent for '{m['name']}' not found locally or in CMS. Skipping.")
+                print(f"  [Cảnh báo] Parent for '{m['name']}' not found locally or in CMS. Skipping.")
                 continue
         
         # Helper to normalize menu codes for safe comparison
@@ -80,10 +85,10 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                     break
         
         if existing:
-            print(f"Menu '{m['name']}' already exists in this group (menuCd: {existing['menuCd']})")
+            print(f"  2.3 Menu '{m['name']}' đã tồn tại (menuCd: {existing['menuCd']}) → Chuyển sang bước 3 (kiểm tra menu tiếp theo).")
             menu_cd = existing['menuCd']
         else:
-            print(f"Creating menu '{m['name']}'...")
+            print(f"  2.4 Menu '{m['name']}' chưa tồn tại → Tiến hành Tạo Menu '{m['name']}'...")
             async def add_menu(m, pid=None):
                 if pid is None:
                     return await page.evaluate(f'''async () => {{
@@ -108,7 +113,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
             await asyncio.sleep(1)
             
             if not add_res or not add_res.get('item'):
-                print(f"Failed to get newly created menu '{m['name']}' from API response: {add_res}")
+                print(f"  Lỗi khi tạo menu '{m['name']}': {add_res}")
                 continue
             menu_cd = add_res['item']['menuCd']
             
@@ -121,7 +126,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
         
         existing_url = existing.get('page') if existing else None
         if url and existing_url != url:
-            print(f"Updating URL for '{m['name']}' to '{url}'...")
+            print(f"  Cập nhật URL cho '{m['name']}' -> '{url}'...")
             info_res = await get_menu_info(page, menu_cd)
             if info_res and 'item' in info_res:
                 data = info_res['item']
@@ -131,11 +136,13 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 await asyncio.sleep(1)
                 
         # Verification Step
+        print(f"  2.5 Kiểm tra lại toàn bộ danh sách Menu để xác nhận...")
         verify_menus = await get_cms_menus(page, site_id)
         is_verified = any(str(cm.get('menuCd')) == str(menu_cd) for cm in verify_menus)
         if not is_verified:
             raise Exception(f"Kiểm tra lại thất bại: Menu '{m['name']}' chưa được tạo thành công trên hệ thống CMS.")
-        print(f"Xác minh thành công: Menu '{m['name']}' đã tồn tại (menuCd: {menu_cd}).")
+        print(f"  ✓ 2.5 Xác nhận thành công: Menu '{m['name']}' đã tồn tại (menuCd: {menu_cd}).")
 
-    print("Finished deploying menus!")
+    print("  ✓ Hoàn tất kiểm tra và tạo Menu.")
     return created_menu_cds, current_item
+

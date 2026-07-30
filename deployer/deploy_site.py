@@ -1,7 +1,10 @@
 import asyncio
 
 async def check_and_deploy_site(page, site_url, site_id, username, password, progress_cb=None):
-    print(f"Kiểm tra sự tồn tại của Site ID: {site_id}")
+    print("\n" + "="*50)
+    print("1. KIỂM TRA SITE")
+    print("="*50)
+    print(f"  1.1 Tìm Site ID: {site_id}")
     try:
         site_check = await page.evaluate(f'''async () => {{
             try {{
@@ -18,15 +21,14 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
         }}''')
         
         if not site_check:
-            print(f"Site ID '{site_id}' không tồn tại. Đang tiến hành tạo mới tại trang Quản lý Site...")
+            print(f"  1.3 Site chưa tồn tại → Đang tiến hành tạo Site ID '{site_id}'...")
             if progress_cb:
                 progress_cb(10, f"Creating new Site ID: {site_id}...")
             
-            # Truy cập trang quản lý site theo yêu cầu
             site_creation_url = f'{site_url}/index.do#!/site'
             
             if 'login.do' in page.url:
-                print("Bị đẩy ra trang login, tiến hành login lại (webadmin) để tạo site...")
+                print("  [Auto-Login] Tiến hành đăng nhập tài khoản admin...")
                 await page.goto(f'{site_url}/index.do')
                 await page.wait_for_selector('input[name="userId"]', timeout=15000)
                 await page.fill('input[name="userId"]', 'webadmin')
@@ -34,11 +36,11 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
                 await page.click('button[type="submit"]')
                 await asyncio.sleep(4)
             
-            print(f"Điều hướng đến: {site_creation_url}")
+            print(f"  Điều hướng đến: {site_creation_url}")
             await page.goto(site_creation_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
 
-            print("Đang gọi API tạo Site trên hệ thống CMS...")
+            print("  Đang gửi API tạo Site trên hệ thống CMS...")
             res = await page.evaluate(f'''async () => {{
                 try {{
                     if (typeof window.angular === 'undefined') return "Angular undefined";
@@ -51,13 +53,11 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
                     return "Error: " + e.message;
                 }}
             }}''')
-            print(f"Kết quả tạo Site: {res}")
+            print(f"  Kết quả tạo Site: {res}")
             await asyncio.sleep(2)
             
-            # Tải lại trang menu manager ban đầu
             target_url = f'{site_url}/index.do?siteId={site_id}#!/menu'
-            print(f"Quay lại trang Menu Manager: {target_url}")
-            # Phải login lại bằng user gốc vì hiện tại đang là webadmin
+            print(f"  Quay lại trang Menu Manager: {target_url}")
             await page.goto(f'{site_url}/logOut.do')
             await asyncio.sleep(2)
             await page.goto(f'{site_url}/index.do')
@@ -70,12 +70,13 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
             await page.goto(target_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
             
-            # Xác minh bằng cách kiểm tra kết quả trả về từ API tạo site
+            print(f"  1.4 Kiểm tra lại Site ID...")
             if not isinstance(res, dict) or not res.get('success'):
                 raise Exception(f"Kiểm tra lại thất bại: Site ID '{site_id}' chưa được tạo thành công trên hệ thống CMS. Lỗi: {res}")
-            print(f"Xác minh thành công: Site ID '{site_id}' đã được API báo tạo thành công!")
+            print(f"  ✓ 1.4 Kiểm tra lại Site ID THÀNH CÔNG: Site '{site_id}' đã sẵn sàng.")
                 
         else:
-            print(f"Site ID '{site_id}' đã tồn tại, tiếp tục deploy.")
+            print(f"  1.2 Site đã tồn tại ({site_id}) → Chuyển sang bước 2.")
     except Exception as e:
         raise Exception(f"Lỗi trong quá trình kiểm tra/tạo Site: {e}")
+

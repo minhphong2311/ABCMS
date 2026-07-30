@@ -786,7 +786,7 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
 
         async def capture():
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                browser = await p.chromium.launch(headless=False)
                 page = await browser.new_page()
                 file_url = 'file:///' + temp_html_path.replace('\\', '/')
                 await page.goto(file_url)
