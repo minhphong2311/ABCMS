@@ -12,6 +12,176 @@ except Exception:
     pass
 
 
+import re
+
+def replace_image_paths_for_cms(content, slug, site_id, res_org='kookmin'):
+    if not content:
+        return content
+    cms_img_base = f'/_res/{res_org}/{site_id}/img/content'
+    pattern = rf'(\./)?images/({re.escape(slug)}/)?([a-zA-Z0-9_\-\.]+\.(?:jpg|png|jpeg|gif|svg|webp))'
+    return re.sub(pattern, lambda m: f'{cms_img_base}/{m.group(3)}', content, flags=re.IGNORECASE)
+
+
+async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(base_dir, 'output')
+    
+    candidate_dirs = [
+        os.path.join(output_dir, site_id, folder or '', 'images', slug),
+        os.path.join(output_dir, site_id, 'images', slug),
+        os.path.join(output_dir, site_id, folder or '', 'images'),
+        os.path.join(output_dir, site_id, 'images')
+    ]
+    
+    local_images = []
+    for d in candidate_dirs:
+        if os.path.exists(d) and os.path.isdir(d):
+            for f in os.listdir(d):
+                if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp')):
+                    full_p = os.path.join(d, f)
+                    if os.path.isfile(full_p) and full_p not in [x[0] for x in local_images]:
+                        local_images.append((full_p, f))
+
+    if not local_images:
+        print(f'[{slug}] No local images found to upload for page {slug}.')
+        return 'kookmin'
+
+    print(f'[{slug}] Found {len(local_images)} local image(s) to upload: {[x[1] for x in local_images]}')
+    
+    target_res_url = f'{site_url}/index.do?siteId={site_id}#!/res-img'
+    print(f'[{slug}] Navigating to image manager: {target_res_url}')
+    await page.goto(target_res_url, wait_until='domcontentloaded')
+    await asyncio.sleep(3)
+
+    res_org = await page.evaluate('''() => {
+        const els = Array.from(document.querySelectorAll('script, link'));
+        for (const el of els) {
+            const url = el.src || el.href || '';
+            const m = url.match(/\\/_res\\/([^\\/]+)\\//);
+            if (m && m[1] !== '_common') return m[1];
+        }
+        return 'kookmin';
+    }''')
+    print(f'[{slug}] Detected res_org: {res_org}')
+
+    root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
+    content_folder_id = f'/_res/{res_org}/{site_id}/img/content_anchor'
+
+    try:
+        await page.wait_for_selector(f'[id="{root_folder_id}"]', timeout=8000)
+    except Exception as e:
+        print(f'[{slug}] Root image folder selector error: {e}')
+
+    content_exists = await page.locator(f'[id="{content_folder_id}"]').count() > 0
+    if not content_exists:
+        print(f'[{slug}] Folder "content" does not exist. Creating folder "content"...')
+        await page.evaluate(f'''() => {{
+            try {{
+                const injector = window.angular.element(document.body).injector();
+                const svc = injector.has('resImgService') ? injector.get('resImgService') : 
+                           (injector.has('fileService') ? injector.get('fileService') : null);
+                if (svc && svc.addFolder) {{
+                    svc.addFolder("{site_id}", "/_res/{res_org}/{site_id}/img/", "content");
+                }}
+            }} catch(e) {{ console.error(e); }}
+        }}''')
+        await asyncio.sleep(2)
+        await page.reload(wait_until='domcontentloaded')
+        await asyncio.sleep(2)
+
+    print(f'[{slug}] Opening folder "content"...')
+    try:
+        await page.wait_for_selector(f'[id="{content_folder_id}"]', timeout=5000)
+        await page.click(f'[id="{content_folder_id}"]')
+    except Exception:
+        await page.evaluate(f'''() => {{
+            const el = document.getElementById("{content_folder_id}");
+            if (el) el.click();
+        }}''')
+    await asyncio.sleep(2)
+
+    missing_images = []
+    for img_path, img_name in local_images:
+        img_exists = await page.evaluate(f'''(fname) => {{
+            return document.body.innerText.includes(fname);
+        }}''', img_name)
+
+        if img_exists:
+            print(f'[{slug}] Image "{img_name}" already exists on CMS.')
+        else:
+            missing_images.append((img_path, img_name))
+
+    if missing_images:
+        print(f'[{slug}] Found {len(missing_images)} missing image(s) to upload: {[x[1] for x in missing_images]}')
+        
+        # Batch upload all missing images
+        try:
+            await page.evaluate('''() => {
+                const btn = document.querySelector('[data-cmd="uploadFile"]') || 
+                           document.querySelector('button[ng-click*="upload"]') ||
+                           Array.from(document.querySelectorAll('button, a')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드'));
+                if (btn) btn.click();
+            }''')
+            await asyncio.sleep(2)
+
+            missing_paths = [x[0] for x in missing_images]
+            file_inputs = await page.locator('input[type="file"]').element_handles()
+            if file_inputs:
+                for fi in file_inputs:
+                    try:
+                        await fi.set_input_files(missing_paths)
+                        print(f'[{slug}] Set {len(missing_paths)} image file(s) into file input.')
+                        break
+                    except Exception as fe:
+                        print(f'[{slug}] set_input_files error: {fe}')
+                await asyncio.sleep(2)
+
+                await page.evaluate('''() => {
+                    const btn = document.querySelector('[data-cmd="startUpload"]') || 
+                               Array.from(document.querySelectorAll('button')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드') || (b.innerText||'').includes('Tải lên'));
+                    if (btn) btn.click();
+                }''')
+                print(f'[{slug}] Clicked start upload for missing images. Waiting for upload...')
+                await asyncio.sleep(5)
+        except Exception as e:
+            print(f'[{slug}] Batch upload error: {e}')
+
+        # Fallback individual retry if any file is still missing
+        for img_path, img_name in missing_images:
+            img_exists = await page.evaluate(f'''(fname) => {{
+                return document.body.innerText.includes(fname);
+            }}''', img_name)
+            if not img_exists:
+                print(f'[{slug}] Retry uploading single image "{img_name}"...')
+                try:
+                    await page.evaluate('''() => {
+                        const btn = document.querySelector('[data-cmd="uploadFile"]') || 
+                                   document.querySelector('button[ng-click*="upload"]') ||
+                                   Array.from(document.querySelectorAll('button, a')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드'));
+                        if (btn) btn.click();
+                    }''')
+                    await asyncio.sleep(2)
+                    file_inputs = await page.locator('input[type="file"]').element_handles()
+                    if file_inputs:
+                        for fi in file_inputs:
+                            try:
+                                await fi.set_input_files(img_path)
+                                break
+                            except Exception:
+                                pass
+                        await asyncio.sleep(1.5)
+                        await page.evaluate('''() => {
+                            const btn = document.querySelector('[data-cmd="startUpload"]') || 
+                                       Array.from(document.querySelectorAll('button')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드') || (b.innerText||'').includes('Tải lên'));
+                            if (btn) btn.click();
+                        }''')
+                        await asyncio.sleep(4)
+                except Exception as ex:
+                    print(f'[{slug}] Single upload error for "{img_name}": {ex}')
+
+    return res_org
+
+
 async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
     config = get_config()
     show_ui = bool(config.get('show_ui', True))
@@ -37,9 +207,14 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             # Verify login succeeded
             current_url = page.url
             if 'login' in current_url.lower():
-                # Check for lockout message
                 body = await page.evaluate('document.body.innerText')
                 raise Exception(f'Login failed! Still on login page: {current_url}. Body snippet: {body[:200]}')
+
+            # STEP 1.5: UPLOAD IMAGES TO CMS & UPDATE PATHS
+            print(f'[{slug}] Checking and uploading local images to CMS...')
+            res_org = await upload_page_images_to_cms(page, site_url, site_id, folder, slug)
+            html_content = replace_image_paths_for_cms(html_content, slug, site_id, res_org)
+            css_content = replace_image_paths_for_cms(css_content, slug, site_id, res_org)
 
             # STEP 2: NAVIGATE TO PAGE MANAGER
             target_url = f'{site_url}/index.do?siteId={site_id}#!/page'

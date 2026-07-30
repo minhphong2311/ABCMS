@@ -13,24 +13,25 @@ It helps developers preview designs and automatically push source code from thei
    - Support for custom CSS guidelines (`css_guide`) per site.
 
 2. **Visual Builder & Page Management**:
-   - Intuitive drag-and-drop interface for managing nested menus, pages, and directory structures.
+   - Intuitively drag-and-drop interface for managing nested menus, pages, and directory structures.
    - Configure individual HTML, CSS, and JavaScript settings for each page or layout.
 
-3. **AI-Powered Automation**:
-   - **Smart Slug Generation**: Integrates with Google's Gemini API (`gemini-flash-latest`) to automatically translate and summarize Korean menu titles into short, SEO-friendly English URL slugs (e.g., `부동산AI융합학과` -> `real-estate-ai`).
+3. **AI-Powered Automation & 100% Design Quality Matching**:
+   - **Figma → HTML Quality Checklist (100% Precision)**: Iterative AI visual reflection loop enforcing a strict 7-step quality checklist (Layout, Typography, HTML & Class rules like `.con-box → h4`, `.con-box02 → h5`, `.con-box03 → h6`, Image export, Responsive layout, Interactive components, and Figma visual comparison).
+   - **Gemini 3.6 Flash Engine**: Powered by Google's `gemini-3.6-flash` model with automatic model fallback retries for fast and reliable visual analysis.
+   - **Smart Slug Generation**: Integrates with Google's Gemini API to automatically translate and summarize Korean menu titles into short, SEO-friendly English URL slugs (e.g., `부동산AI융합학과` -> `real-estate-ai`).
    - **Batch Excel Import**: Upload Excel files of site structures, and the AI will batch translate hundreds of missing slugs in just a few seconds.
-   - **Auto-Deduplication**: Ensures globally unique URLs by automatically appending numeric suffixes (e.g., `-2`, `-3`) to identically named pages.
-   - **Auto-Folder Assignment**: Intelligently derives folder structures by cascading root slugs down to descendant nodes.
+   - **Auto-Deduplication & Folder Assignment**: Ensures globally unique URLs and intelligently derives folder structures.
 
-4. **Playwright Automation (Auto Deploy)**:
-   - Automated headless/headed login to the CMS.
-   - Direct navigation to the Page Manager.
-   - Automated folder creation on the CMS tree.
-   - Verifies if a page (JSP/HTML) exists:
-     - **If new**: Creates the page, selects the template layout, and configures titles/files.
-     - **If existing**: Selects the target page and opens the editor.
-   - Injects HTML, CSS, and JS code into the CMS editors (e.g., Froala, CodeMirror).
-   - Automatically saves and finalizes the deployment.
+4. **Playwright Automation (Auto Deploy & Image Sync)**:
+   - **Playwright UI Mode Toggle**: Easily toggle Playwright between visible browser window (`headless=False`) and background mode (`headless=True`) directly in **System Settings**.
+   - **Automated CMS Image Upload**: Scans local generated page images (`.jpg`, `.png`, etc.) and automatically uploads them into the CMS `content` resource folder (`#!/res-img`) via batch uploading.
+   - **Automatic Image Path Replacement**: Automatically transforms local image paths in HTML (`<img src="...">`) and CSS (`background-image: url(...)`) to exact CMS resource URLs (`/_res/{res_org}/{site_id}/img/content/{filename}`).
+   - **Page & Tree Manager Automation**: Automated login, folder creation, page existence check, template layout selection, and HTML/CSS/JS editor injection.
+
+5. **UI & UX Standardizations**:
+   - **Standardized Toast Notifications**: SweetAlert2 top-end toast notifications with timer progress bars and full Dark Mode support across all pages.
+   - **Perfected Action Button Alignment**: Table rows feature `vertical-align: middle` precision centering for action buttons (Generate, Preview, Deploy, Edit, Delete).
 
 ---
 
@@ -39,11 +40,11 @@ It helps developers preview designs and automatically push source code from thei
 ```text
 ├── app.py                # Main Flask server running the web builder dashboard
 ├── deploy_menus.py       # Main script to orchestrate the deployment workflow
+├── automation.py         # Playwright automation task engine for CMS deployment
 ├── deployer/             # Core deployment modules (site, menu, folder, upload, page)
 ├── routes/               # Flask blueprints for API routes (menu, site, deploy, generate)
 ├── assets/               # System resources (ai_prompts, layout templates, placeholder images)
 ├── data/                 # Local JSON database and configs (sites, config, cache)
-├── scripts/              # Utility scripts for long-term usage (e.g., automation, translations)
 ├── static/               # Flask static files (CSS, JS) for the Web UI
 ├── templates/            # Flask Jinja2 HTML templates for the Web UI
 └── scratch/              # Temporary folder for tests, DOM dumps, and debugging
@@ -59,7 +60,7 @@ It helps developers preview designs and automatically push source code from thei
 ### 2. Install Dependencies
 Open your terminal and run:
 ```bash
-pip install flask playwright asyncio google-genai openpyxl requests
+pip install flask playwright asyncio google-genai openpyxl requests pillow
 playwright install chromium
 ```
 
@@ -71,18 +72,20 @@ python app.py
 Then navigate to [http://localhost:5000](http://localhost:5000) in your web browser.
 
 ### 4. Configuration
-Ensure you have set up your API keys in the dashboard's settings panel (e.g., Gemini API Key) to enable AI features.
+Ensure you have set up your API keys and Playwright UI display mode in the dashboard's **System Settings** panel to enable AI and automation features.
 
 ---
 
 ## 💻 Tech Stack
 - **Backend**: Python, Flask (Dashboard UI and API)
-- **AI Integration**: Google GenAI SDK (`gemini-flash-latest` model)
-- **Automation**: Playwright (Headless browser control)
+- **AI Integration**: Google GenAI SDK (`gemini-3.6-flash` model)
+- **Automation**: Playwright (Headless/Headed browser control)
 - **Database**: Flat JSON files in the `data/` directory for lightweight, portable data persistence.
 
+---
 
-## 🌟 Recent Stability Improvements
-- **Responsive Automation UI**: Playwright now launches with `no_viewport=True`, allowing users to resize the browser window freely without encountering blank borders.
-- **AngularJS Auto-Recovery**: Deployed an intelligent retry mechanism that automatically detects SPA rendering failures (blank screens) and auto-reloads until the UI successfully mounts, achieving 100% reliability for batch deployments.
-- **Precision Menu Targeting**: Upgraded the tree-node click logic to trace hierarchical DOM paths instead of just matching node names. This perfectly handles scenarios with duplicate menu names (e.g., `Profile -> Profile`).
+## 🌟 Recent Improvements
+- **Figma → HTML Quality Checklist**: Auto-corrects compiled code against 7 strict design and project structure rules.
+- **Automated CMS Image Upload & Path Sync**: Local page images are automatically uploaded into the CMS `content` folder and HTML/CSS paths are dynamically rewritten to `/_res/{res_org}/{site_id}/img/content/{filename}`.
+- **Configurable Playwright UI Mode**: Toggle between `headless=False` and `headless=True` directly in System Settings.
+- **Dark Mode Toasts & Table Alignment**: Unified top-end SweetAlert2 toasts and vertical-align centering for action buttons.
