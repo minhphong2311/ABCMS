@@ -5,7 +5,7 @@ Blueprint xử lý chức năng Preview trang đã generate.
 import os
 import time
 
-from flask import Blueprint, render_template, make_response
+from flask import Blueprint, render_template, make_response, send_from_directory
 from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
 
 preview_bp = Blueprint('preview', __name__)
@@ -57,3 +57,17 @@ def preview_raw(site_id, menu_param):
     response = make_response(html_content)
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
     return response
+
+
+@preview_bp.route('/preview/<site_id>/<menu_param>/<path:filename>')
+def preview_asset(site_id, menu_param, filename):
+    folder, _ = parse_folder_slug(menu_param)
+    # Check folder dir first
+    dir_path = os.path.join(OUTPUT_DIR, site_id, folder) if folder else os.path.join(OUTPUT_DIR, site_id)
+    file_path = os.path.join(dir_path, filename)
+    if os.path.exists(file_path):
+        return send_from_directory(dir_path, filename)
+    
+    # Fallback to site root (e.g. for style.css or images common to the site)
+    site_root = os.path.join(OUTPUT_DIR, site_id)
+    return send_from_directory(site_root, filename)

@@ -702,20 +702,31 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     from playwright.async_api import async_playwright
     from google import genai
     import PIL.Image
+    import threading
+
+    # Thêm Semaphore để giới hạn chỉ 1 request Gemini được chạy tại 1 thời điểm
+    if not hasattr(compare_and_fix_visuals, 'api_lock'):
+        compare_and_fix_visuals.api_lock = threading.Semaphore(1)
 
     # Load templates
     structure_template = ''
     table_template = ''
+    quality_checklist = ''
     try:
         base = os.path.dirname(os.path.dirname(__file__))
         structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
         table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
+        checklist_path = os.path.join(base, 'assets', 'ai_prompts', 'quality-checklist.md')
+        
         if os.path.exists(structure_path):
             with open(structure_path, 'r', encoding='utf-8') as f:
                 structure_template = f.read()
         if os.path.exists(table_path):
             with open(table_path, 'r', encoding='utf-8') as f:
                 table_template = f.read()
+        if os.path.exists(checklist_path):
+            with open(checklist_path, 'r', encoding='utf-8') as f:
+                quality_checklist = f.read()
     except Exception as e:
         print(f"Error loading templates in compare_and_fix_visuals: {e}")
 
@@ -825,6 +836,11 @@ RULES:
    Table template: {table_template}
 3. Maintain all image/background tags.
 4. Keep CSS formatting (one rule per line).
+5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
+6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers as shown in the template. Do not leave text or headings floating outside of a `.con-box`.
+7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`, `ul-type-bar`, `ol-type01`, `con-box02`). DO NOT invent new classes or keep Figma's raw classes for these text and structure elements.
+8. FINAL QUALITY CHECKLIST: You must follow this checklist:
+{quality_checklist}
 
 Current HTML:
 {html}
@@ -836,11 +852,19 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
 """
 
         try:
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=[prompt, target_pil, render_pil]
-            )
-            text = response.text.strip()
+            if gemini_api_key == "DEMO_KEY":
+                print(f"[{menu_name}] Using DEMO_KEY. Mocking AI response...")
+                import time
+                time.sleep(3) # Simulate AI thinking
+                text = '{"status": "SUCCESS", "html": "<div class=\\"content-box\\"><div class=\\"con-box\\"><h4 class=\\"h4-tit01\\">Demo Title</h4><p class=\\"con-p\\">This is a mocked response because of DEMO_KEY.</p></div></div>", "css": ".content-box { padding: 20px; }"}'
+            else:
+                with compare_and_fix_visuals.api_lock:
+                    response = client.models.generate_content(
+                        model='gemini-3.5-flash',
+                        contents=[prompt, target_pil, render_pil]
+                    )
+                text = response.text.strip()
+            
             if '```json' in text:
                 text = text.split('```json')[1].split('```')[0].strip()
             elif text.startswith('```'):
@@ -858,7 +882,7 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
 
         except Exception as e:
             print(f"[{menu_name}] Gemini Vision Error: {e}")
-            break
+            raise Exception(f"Gemini API Error: {e}")
 
     return html, css
 

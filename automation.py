@@ -338,7 +338,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             # STEP 8: CSS
             print(f'[{slug}] Switching to CSS tab...')
             await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('a,.nav-tabs li a,uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
+                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
                 if (t) t.click();
             }''')
             await asyncio.sleep(1)
@@ -364,7 +364,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             # STEP 9: JS
             print(f'[{slug}] Switching to JS tab...')
             await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('a,.nav-tabs li a,uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
+                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
                 if (t) t.click();
             }''')
             await asyncio.sleep(1)
