@@ -165,6 +165,26 @@ def api_deploy_menus():
     if not menus:
         return jsonify({'success': False, 'message': 'No menus to deploy!'})
 
+    selected_menus = data.get('selected_menus')
+    if selected_menus and isinstance(selected_menus, list):
+        required_ids = set(selected_menus)
+        menu_dict = {m['id']: m for m in menus}
+        
+        # Recursively include all ancestors
+        added = True
+        while added:
+            added = False
+            for m_id in list(required_ids):
+                menu = menu_dict.get(m_id)
+                if menu and menu.get('parent_id') and menu['parent_id'] not in required_ids:
+                    required_ids.add(menu['parent_id'])
+                    added = True
+                    
+        menus = [m for m in menus if m['id'] in required_ids]
+        
+        if not menus:
+            return jsonify({'success': False, 'message': 'No valid menus selected!'})
+
     task_id = f"{site_id}--deploy-menus"
     if DEPLOY_TASKS.get(task_id, {}).get('status') == 'running':
         return jsonify({'success': False, 'message': 'Menu deployment is already running!'})

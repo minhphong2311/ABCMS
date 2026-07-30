@@ -124,14 +124,17 @@
   <!-- Left Pane: Menu Tree -->
   <div class="col-12 left-menu-pane">
     <div class="card card-outline card-primary">
-      <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-        <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem; line-height: 1.5;"><i class="fas fa-sitemap mr-2"></i>{{ site.name }}</h3>
+      <div class="card-header bg-light py-2 d-flex align-items-center">
+        <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem; line-height: 1.5;"><i class="fas fa-sitemap text-primary"></i></h3>
         <button type="button" id="btn-deploy-menus" class="btn btn-warning btn-sm text-white" style="margin-left: auto;" onclick="deployMenus('{{ site.id }}')" title="Deploy Menus">
           <i class="fas fa-cloud-upload-alt"></i>
         </button>
         <button type="button" id="btn-cancel-deploy-menus" class="btn btn-danger btn-sm text-white ml-2" style="display:none;" onclick="cancelDeployMenus()" title="Cancel Deployment">
           <i class="fas fa-times"></i>
         </button>
+        <div class="ml-3" title="Check / Uncheck All" style="margin-right: -4px;">
+            <input type="checkbox" class="tree-checkbox" id="tree-check-all" onchange="toggleAllTreeChecks(this.checked)">
+        </div>
       </div>
       <div class="card-body p-0 bg-white" id="site-menu-tree-container">
         <div class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin"></i> Loading tree...</div>
@@ -895,11 +898,19 @@ function setDeployMenuBtnRunning() {
 }
 
 function deployMenus(siteId) {
+  const selectedCheckboxes = document.querySelectorAll('.tree-checkbox:checked');
+  const selectedMenuIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+  
+  if (selectedMenuIds.length === 0) {
+      Swal.fire('No Menus Selected', 'Please select at least one menu to deploy from the tree on the left.', 'warning');
+      return;
+  }
+
   setDeployMenuBtnRunning();
   fetch('/api/deploy_menus', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ site_id: siteId })
+    body: JSON.stringify({ site_id: siteId, selected_menus: selectedMenuIds })
   })
   .then(r => r.json())
   .then(data => {
@@ -1382,9 +1393,30 @@ function renderMenuTree() {
     
     const treeHTML = buildTreeHTML(siteMenus, null);
     container.innerHTML = `
-        <style>.tree-active, .tree-active span, .tree-active i { color: #fff !important; }</style>
+        <style>
+            .tree-active, .tree-active span, .tree-active i { color: #fff !important; }
+            .tree-checkbox {
+                appearance: none; -webkit-appearance: none;
+                width: 18px; height: 18px;
+                border: 2px solid #adb5bd; border-radius: 4px;
+                outline: none; cursor: pointer;
+                transition: all 0.2s ease-in-out;
+                position: relative; background-color: transparent;
+            }
+            .tree-checkbox:checked {
+                background-color: #0d6efd; border-color: #0d6efd;
+            }
+            .tree-checkbox:checked::after {
+                content: '\\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900;
+                color: white; font-size: 11px; position: absolute;
+                top: 50%; left: 50%; transform: translate(-50%, -50%);
+            }
+            body.dark-mode .tree-checkbox { border-color: #6c757d; }
+            body.dark-mode .tree-checkbox:checked { background-color: #0d6efd; border-color: #0d6efd; }
+        </style>
         <div class="p-2">${treeHTML}</div>
     `;
+    setTimeout(() => updateTreeCheckAllState(), 10);
 }
 
 function buildTreeHTML(menus, parentId) {
@@ -1398,10 +1430,11 @@ function buildTreeHTML(menus, parentId) {
         if (hasChildren) {
             html += `
                 <li class="py-1">
-                  <div class="d-flex align-items-center tree-node cursor-pointer p-1 rounded" onclick="toggleAndFilterTreeNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer;">
+                  <div class="d-flex align-items-center tree-node cursor-pointer p-1 rounded" onclick="toggleAndFilterTreeNode('${node.id}', event)" id="tree-node-ui-${node.id}" style="cursor: pointer;">
                     <i class="fas fa-chevron-right fa-xs fa-fw text-muted mr-1" id="tree-caret-${node.id}"></i>
                     <i class="fas fa-folder text-primary mr-2"></i> 
                     <span class="font-weight-bold">${node.name}</span>
+                    <input type="checkbox" class="tree-checkbox ml-auto mr-1" value="${node.id}" onchange="handleMenuCheckboxChange(this, '${node.id}')">
                   </div>
                   <div class="tree-children" id="tree-children-${node.id}" style="display: none;">
                     ${buildTreeHTML(menus, node.id)}
@@ -1411,9 +1444,10 @@ function buildTreeHTML(menus, parentId) {
         } else {
             html += `
                 <li class="py-1">
-                  <div class="d-flex align-items-center tree-leaf cursor-pointer p-1 rounded" onclick="filterByLeafNode('${node.id}')" id="tree-node-ui-${node.id}" style="cursor: pointer; padding-left: 1.25rem !important;">
+                  <div class="d-flex align-items-center tree-leaf cursor-pointer p-1 rounded" onclick="filterByLeafNode('${node.id}', event)" id="tree-node-ui-${node.id}" style="cursor: pointer; padding-left: 1.25rem !important;">
                     <i class="fas fa-folder text-primary mr-2"></i>
                     <span>${node.name}</span>
+                    <input type="checkbox" class="tree-checkbox ml-auto mr-1" value="${node.id}" onchange="handleMenuCheckboxChange(this, '${node.id}')">
                   </div>
                 </li>
             `;
@@ -1423,11 +1457,64 @@ function buildTreeHTML(menus, parentId) {
     return html;
 }
 
-function filterByLeafNode(nodeId) {
+function handleMenuCheckboxChange(el, nodeId) {
+    const checked = el.checked;
+    
+    // 1. Cascade down: if it's a folder, check/uncheck all descendants
+    const childrenDiv = document.getElementById(`tree-children-${nodeId}`);
+    if (childrenDiv) {
+        const descendantCbs = childrenDiv.querySelectorAll('.tree-checkbox');
+        descendantCbs.forEach(cb => cb.checked = checked);
+    }
+    
+    // 2. Cascade up: if unchecking, uncheck all parents. If checking, check parents if all children are checked (or just check parent anyway? Actually, simpler to just check parent if any child is checked, to be safe. Let's just check the parent).
+    if (checked) {
+        let currentParentId = siteMenus.find(m => m.id === nodeId)?.parent_id;
+        while (currentParentId) {
+            const parentCb = document.querySelector(`.tree-checkbox[value="${currentParentId}"]`);
+            if (parentCb) parentCb.checked = true;
+            currentParentId = siteMenus.find(m => m.id === currentParentId)?.parent_id;
+        }
+    } else {
+        // If unchecking, we don't strictly need to uncheck parent, but we can uncheck parent if all children are unchecked.
+        // For simplicity, we just leave parents checked (or let the user manually uncheck the parent).
+    }
+    
+    updateTreeCheckAllState();
+}
+
+function updateTreeCheckAllState() {
+    const allCbs = document.querySelectorAll('.tree-checkbox:not(#tree-check-all)');
+    const checkedCbs = document.querySelectorAll('.tree-checkbox:not(#tree-check-all):checked');
+    const checkAll = document.getElementById('tree-check-all');
+    if (checkAll) {
+        checkAll.checked = (allCbs.length > 0 && allCbs.length === checkedCbs.length);
+    }
+    
+    const deployBtn = document.getElementById('btn-deploy-menus');
+    if (deployBtn) {
+        if (checkedCbs.length === 0) {
+            deployBtn.disabled = true;
+            deployBtn.classList.replace('btn-warning', 'btn-secondary');
+        } else {
+            deployBtn.disabled = false;
+            deployBtn.classList.replace('btn-secondary', 'btn-warning');
+        }
+    }
+}
+
+function filterByLeafNode(nodeId, event) {
+    if (event && event.target && event.target.tagName.toLowerCase() === 'input') return;
     currentTreeFilterIds = [nodeId];
     highlightTreeNode(nodeId);
     currentPage = 1;
     applyFilters();
+}
+
+function toggleAllTreeChecks(checked) {
+    const checkboxes = document.querySelectorAll('.tree-checkbox:not(#tree-check-all)');
+    checkboxes.forEach(cb => cb.checked = checked);
+    updateTreeCheckAllState();
 }
 
 function clearTreeFilter() {
@@ -1712,7 +1799,9 @@ function populateFolderSelects() {
     if (editSelect) editSelect.innerHTML = optionsHTML;
 }
 
-function toggleAndFilterTreeNode(nodeId) {
+function toggleAndFilterTreeNode(nodeId, event) {
+    if (event && event.target && event.target.tagName.toLowerCase() === 'input') return;
+    
     // Toggle expand/collapse
     const childrenDiv = document.getElementById(`tree-children-${nodeId}`);
     const caret = document.getElementById(`tree-caret-${nodeId}`);
