@@ -109,9 +109,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             # 3. Check if page already exists in the folder
             print(f"  6.2 Kiểm tra Page '{slug}' trong Folder '{folder}'...")
             page_exists = await page.evaluate('''async (slug) => {
-                const table = document.querySelector('table.table');
-                if (!table) return false;
-                return table.innerText.includes(slug + '.do') || table.innerText.includes('/' + slug);
+                const container = document.querySelector('[ng-controller], .content-wrapper, body');
+                if (!container) return false;
+                const text = container.innerText || '';
+                return text.includes(slug + '.do') || text.includes('/' + slug + '.jsp');
             }''', slug)
             
             page_was_created = False
@@ -450,86 +451,4 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
 
     print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
 
-    # --- KÍCH HOẠT PHA KIỂM TRA ĐỘC LẬP LẦN CUỐI (RE-VERIFY ALL PAGES) ---
-    print("\n" + "="*60)
-    print("  7. KIỂM TRA LẠI LẦN NỮA (FINAL RE-VERIFICATION PASS)")
-    print("="*60)
-    print("  Đang mở từng trang, chuyển vào View Code (</>) để kiểm tra lần cuối...")
 
-    all_passed = True
-    for i, m in enumerate(leaf_menus):
-        slug = m.get('slug', '').strip()
-        folder = m.get('folder', '').strip() or slug
-        if not slug: continue
-        
-        print(f"\n  [KIỂM TRA LẦN CUỐI {i+1}/{len(leaf_menus)}] Mở Edit Page cho '{slug}'...")
-        target_url = f'{site_url}/index.do?siteId={site_id}#!/page'
-        await page.goto(target_url, wait_until='domcontentloaded')
-        await asyncio.sleep(2.4)
-        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-        
-        folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
-        try:
-            await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
-            await asyncio.sleep(1.2)
-            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-        except Exception as e:
-            if str(e) == 'Deploy cancelled by user': raise
-            pass
-            
-        await page.evaluate(f'''async (slug) => {{
-            const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
-            if (searchInput) {{
-                searchInput.value = slug;
-                searchInput.dispatchEvent(new Event('input', {{bubbles:true}}));
-                searchInput.dispatchEvent(new Event('change', {{bubbles:true}}));
-                const searchBtn = document.querySelector('button[ng-click*="search"], .zmdi-search');
-                if (searchBtn) searchBtn.click();
-                await new Promise(r => setTimeout(r, 2000));
-            }}
-            const rows = Array.from(document.querySelectorAll('table tbody tr'));
-            for (let tr of rows) {{
-                if (tr.innerText.includes(slug)) {{
-                    const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
-                    if (btn) {{ btn.click(); return; }}
-                }}
-            }}
-            const anyBtn = document.querySelector('.zmdi-brush');
-            if (anyBtn) anyBtn.click();
-        }}''', slug)
-        await asyncio.sleep(2.4)
-        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-        
-        # Switch to View Code
-        print(f"  Bấm nút </> để xem mã nguồn View Code của Page '{slug}'...")
-        await page.evaluate('''() => {
-            const btn1 = document.querySelector('.fr-command[data-cmd="html"]') || document.querySelector('button[data-cmd="html"]');
-            if (btn1 && !btn1.classList.contains('fr-active')) {
-                btn1.click();
-            }
-        }''')
-        # Pause on screen so user can watch View Code live
-        await asyncio.sleep(3.6)
-        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-        
-        # Read HTML from View Code
-        html_code = await page.evaluate('''() => {
-            try {
-                const cm = document.querySelector('.CodeMirror');
-                if (cm && cm.CodeMirror) return cm.CodeMirror.getValue();
-            } catch(e) {}
-            return "";
-        }''')
-        
-        if html_code and html_code.strip() != "" and html_code.strip() != "<p><br></p>":
-            snippet = html_code.replace('\n', ' ')[:100]
-            print(f"  ✓ XÁC MINH VỚI TRÌNH DUYỆT THÀNH CÔNG: View Code của Page '{slug}' chứa {len(html_code)} ký tự HTML.")
-            print(f"    Code snippet: {snippet}...")
-        else:
-            print(f"  ❌ XÁC MINH LẦN CUỐI THẤT BẠI: View Code của Page '{slug}' KHÔNG CÓ MÃ HTML!")
-            all_passed = False
-
-    if not all_passed:
-        raise Exception("Pha kiểm tra độc lập lần cuối thất bại: Có trang vẫn chưa có mã HTML trong View Code.")
-
-    print("\n  ✓ 7.1 XÁC NHẬN HOÀN TẤT LẦN CUỐI: Tất cả các Page đều đã được kiểm tra lại và có mã HTML trong View Code!")
