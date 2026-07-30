@@ -29,7 +29,18 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         slug = m.get('slug', '').strip()
         folder = m.get('folder', '').strip() or slug
         layout = m.get('layout', 'sub-template')
+
         menu_name = m.get('name', '').strip()
+        path_names = []
+        curr_m = m
+        while curr_m:
+            path_names.insert(0, curr_m.get('name', '').strip())
+            parent = next((mx for mx in menus if mx.get('id') == curr_m.get('parent_id')), None)
+            if not parent or parent == curr_m:
+                break
+            curr_m = parent
+
+
         
         if not slug:
             continue
@@ -187,9 +198,36 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         titleInput.dispatchEvent(new Event('input', {{bubbles: true}}));
                     }}
                     
-                    const modalAnchors = Array.from(document.querySelectorAll('.modal-dialog .jstree-anchor'));
+                    const pathNames = args[6];
+                    const modalAnchors = Array.from(document.querySelectorAll('.modal-dialog div[js-tree="menuTree.config"] .jstree-anchor'));
+                    const matchedAnchors = modalAnchors.filter(a => a.innerText.trim() === menuName);
+                    
+                    let modalItem = null;
+                    if (pathNames && pathNames.length > 0) {{
+                        modalItem = matchedAnchors.find(a => {{
+                            let currPath = [];
+                            let li = a.closest('li');
+                            while (li) {{
+                                const anchor = li.querySelector(':scope > .jstree-anchor');
+                                if (anchor) currPath.unshift(anchor.innerText.trim());
+                                const parentUl = li.parentElement;
+                                if (!parentUl || !parentUl.classList.contains('jstree-children')) break;
+                                li = parentUl.closest('li.jstree-node');
+                            }}
+                            if (currPath.length !== pathNames.length) return false;
+                            for (let i=0; i<currPath.length; i++) {{
+                                if (currPath[i] !== pathNames[i]) return false;
+                            }}
+                            return true;
+                        }});
+                    }}
+                    if (!modalItem && matchedAnchors.length > 0) {{
+                        modalItem = matchedAnchors[matchedAnchors.length - 1];
+                    }}
                     const menuId = args[5];
-                    const modalItem = modalAnchors.find(a => (menuId && a.innerText.includes(String(menuId))) || a.innerText.trim() === menuName);
+                    if (!modalItem) {{
+                        modalItem = modalAnchors.find(a => (menuId && a.innerText.includes(String(menuId))) || a.innerText.trim() === menuName);
+                    }}
                     if (modalItem) {{
                         modalItem.click();
                     }}
@@ -225,7 +263,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     }};
                     selectTpl('headTemplate', 'common.jsp');
                     setTimeout(() => {{ selectTpl('layoutTemplate', layoutName + '.jsp'); }}, 1000);
-                }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', ''))])
+                }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', '')), path_names])
                 await asyncio.sleep(1.5)
                 if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
