@@ -195,18 +195,21 @@ def api_get_config():
     return jsonify({
         'success': True,
         'gemini_api_key': config.get('gemini_api_key', ''),
-        'figma_token': config.get('figma_token', '')
+        'figma_token': config.get('figma_token', ''),
+        'show_ui': config.get('show_ui', True)
     })
 
 
 @app.route('/api/config', methods=['POST'])
 def api_save_config():
-    data = request.json
+    data = request.json or {}
     config = get_config()
     if 'gemini_api_key' in data:
         config['gemini_api_key'] = data['gemini_api_key']
     if 'figma_token' in data:
         config['figma_token'] = data['figma_token']
+    if 'show_ui' in data:
+        config['show_ui'] = bool(data['show_ui'])
     save_config(config)
     return jsonify({'success': True, 'message': 'Config saved'})
 

@@ -39,9 +39,20 @@
             </div>
             <input type="password" class="form-control" id="figma_token_input" placeholder="Enter Figma Personal Access Token...">
           </div>
-          <small class="form-text text-muted mt-2"><i class="fas fa-info-circle mr-1"></i>Click Save Settings below to overwrite the global configuration file on the server.</small>
         </div>
-        
+
+        <hr class="my-4">
+
+        <!-- Playwright UI Configuration -->
+        <h5 class="mb-3"><i class="fas fa-desktop text-success mr-2"></i>Playwright Browser UI Mode</h5>
+        <p class="text-muted text-sm">Display mode for Playwright browser window during page generation (Gemini Reflection) or CMS deployment.</p>
+
+        <div class="custom-control custom-switch custom-switch-off-secondary custom-switch-on-success">
+          <input type="checkbox" class="custom-control-input" id="show_ui_input" checked>
+          <label class="custom-control-label font-weight-bold" for="show_ui_input">Enable UI Display Mode (headless=False)</label>
+        </div>
+        <small class="form-text text-muted mt-2"><i class="fas fa-info-circle mr-1"></i>When enabled, the browser will open a visible window (headless=False). When disabled, the browser will run in headless mode (headless=True).</small>
+
         <div class="mt-4 text-right">
           <button type="button" class="btn btn-primary px-4" id="btnSaveConfig">
             <i class="fas fa-save mr-1"></i> Save
@@ -57,6 +68,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.12/sweetalert2.all.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+      const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+              toast.addEventListener('mouseenter', Swal.stopTimer);
+              toast.addEventListener('mouseleave', Swal.resumeTimer);
+          }
+      });
+
       // Fetch configs from server on load
       $.get('/api/config', function(data) {
           if (data.gemini_api_key) {
@@ -64,6 +87,9 @@
           }
           if (data.figma_token) {
               document.getElementById('figma_token_input').value = data.figma_token;
+          }
+          if (typeof data.show_ui !== 'undefined') {
+              document.getElementById('show_ui_input').checked = !!data.show_ui;
           }
       });
       
@@ -76,7 +102,8 @@
           
           const payload = {
               gemini_api_key: document.getElementById('gemini_key_input').value.trim(),
-              figma_token: document.getElementById('figma_token_input').value.trim()
+              figma_token: document.getElementById('figma_token_input').value.trim(),
+              show_ui: document.getElementById('show_ui_input').checked
           };
           
           $.ajax({
@@ -88,22 +115,24 @@
                   btn.innerHTML = originalText;
                   btn.disabled = false;
                   if (res.success) {
-                      Swal.fire({
-                          toast: true,
-                          position: 'top-end',
-                          showConfirmButton: false,
-                          timer: 2000,
+                      Toast.fire({
                           icon: 'success',
                           title: 'Configuration saved successfully!'
+                      });
+                  } else {
+                      Toast.fire({
+                          icon: 'error',
+                          title: 'Error',
+                          text: res.message || 'Cannot save configuration, please try again.'
                       });
                   }
               },
               error: function() {
                   btn.innerHTML = originalText;
                   btn.disabled = false;
-                  Swal.fire({
+                  Toast.fire({
                       icon: 'error',
-                      title: 'Error',
+                      title: 'Connection Error',
                       text: 'Cannot save configuration, please try again.'
                   });
               }

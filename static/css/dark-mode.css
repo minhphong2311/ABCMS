@@ -166,3 +166,14 @@ body.dark-mode .page-card-wrapper .card-header {
     border-bottom-color: #3f6791 !important;
     background-color: #454d55 !important;
 }
+
+/* SweetAlert2 Dark Mode Enhancements */
+body.dark-mode .swal2-popup {
+    background-color: #343a40 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .swal2-title,
+body.dark-mode .swal2-content,
+body.dark-mode .swal2-html-container {
+    color: #ffffff !important;
+}

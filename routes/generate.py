@@ -808,11 +808,13 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
         with open(temp_html_path, 'w', encoding='utf-8') as f:
             f.write(full_html)
 
-        render_img_path = os.path.join(output_dir, f'temp_render_{menu_name}.png')
+        config = get_config()
+        show_ui = bool(config.get('show_ui', True))
+        headless_mode = not show_ui
 
         async def capture():
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=False)
+                browser = await p.chromium.launch(headless=headless_mode)
                 page = await browser.new_page()
                 file_url = 'file:///' + temp_html_path.replace('\\', '/')
                 await page.goto(file_url)

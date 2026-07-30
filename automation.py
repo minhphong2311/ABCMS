@@ -4,6 +4,8 @@ from playwright.async_api import async_playwright
 import os
 import traceback
 
+from routes.helpers import get_config
+
 try:
     sys.stdout.reconfigure(encoding='utf-8')
 except Exception:
@@ -11,8 +13,12 @@ except Exception:
 
 
 async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
+    config = get_config()
+    show_ui = bool(config.get('show_ui', True))
+    headless_mode = not show_ui
+
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, slow_mo=200)
+        browser = await p.chromium.launch(headless=headless_mode, slow_mo=200)
         context = await browser.new_context(no_viewport=True, ignore_https_errors=True)
         page = await context.new_page()
         page.on('dialog', lambda dialog: asyncio.create_task(dialog.accept()))

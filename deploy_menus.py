@@ -35,24 +35,28 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
     menus = sorted(menus, key=lambda x: (get_depth(x), x.get('order', 999)))
     print("Sorted menus.")
     
+    from routes.helpers import get_config
+    config = get_config()
+    show_ui = bool(config.get('show_ui', True))
+    headless_mode = not show_ui
+
     async with async_playwright() as p:
         print("Playwright started...")
-        # Launch browser in visible UI mode (headless=False)
         try:
             browser = await p.chromium.launch(
-                headless=False,
+                headless=headless_mode,
                 channel="chrome",
                 slow_mo=500,
                 args=['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
             )
-            print('Google Chrome launched in UI mode (headless=False).')
+            print(f'Google Chrome launched (headless={headless_mode}).')
         except Exception:
             browser = await p.chromium.launch(
-                headless=False,
+                headless=headless_mode,
                 slow_mo=500,
                 args=['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
             )
-            print('Chromium launched in UI mode (headless=False).')
+            print(f'Chromium launched (headless={headless_mode}).')
             
         context = await browser.new_context(
             no_viewport=True, 
