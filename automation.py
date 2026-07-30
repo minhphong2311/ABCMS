@@ -13,7 +13,7 @@ except Exception:
 async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False, slow_mo=200)
-        context = await browser.new_context(viewport={'width': 1400, 'height': 900}, ignore_https_errors=True)
+        context = await browser.new_context(no_viewport=True, ignore_https_errors=True)
         page = await context.new_page()
         page.on('dialog', lambda dialog: asyncio.create_task(dialog.accept()))
 

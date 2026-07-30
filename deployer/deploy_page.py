@@ -51,12 +51,19 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             print(f"\n  6.1 Mở Folder '{folder}' (Page Manager)...")
             
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
-            await page.goto("about:blank")
-            await asyncio.sleep(0.6)
-            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-            await page.goto(target_url_page, wait_until="domcontentloaded")
-            await asyncio.sleep(2.4)
-            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+            for retry_load in range(3):
+                await page.goto("about:blank")
+                await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                await page.goto(target_url_page, wait_until="domcontentloaded")
+                await asyncio.sleep(2.4)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                
+                ui_loaded = await page.evaluate('''() => !!document.querySelector('div[js-tree="folderTree.config"]')''')
+                if ui_loaded:
+                    break
+                print(f"[{slug}] UI blank or stuck, retrying page reload... ({retry_load+1}/3)")
+            
 
             
             # Ensure Table view is selected

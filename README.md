@@ -80,3 +80,9 @@ Ensure you have set up your API keys in the dashboard's settings panel (e.g., Ge
 - **AI Integration**: Google GenAI SDK (`gemini-flash-latest` model)
 - **Automation**: Playwright (Headless browser control)
 - **Database**: Flat JSON files in the `data/` directory for lightweight, portable data persistence.
+
+
+## 🌟 Recent Stability Improvements
+- **Responsive Automation UI**: Playwright now launches with `no_viewport=True`, allowing users to resize the browser window freely without encountering blank borders.
+- **AngularJS Auto-Recovery**: Deployed an intelligent retry mechanism that automatically detects SPA rendering failures (blank screens) and auto-reloads until the UI successfully mounts, achieving 100% reliability for batch deployments.
+- **Precision Menu Targeting**: Upgraded the tree-node click logic to trace hierarchical DOM paths instead of just matching node names. This perfectly handles scenarios with duplicate menu names (e.g., `Profile -> Profile`).

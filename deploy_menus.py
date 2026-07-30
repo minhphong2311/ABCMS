@@ -55,7 +55,7 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             print('Chromium launched in UI mode (headless=False).')
             
         context = await browser.new_context(
-            viewport=None, 
+            no_viewport=True, 
             ignore_https_errors=True,
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
         )
