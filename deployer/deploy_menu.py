@@ -119,6 +119,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
             
             add_res = await add_menu(m, parent_menu_cd)
             await asyncio.sleep(0.6)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             if not add_res or not add_res.get('item'):
                 print(f"  Lỗi khi tạo menu '{m['name']}': {add_res}")
@@ -147,6 +148,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 
                 await update_menu(page, data)
                 await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
                 # Close any SweetAlert that might have popped up from Spring 500 error or success
                 try:

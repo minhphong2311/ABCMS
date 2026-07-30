@@ -42,8 +42,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
             await page.goto("about:blank")
             await asyncio.sleep(0.6)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             await page.goto(target_url_page, wait_until="domcontentloaded")
             await asyncio.sleep(2.4)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
             
             # Ensure Table view is selected
@@ -60,7 +62,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     }
                 }''')
                 await asyncio.sleep(1.2)
-            except:
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+            except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
+                if str(e) == 'Deploy cancelled by user': raise
                 pass
             
             # 1. Expand jsTree folders on main screen
@@ -81,7 +86,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     throw new Error("jstree instance not ready after 10s");
                 }''')
                 await asyncio.sleep(1.2)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
+                if str(e) == 'Deploy cancelled by user': raise
                 print(f"[{slug}] Warning: Tree expansion failed: {e}")
             
             # 2. Select folder on main screen
@@ -91,7 +99,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 await page.wait_for_selector(f'div[js-tree="folderTree.config"] [id="{folder_anchor_id}"]', timeout=5000)
                 await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
                 await asyncio.sleep(1.2)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
+                if str(e) == 'Deploy cancelled by user': raise
                 print(f"[{slug}] WARNING: Could not select folder {folder_anchor_id}: {e}")
                 # Keep going but it might fail
                 
@@ -117,9 +128,12 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 
                 try:
                     await page.wait_for_selector('.modal-dialog', timeout=5000)
-                except:
+                except Exception as e:
+                    if str(e) == 'Deploy cancelled by user': raise
+                    if str(e) == 'Deploy cancelled by user': raise
                     pass
                 await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                     
                 # 4. Fill Modal Form
                 await page.evaluate(f'''async (args) => {{
@@ -212,6 +226,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     setTimeout(() => {{ selectTpl('layoutTemplate', layoutName + '.jsp'); }}, 1000);
                 }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', ''))])
                 await asyncio.sleep(1.5)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
                 has_warning = await page.evaluate('''() => {
                     const modal = document.querySelector('.modal-dialog');
@@ -222,9 +237,12 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 if has_warning:
                     try:
                         await page.get_by_role("button", name="닫기").click()
-                    except:
+                    except Exception as e:
+                        if str(e) == 'Deploy cancelled by user': raise
+                        if str(e) == 'Deploy cancelled by user': raise
                         await page.keyboard.press("Escape")
                     await asyncio.sleep(1.2)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                     page_exists = True
                 else:
                     try:
@@ -235,10 +253,14 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             if (btn) btn.click();
                         }''')
                         await asyncio.sleep(1.2)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         page_was_created = True
                     except Exception as e:
+                        if str(e) == 'Deploy cancelled by user': raise
+                        if str(e) == 'Deploy cancelled by user': raise
                         print(f"  Error saving modal: {e}")
                     await asyncio.sleep(0.6)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                     
             print(f"  6.5 Mở màn hình Edit Page cho '{slug}'...")
             try:
@@ -278,6 +300,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         }} catch(e) {{}}
                     }}''', slug)
                     await asyncio.sleep(2.4)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
                 print(f"  6.6 Chuyển sang View Code (Click nút </>)...")
                 
@@ -294,6 +317,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         }
                     }''')
                     await asyncio.sleep(0.9)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
                     print(f"  6.7 Kiểm tra bên trong View Code (Lần thử {attempt}/{max_attempts})...")
                     current_html = await page.evaluate('''() => {
@@ -327,28 +351,38 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         try:
                             await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                         except Exception as e:
+                            if str(e) == 'Deploy cancelled by user': raise
+                            if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Could not click HTML view: {e}")
                         await asyncio.sleep(1.2)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
                         # Paste HTML via Keyboard
                         print(f"  [{slug}] Pasting HTML via Keyboard...")
                         try:
                             await page.locator('textarea, .CodeMirror-code >> visible=true').first.focus()
                             await asyncio.sleep(0.5)
+                            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                             await page.keyboard.press("Control+A")
                             await page.keyboard.press("Backspace")
                             await page.keyboard.insert_text(ready_html)
                         except Exception as e:
+                            if str(e) == 'Deploy cancelled by user': raise
+                            if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Could not paste HTML: {e}")
                         await asyncio.sleep(1.2)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
                         # Click HTML View AGAIN to sync
                         print(f"  [{slug}] Clicking HTML Code View AGAIN...")
                         try:
                             await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                         except Exception as e:
+                            if str(e) == 'Deploy cancelled by user': raise
+                            if str(e) == 'Deploy cancelled by user': raise
                             pass
                         await asyncio.sleep(1.2)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
                         # Save Editor
                         print(f"  [{slug}] Saving Editor...")
@@ -364,9 +398,12 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             }''')
                             print(f"  [{slug}] Save action result: {saved}")
                         except Exception as e:
+                            if str(e) == 'Deploy cancelled by user': raise
+                            if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Error saving editor: {e}")
                         
                         await asyncio.sleep(2.4)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
                         # Handle SweetAlert (Success or confirm popup)
                         await page.evaluate('''() => {
@@ -374,6 +411,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             if (confirmBtn) confirmBtn.click();
                         }''')
                         await asyncio.sleep(1.8)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
                         # Click Back / Close button to exit Edit Page
                         print("  Nhấn Back/Đóng để thoát Edit Page...")
@@ -388,20 +426,26 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             if (closeBtn) closeBtn.click();
                         }''')
                         await asyncio.sleep(2.4)
+                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
                 if not html_verified:
                     raise Exception(f"Kiểm tra thất bại sau {max_attempts} lần thử: Page '{slug}' chưa có nội dung HTML trong View Code.")
 
             except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
+                if str(e) == 'Deploy cancelled by user': raise
                 print(f"  [Lỗi xử lý HTML page {slug}]: {e}")
             
             # Go back to page manager for next page
             await page.goto(target_url_page, wait_until='domcontentloaded')
             await asyncio.sleep(1.8)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             print(f"  6.8 Lặp lại cho đến khi kiểm tra hết tất cả Page trong Folder (Hoàn thành page {i+1}/{len(leaf_menus)}).")
 
             
         except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
+            if str(e) == 'Deploy cancelled by user': raise
             print(f"  [Lỗi page {slug}]: {e}")
 
     print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
@@ -422,12 +466,15 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         target_url = f'{site_url}/index.do?siteId={site_id}#!/page'
         await page.goto(target_url, wait_until='domcontentloaded')
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
         try:
             await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
             await asyncio.sleep(1.2)
-        except Exception:
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+        except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
             pass
             
         await page.evaluate(f'''async (slug) => {{
@@ -451,6 +498,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             if (anyBtn) anyBtn.click();
         }}''', slug)
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         # Switch to View Code
         print(f"  Bấm nút </> để xem mã nguồn View Code của Page '{slug}'...")
@@ -462,6 +510,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         }''')
         # Pause on screen so user can watch View Code live
         await asyncio.sleep(3.6)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         # Read HTML from View Code
         html_code = await page.evaluate('''() => {

@@ -30,7 +30,8 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         try:
             await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
             folder_el = True
-        except Exception:
+        except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
             folder_el = False
         
         if folder_el:
@@ -45,16 +46,19 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
                 }} catch(e) {{}}
             }}''')
             await asyncio.sleep(0.9)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             folders_created = True
             
             # Verification Step
             await page.reload(wait_until="domcontentloaded")
             await asyncio.sleep(2.4)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             print(f"  3.5 Kiểm tra lại Folder '{folder}' trong danh sách...")
             try:
                 await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)
                 print(f"  ✓ 3.5 Kiểm tra lại THÀNH CÔNG: Thư mục '{folder}' đã tồn tại.")
-            except Exception:
+            except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
                 raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
     
     print("  ✓ 3.5 Hoàn thành kiểm tra và xác nhận lại toàn bộ Folder theo đúng thứ tự.")

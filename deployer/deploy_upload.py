@@ -14,6 +14,7 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         
         await page.goto(target_url_res, wait_until="domcontentloaded")
         await asyncio.sleep(3.6)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
         res_org = 'kookmin'
         root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
@@ -28,14 +29,18 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
             print("  4.3 Chưa có Folder 'content' → Tiến hành Tạo Folder 'content'...")
             await page.click(f'[id="{root_folder_id}"]', button='right')
             await asyncio.sleep(0.6)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             await page.locator('.vakata-context li a:has(.fa-plus), .jstree-contextmenu li a:has(.fa-plus)').first.click()
             await asyncio.sleep(0.6)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             await page.locator('.jstree-rename-input').fill('content')
             await asyncio.sleep(0.5)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             await page.keyboard.press('Enter')
             await asyncio.sleep(1.2)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             print("  ✓ Đã tạo Folder 'content'.")
         else:
             print("  ✓ Folder 'content' đã tồn tại.")
@@ -44,9 +49,11 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         try:
             await page.wait_for_selector(f'[id="{content_folder_id}"]', timeout=5000)
             await page.click(f'[id="{content_folder_id}"]')
-        except Exception:
+        except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
             await page.locator('.jstree-anchor').filter(has_text='content').last.click()
         await asyncio.sleep(1.2)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         image_name = 'img-ready.png'
@@ -64,14 +71,17 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
             if os.path.exists(image_path):
                 await page.click('button[ng-click="img.upload()"]')
                 await asyncio.sleep(1.2)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
                 file_input = page.locator('input[type="file"][flow-btn]').first
                 await file_input.set_input_files(image_path)
                 await asyncio.sleep(1.2)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
                 upload_confirm = page.locator('button:has(.fa-cloud-upload), button:has-text("업로드")').first
                 await upload_confirm.click()
                 await asyncio.sleep(2.4)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             else:
                 print(f"  [Lỗi] File hình ảnh không tồn tại tại: {image_path}")
 
@@ -81,10 +91,12 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
                 return document.body.innerText.includes('{image_name}');
             }}''', timeout=10000)
             print(f"  ✓ 4.8 Kiểm tra lại THÀNH CÔNG: Hình ảnh '{image_name}' đã có mặt đầy đủ trong Folder 'content'!")
-        except Exception:
+        except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
             raise Exception(f"Kiểm tra lại thất bại: Hình ảnh '{image_name}' chưa xuất hiện trong Folder 'content'.")
 
     except Exception as e:
+        if str(e) == 'Deploy cancelled by user': raise
         print(f"Lỗi trong quá trình kiểm tra Upload: {e}")
         raise
 

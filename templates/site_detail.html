@@ -97,6 +97,17 @@
     #site-menu-tree-container { min-height: 500px; max-height: none; }
   }
   
+  /* SweetAlert2 Dark Mode Enhancements */
+  body.dark-mode .swal2-popup {
+    background-color: #343a40 !important;
+    color: #ffffff !important;
+  }
+  body.dark-mode .swal2-title,
+  body.dark-mode .swal2-content,
+  body.dark-mode .swal2-html-container {
+    color: #ffffff !important;
+  }
+
   /* Dark Mode Pagination Enhancements */
   body.dark-mode .page-link {
     background-color: #343a40 !important;
@@ -939,22 +950,14 @@ function deployMenus(siteId) {
                   body: JSON.stringify({ task_id: siteId + '--deploy-menus' })
               }).then(() => {
                   resetDeployMenuBtn();
-                  $(document).Toasts('create', {
-                      class: 'bg-warning',
-                      title: 'Cancelled',
-                      body: 'The deployment process has been cancelled.'
-                  });
+                  Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'warning', title: 'Cancelled', text: 'The deployment process has been cancelled.' });
               });
           }
       });
       checkDeployMenuStatus(siteId);
     } else {
       resetDeployMenuBtn();
-      $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: data.message
-      });
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Error', text: data.message });
       if (data.message.includes("already running")) {
           setDeployMenuBtnRunning();
           checkDeployMenuStatus(siteId);
@@ -964,11 +967,7 @@ function deployMenus(siteId) {
   .catch(err => {
     console.error(err);
     resetDeployMenuBtn();
-    $(document).Toasts('create', {
-        class: 'bg-danger',
-        title: 'Error',
-        body: 'An unexpected error occurred.'
-    });
+    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Error', text: 'An unexpected error occurred.' });
   });
 }
 </script>

@@ -11,10 +11,12 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     target_url = f"{site_url}/index.do?siteId={site_id}#!/res-layout"
     try:
         await page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
-    except Exception:
+    except Exception as e:
+        if str(e) == 'Deploy cancelled by user': raise
         await page.evaluate('window.location.hash = "#!/res-layout";')
     await page.wait_for_load_state('networkidle')
     await asyncio.sleep(2.4)
+    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
     
     layouts_to_check = ['sub-template', 'sub-template-tab']
     base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -29,10 +31,12 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         print(f"\n  5.1 Tìm kiếm Layout theo tên: '{layout_name}'...")
         try:
             await page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
-        except Exception:
+        except Exception as e:
+            if str(e) == 'Deploy cancelled by user': raise
             await page.evaluate('window.location.hash = "#!/res-layout";')
         await page.wait_for_load_state('networkidle')
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         local_html_path = os.path.join(layout_dir, f"{layout_name}.html")
         if not os.path.exists(local_html_path):
@@ -57,6 +61,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }}
         }}''', layout_name)
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         layout_exists = await page.evaluate(f'''(layoutName) => {{
             const els = Array.from(document.querySelectorAll('a, span, div, td, h4, .card-title'));
@@ -78,6 +83,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (addBtn) addBtn.click();
             }''')
             await asyncio.sleep(1.2)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             try:
                 inputs = await page.locator('.modal-dialog input[type="text"]').all()
@@ -86,6 +92,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                     await inputs[0].fill("")
                     await inputs[0].press_sequentially(layout_name, delay=50)
                     await asyncio.sleep(0.6)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
                 if len(inputs) > 1 and await inputs[1].is_visible():
                     val = await inputs[1].input_value()
@@ -94,7 +101,9 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                         await inputs[1].fill("")
                         await inputs[1].press_sequentially(layout_name, delay=50)
                 await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
                 print(f"  Error filling form: {e}")
 
             await page.evaluate('''() => {
@@ -102,6 +111,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (saveBtn) saveBtn.click();
             }''')
             await asyncio.sleep(1.8)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
         # Kiểm tra xem có popup lỗi "file đã tồn tại" không
             error_exists = await page.evaluate('''() => {
@@ -117,11 +127,13 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             if error_exists:
                 print(f"  [Cảnh báo] Layout '{layout_name}' đã tồn tại (phát hiện qua popup error). Bỏ qua (không edit).")
                 await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 await page.evaluate('''() => {
                     const closeBtn = document.querySelector('.modal-header .close, button[ng-click*="cancel"]');
                     if (closeBtn) closeBtn.click();
                 }''')
                 await asyncio.sleep(0.6)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 continue
             
             await page.evaluate('''() => {
@@ -129,6 +141,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (confirmBtn) confirmBtn.click();
             }''')
             await asyncio.sleep(1.2)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             await page.evaluate('''() => {
                 const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
@@ -139,6 +152,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (closeBtn) closeBtn.click();
             }''')
             await asyncio.sleep(1.2)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
         print(f"  5.4 Tìm kiếm lại Layout '{layout_name}' để tiến hành Edit...")
         await page.evaluate(f'''(layoutName) => {{
@@ -155,6 +169,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }}
         }}''', layout_name)
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         print(f"  5.5 Mở màn hình Edit Layout '{layout_name}'...")
         await page.evaluate(f'''(layoutName) => {{
@@ -174,6 +189,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }}
         }}''', layout_name)
         await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         print(f"  5.6 Chuyển sang tab HTML (소스 편집)...")
         await page.evaluate('''() => {
@@ -185,6 +201,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             }
         }''')
         await asyncio.sleep(1.8)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         print(f"  5.7 So sánh nội dung HTML với file HTML chuẩn...")
         current_html = await page.evaluate('''() => {
@@ -209,21 +226,25 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if success:
                     print(f"  Cập nhật HTML vào CodeMirror editor thành công.")
             except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
                 print(f"  Error setting HTML: {e}")
                 
             await asyncio.sleep(1.2)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             print(f"  Lưu lại thay đổi Layout...")
             await page.evaluate('''() => {
                 const btn = document.querySelector('button[ng-click*="edit.save()"], button[x-ng-click*="edit.save()"]');
                 if (btn) btn.click();
             }''')
             await asyncio.sleep(1.8)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             
             await page.evaluate('''() => {
                 const confirmBtn = document.querySelector('.sweet-alert button.confirm');
                 if (confirmBtn) confirmBtn.click();
             }''')
             await asyncio.sleep(0.6)
+            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         else:
             print(f"  ✓ HTML đã khớp với file chuẩn.")
 
@@ -247,6 +268,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             if (backBtn) backBtn.click();
         }''')
         await asyncio.sleep(1.8)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
         
         print(f"  ✓ Đã xử lý xong Layout '{layout_name}'.")
         
