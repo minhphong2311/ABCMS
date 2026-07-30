@@ -286,6 +286,8 @@
           <div>
             <button class="btn btn-success btn-sm" onclick="triggerExcelUpload()"><i class="fas fa-file-excel"></i> Import Excel</button>
             <input type="file" id="excelFileInput" style="display: none;" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
+            <button class="btn btn-info btn-sm ml-2" onclick="triggerImageUpload()"><i class="fas fa-file-image"></i> Import Image</button>
+            <input type="file" id="imageFileInput" style="display: none;" accept="image/*" onchange="handleImageUpload(event)">
           </div>
           <button class="btn btn-primary btn-sm" onclick="showInlineAdd(null)"><i class="fas fa-plus"></i> Add Menu</button>
         </div>
@@ -1007,6 +1009,10 @@ function triggerExcelUpload() {
     document.getElementById('excelFileInput').click();
 }
 
+function triggerImageUpload() {
+    document.getElementById('imageFileInput').click();
+}
+
 function handleExcelUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1055,5 +1061,62 @@ function handleExcelUpload(event) {
         event.target.value = '';
     });
 }
+
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    Swal.fire({
+        title: 'Analyzing Image...',
+        text: 'Extracting menu structure using AI. This may take up to a minute.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+    
+    fetch(`/api/site/${currentSiteId}/menus/upload-image`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            Swal.fire('Success', data.message || 'Menus extracted and added.', 'success');
+            
+            // Merge into currentMenus instead of reloading
+            const existingMenuIds = new Set(currentMenus.map(m => m.id));
+            
+            if (data.new_menus) {
+                data.new_menus.forEach(menu => {
+                    if (existingMenuIds.has(menu.id)) {
+                        // Update existing
+                        const idx = currentMenus.findIndex(m => m.id === menu.id);
+                        if (idx !== -1) currentMenus[idx] = { ...currentMenus[idx], ...menu };
+                    } else {
+                        currentMenus.push(menu);
+                    }
+                    
+                    if (menu.parent_id) {
+                        expandedMenuIds.add(menu.parent_id);
+                    }
+                });
+            }
+            renderTree();
+            updateDataFromDOM();
+        } else {
+            Swal.fire('Error', data.error || 'Failed', 'error');
+        }
+    })
+    .catch(err => {
+        Swal.fire('Error', err.toString(), 'error');
+    })
+    .finally(() => {
+        event.target.value = '';
+    });
+}
+
 </script>
 {% endblock %}

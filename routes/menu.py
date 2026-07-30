@@ -291,3 +291,139 @@ def api_upload_menus_excel(site_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@menu_bp.route('/api/site/<site_id>/menus/upload-image', methods=['POST'])
+def api_upload_menus_image(site_id):
+    import os
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    sites = load_data()
+    site = next((s for s in sites if s['id'] == site_id), None)
+    if not site:
+        return jsonify({'error': 'Site not found'}), 404
+
+    config = get_config()
+    api_key = config.get('gemini_api_key', '').strip()
+    if not api_key:
+        return jsonify({'error': 'Gemini API Key is not configured for this site. Please add it in Site Details.'}), 400
+
+    try:
+        from google import genai
+        import tempfile
+        import uuid
+        import re
+
+        client = genai.Client(api_key=api_key)
+
+        # Save uploaded file to temp file
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, file.filename)
+        file.save(temp_path)
+
+        # Upload to Gemini
+        gemini_file = client.files.upload(file=temp_path)
+
+        prompt = '''
+        Analyze this image, which contains a table of a hierarchical menu structure.
+        The columns are typically Depth levels (D1, D2, D3...) and Tab levels (Tab1...).
+        Extract the menu hierarchy and output it strictly as a JSON array of objects.
+        Each object should represent a menu item with the following format:
+        [
+            {
+                "id": 1,
+                "name": "Extracted Menu Name",
+                "slug": "",
+                "parent_id": null,
+                "type": "page"
+            }
+        ]
+        
+        Rules:
+        - Accurately determine the parent-child relationship based on the columns. For example, an item in D2 is a child of the closest preceding item in D1. Set its parent_id to the id of that D1 item.
+        - USE SEQUENTIAL INTEGERS for "id" (1, 2, 3...) and "parent_id" so that relationships are perfectly maintained. The root items must have parent_id: null.
+        - If you see Korean text like "목록/상세" (List/Detail), ignore it or use it as a hint, but the menu name is the main text (e.g. "Profile", "Education", "Publication").
+        - Output NOTHING but the raw JSON array. No markdown blocks, no explanations.
+        '''
+
+        response = client.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=[gemini_file, prompt]
+        )
+
+        output_text = response.text.strip()
+        
+        # Clean up markdown if any
+        if output_text.startswith('```json'):
+            output_text = output_text[7:]
+        if output_text.endswith('```'):
+            output_text = output_text[:-3]
+        output_text = output_text.strip()
+
+        new_menus = json.loads(output_text)
+        
+        # Replace integer IDs with UUIDs
+        id_map = {}
+        for m in new_menus:
+            old_id = m.get('id')
+            new_id = str(uuid.uuid4())
+            id_map[old_id] = new_id
+            m['id'] = new_id
+            
+        for m in new_menus:
+            if m.get('parent_id') is not None and m.get('parent_id') != 'null' and m.get('parent_id') != '':
+                m['parent_id'] = id_map.get(m['parent_id'], None)
+            else:
+                m['parent_id'] = None
+        
+        # Assign folders
+        assign_folders_from_roots(new_menus)
+        
+        # We need to generate missing slugs using Gemini if needed
+        missing_slug_menus = [m for m in new_menus if not m.get('slug')]
+        if missing_slug_menus:
+            prompt_slugs = "Generate URL-friendly English slugs (lowercase, alphanumeric, hyphens only) for the following menu names. Return a JSON object where keys are the menu IDs and values are the generated slugs. Do not use markdown.\n\n"
+            for m in missing_slug_menus:
+                prompt_slugs += f"ID: {m['id']}, Name: {m['name']}\n"
+
+            try:
+                resp_slugs = client.models.generate_content(model='gemini-3.5-flash', contents=prompt_slugs)
+                slugs_text = resp_slugs.text.strip()
+                if slugs_text.startswith('```json'): slugs_text = slugs_text[7:]
+                if slugs_text.endswith('```'): slugs_text = slugs_text[:-3]
+                slugs_text = slugs_text.strip()
+                slug_dict = json.loads(slugs_text)
+                
+                existing_slugs = set(m.get('slug', '') for m in new_menus if m.get('slug'))
+                
+                for m in missing_slug_menus:
+                    if m['id'] in slug_dict:
+                        slug = slug_dict[m['id']].lower()
+                        slug = re.sub(r'[^a-z0-9\-]+', '', slug)
+                        slug = make_unique_slug(slug, existing_slugs)
+                        m['slug'] = slug
+                        existing_slugs.add(slug)
+            except Exception as e:
+                print('Batch slug generation for image failed:', e)
+
+            # Fallback
+            import time
+            base_time = int(time.time() * 1000)
+            for idx, m in enumerate(missing_slug_menus):
+                if not m.get('slug'):
+                    m['slug'] = 'auto-' + str(base_time + idx)
+                    
+        return jsonify({
+            'success': True,
+            'message': f'Extracted {len(new_menus)} menus from Image using AI. Please review and Save.',
+            'new_menus': new_menus
+        })
+        
+    except Exception as e:
+        print(f"Image import error: {e}")
+        return jsonify({'error': str(e)}), 500
+
