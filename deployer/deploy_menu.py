@@ -118,7 +118,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                     }}''', pid)
             
             add_res = await add_menu(m, parent_menu_cd)
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.6)
             
             if not add_res or not add_res.get('item'):
                 print(f"  Lỗi khi tạo menu '{m['name']}': {add_res}")
@@ -146,7 +146,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 if 'nodes' in data: del data['nodes']
                 
                 await update_menu(page, data)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.6)
                 
                 # Close any SweetAlert that might have popped up from Spring 500 error or success
                 try:

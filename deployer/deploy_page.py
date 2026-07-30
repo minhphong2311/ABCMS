@@ -41,9 +41,9 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
             await page.goto("about:blank")
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.6)
             await page.goto(target_url_page, wait_until="domcontentloaded")
-            await asyncio.sleep(4)
+            await asyncio.sleep(2.4)
 
             
             # Ensure Table view is selected
@@ -59,7 +59,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         }
                     }
                 }''')
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.2)
             except:
                 pass
             
@@ -80,7 +80,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     }
                     throw new Error("jstree instance not ready after 10s");
                 }''')
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.2)
             except Exception as e:
                 print(f"[{slug}] Warning: Tree expansion failed: {e}")
             
@@ -90,7 +90,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             try:
                 await page.wait_for_selector(f'div[js-tree="folderTree.config"] [id="{folder_anchor_id}"]', timeout=5000)
                 await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.2)
             except Exception as e:
                 print(f"[{slug}] WARNING: Could not select folder {folder_anchor_id}: {e}")
                 # Keep going but it might fail
@@ -119,7 +119,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     await page.wait_for_selector('.modal-dialog', timeout=5000)
                 except:
                     pass
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.6)
                     
                 # 4. Fill Modal Form
                 await page.evaluate(f'''async (args) => {{
@@ -211,7 +211,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     selectTpl('headTemplate', 'common.jsp');
                     setTimeout(() => {{ selectTpl('layoutTemplate', layoutName + '.jsp'); }}, 1000);
                 }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', ''))])
-                await asyncio.sleep(2.5)
+                await asyncio.sleep(1.5)
 
                 has_warning = await page.evaluate('''() => {
                     const modal = document.querySelector('.modal-dialog');
@@ -224,7 +224,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         await page.get_by_role("button", name="닫기").click()
                     except:
                         await page.keyboard.press("Escape")
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(1.2)
                     page_exists = True
                 else:
                     try:
@@ -234,11 +234,11 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             ) || document.querySelector('.modal-dialog .modal-footer .btn-primary, .modal-dialog .btn-primary');
                             if (btn) btn.click();
                         }''')
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(1.2)
                         page_was_created = True
                     except Exception as e:
                         print(f"  Error saving modal: {e}")
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.6)
                     
             print(f"  6.5 Mở màn hình Edit Page cho '{slug}'...")
             try:
@@ -277,7 +277,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             if (anyBtn) anyBtn.click();
                         }} catch(e) {{}}
                     }}''', slug)
-                    await asyncio.sleep(4)
+                    await asyncio.sleep(2.4)
                 
                 print(f"  6.6 Chuyển sang View Code (Click nút </>)...")
                 
@@ -293,7 +293,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             btn1.click();
                         }
                     }''')
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(0.9)
 
                     print(f"  6.7 Kiểm tra bên trong View Code (Lần thử {attempt}/{max_attempts})...")
                     current_html = await page.evaluate('''() => {
@@ -328,7 +328,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                         except Exception as e:
                             print(f"  [{slug}] Could not click HTML view: {e}")
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(1.2)
                         
                         # Paste HTML via Keyboard
                         print(f"  [{slug}] Pasting HTML via Keyboard...")
@@ -340,7 +340,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             await page.keyboard.insert_text(ready_html)
                         except Exception as e:
                             print(f"  [{slug}] Could not paste HTML: {e}")
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(1.2)
                         
                         # Click HTML View AGAIN to sync
                         print(f"  [{slug}] Clicking HTML Code View AGAIN...")
@@ -348,7 +348,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                         except Exception as e:
                             pass
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(1.2)
                         
                         # Save Editor
                         print(f"  [{slug}] Saving Editor...")
@@ -366,14 +366,14 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         except Exception as e:
                             print(f"  [{slug}] Error saving editor: {e}")
                         
-                        await asyncio.sleep(4)
+                        await asyncio.sleep(2.4)
 
                         # Handle SweetAlert (Success or confirm popup)
                         await page.evaluate('''() => {
                             const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
                             if (confirmBtn) confirmBtn.click();
                         }''')
-                        await asyncio.sleep(3)
+                        await asyncio.sleep(1.8)
                         
                         # Click Back / Close button to exit Edit Page
                         print("  Nhấn Back/Đóng để thoát Edit Page...")
@@ -387,7 +387,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             );
                             if (closeBtn) closeBtn.click();
                         }''')
-                        await asyncio.sleep(4)
+                        await asyncio.sleep(2.4)
 
                 if not html_verified:
                     raise Exception(f"Kiểm tra thất bại sau {max_attempts} lần thử: Page '{slug}' chưa có nội dung HTML trong View Code.")
@@ -397,7 +397,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             
             # Go back to page manager for next page
             await page.goto(target_url_page, wait_until='domcontentloaded')
-            await asyncio.sleep(3)
+            await asyncio.sleep(1.8)
             print(f"  6.8 Lặp lại cho đến khi kiểm tra hết tất cả Page trong Folder (Hoàn thành page {i+1}/{len(leaf_menus)}).")
 
             
@@ -421,12 +421,12 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         print(f"\n  [KIỂM TRA LẦN CUỐI {i+1}/{len(leaf_menus)}] Mở Edit Page cho '{slug}'...")
         target_url = f'{site_url}/index.do?siteId={site_id}#!/page'
         await page.goto(target_url, wait_until='domcontentloaded')
-        await asyncio.sleep(4)
+        await asyncio.sleep(2.4)
         
         folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
         try:
             await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
         except Exception:
             pass
             
@@ -450,7 +450,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             const anyBtn = document.querySelector('.zmdi-brush');
             if (anyBtn) anyBtn.click();
         }}''', slug)
-        await asyncio.sleep(4)
+        await asyncio.sleep(2.4)
         
         # Switch to View Code
         print(f"  Bấm nút </> để xem mã nguồn View Code của Page '{slug}'...")
@@ -461,7 +461,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             }
         }''')
         # Pause on screen so user can watch View Code live
-        await asyncio.sleep(6)
+        await asyncio.sleep(3.6)
         
         # Read HTML from View Code
         html_code = await page.evaluate('''() => {

@@ -17,7 +17,7 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
 
     target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
     await page.goto(target_url_page, wait_until="domcontentloaded")
-    await asyncio.sleep(6)
+    await asyncio.sleep(3.6)
     
     folders_created = False
     for folder in unique_folders_list:
@@ -44,12 +44,12 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
                     if (injector) await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}"); 
                 }} catch(e) {{}}
             }}''')
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(0.9)
             folders_created = True
             
             # Verification Step
             await page.reload(wait_until="domcontentloaded")
-            await asyncio.sleep(4)
+            await asyncio.sleep(2.4)
             print(f"  3.5 Kiểm tra lại Folder '{folder}' trong danh sách...")
             try:
                 await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)

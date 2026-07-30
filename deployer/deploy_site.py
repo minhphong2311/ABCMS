@@ -34,11 +34,11 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
                 await page.fill('input[name="userId"]', 'webadmin')
                 await page.fill('input[name="userPassword"]', '12andvina#$')
                 await page.click('button[type="submit"]')
-                await asyncio.sleep(4)
+                await asyncio.sleep(2.4)
             
             print(f"  Điều hướng đến: {site_creation_url}")
             await page.goto(site_creation_url, wait_until="domcontentloaded")
-            await asyncio.sleep(5)
+            await asyncio.sleep(3.0)
 
             print("  Đang gửi API tạo Site trên hệ thống CMS...")
             res = await page.evaluate(f'''async () => {{
@@ -54,21 +54,21 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
                 }}
             }}''')
             print(f"  Kết quả tạo Site: {res}")
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             
             target_url = f'{site_url}/index.do?siteId={site_id}#!/menu'
             print(f"  Quay lại trang Menu Manager: {target_url}")
             await page.goto(f'{site_url}/logOut.do')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             await page.goto(f'{site_url}/index.do')
             await page.wait_for_selector('input[name="userId"]', timeout=15000)
             await page.fill('input[name="userId"]', username)
             await page.fill('input[name="userPassword"]', password)
             await page.click('button[type="submit"]')
-            await asyncio.sleep(4)
+            await asyncio.sleep(2.4)
             
             await page.goto(target_url, wait_until="domcontentloaded")
-            await asyncio.sleep(5)
+            await asyncio.sleep(3.0)
             
             print(f"  1.4 Kiểm tra lại Site ID...")
             if not isinstance(res, dict) or not res.get('success'):

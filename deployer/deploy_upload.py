@@ -13,7 +13,7 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         target_url_res = f'{site_url}/index.do?siteId={site_id}#!/res-img'
         
         await page.goto(target_url_res, wait_until="domcontentloaded")
-        await asyncio.sleep(6)
+        await asyncio.sleep(3.6)
 
         res_org = 'kookmin'
         root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
@@ -27,15 +27,15 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         if not content_exists:
             print("  4.3 Chưa có Folder 'content' → Tiến hành Tạo Folder 'content'...")
             await page.click(f'[id="{root_folder_id}"]', button='right')
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.6)
             
             await page.locator('.vakata-context li a:has(.fa-plus), .jstree-contextmenu li a:has(.fa-plus)').first.click()
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.6)
             
             await page.locator('.jstree-rename-input').fill('content')
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.5)
             await page.keyboard.press('Enter')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             print("  ✓ Đã tạo Folder 'content'.")
         else:
             print("  ✓ Folder 'content' đã tồn tại.")
@@ -46,7 +46,7 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
             await page.click(f'[id="{content_folder_id}"]')
         except Exception:
             await page.locator('.jstree-anchor').filter(has_text='content').last.click()
-        await asyncio.sleep(2)
+        await asyncio.sleep(1.2)
         
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         image_name = 'img-ready.png'
@@ -63,15 +63,15 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
             print(f"  4.7 Hình ảnh '{image_name}' chưa tồn tại → Upload hình ảnh...")
             if os.path.exists(image_path):
                 await page.click('button[ng-click="img.upload()"]')
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.2)
                 
                 file_input = page.locator('input[type="file"][flow-btn]').first
                 await file_input.set_input_files(image_path)
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.2)
                 
                 upload_confirm = page.locator('button:has(.fa-cloud-upload), button:has-text("업로드")').first
                 await upload_confirm.click()
-                await asyncio.sleep(4)
+                await asyncio.sleep(2.4)
             else:
                 print(f"  [Lỗi] File hình ảnh không tồn tại tại: {image_path}")
 

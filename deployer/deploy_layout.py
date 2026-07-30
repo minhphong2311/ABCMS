@@ -14,7 +14,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     except Exception:
         await page.evaluate('window.location.hash = "#!/res-layout";')
     await page.wait_for_load_state('networkidle')
-    await asyncio.sleep(4)
+    await asyncio.sleep(2.4)
     
     layouts_to_check = ['sub-template', 'sub-template-tab']
     base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -32,7 +32,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         except Exception:
             await page.evaluate('window.location.hash = "#!/res-layout";')
         await page.wait_for_load_state('networkidle')
-        await asyncio.sleep(4)
+        await asyncio.sleep(2.4)
         
         local_html_path = os.path.join(layout_dir, f"{layout_name}.html")
         if not os.path.exists(local_html_path):
@@ -42,13 +42,30 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         with open(local_html_path, 'r', encoding='utf-8') as f:
             html_content = f.read()
             
+        # Thực hiện Search Layout trước để đảm bảo nó hiển thị trên trang 1
+        await page.evaluate(f'''(layoutName) => {{
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            const searchInput = inputs.find(i => (i.placeholder || '').includes('검색') || (i.getAttribute('ng-model') || '').toLowerCase().includes('search')) || inputs[inputs.length - 1];
+            if (searchInput) {{
+                searchInput.value = layoutName;
+                searchInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                searchInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                
+                const searchBtn = Array.from(document.querySelectorAll('button, a, span')).find(b => (b.innerText || '').includes('검색'));
+                if (searchBtn) searchBtn.click();
+                else searchInput.dispatchEvent(new KeyboardEvent('keydown', {{'key': 'Enter'}}));
+            }}
+        }}''', layout_name)
+        await asyncio.sleep(2.4)
+        
         layout_exists = await page.evaluate(f'''(layoutName) => {{
-            const els = Array.from(document.querySelectorAll('a, span, div, td'));
+            const els = Array.from(document.querySelectorAll('a, span, div, td, h4, .card-title'));
             return els.some(el => (el.innerText || el.textContent || '').trim() === layoutName || (el.innerText || el.textContent || '').trim() === layoutName + '.jsp');
         }}''', layout_name)
         
         if layout_exists:
-            print(f"  5.2 Layout '{layout_name}' đã tồn tại → Chuyển sang bước kiểm tra HTML và tạo bước tiếp theo.")
+            print(f"  5.2 Layout '{layout_name}' đã tồn tại → Bỏ qua (không edit).")
+            continue
         else:
             print(f"  5.3 Layout '{layout_name}' chưa tồn tại → Tiến hành Tạo Layout '{layout_name}'...")
             if progress_cb:
@@ -60,7 +77,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                                Array.from(document.querySelectorAll('button, a.btn')).find(b => (b.innerText || '').includes('추가'));
                 if (addBtn) addBtn.click();
             }''')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             
             try:
                 inputs = await page.locator('.modal-dialog input[type="text"]').all()
@@ -68,7 +85,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                     await inputs[0].click()
                     await inputs[0].fill("")
                     await inputs[0].press_sequentially(layout_name, delay=50)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.6)
                 
                 if len(inputs) > 1 and await inputs[1].is_visible():
                     val = await inputs[1].input_value()
@@ -76,7 +93,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                         await inputs[1].click()
                         await inputs[1].fill("")
                         await inputs[1].press_sequentially(layout_name, delay=50)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.6)
             except Exception as e:
                 print(f"  Error filling form: {e}")
 
@@ -84,13 +101,34 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 const saveBtn = Array.from(document.querySelectorAll('.modal-footer button, .btn-primary')).find(b => (b.innerText || '').includes('저장') || (b.innerText || '').includes('Save') || (b.innerText || '').includes('확인'));
                 if (saveBtn) saveBtn.click();
             }''')
-            await asyncio.sleep(3)
+            await asyncio.sleep(1.8)
+            
+        # Kiểm tra xem có popup lỗi "file đã tồn tại" không
+            error_exists = await page.evaluate('''() => {
+                const swal = document.querySelector('.sweet-alert');
+                if (swal && (swal.innerText || '').includes('존재')) {
+                    const btn = document.querySelector('.sweet-alert button.confirm');
+                    if (btn) btn.click();
+                    return true;
+                }
+                return false;
+            }''')
+            
+            if error_exists:
+                print(f"  [Cảnh báo] Layout '{layout_name}' đã tồn tại (phát hiện qua popup error). Bỏ qua (không edit).")
+                await asyncio.sleep(0.6)
+                await page.evaluate('''() => {
+                    const closeBtn = document.querySelector('.modal-header .close, button[ng-click*="cancel"]');
+                    if (closeBtn) closeBtn.click();
+                }''')
+                await asyncio.sleep(0.6)
+                continue
             
             await page.evaluate('''() => {
                 const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
                 if (confirmBtn) confirmBtn.click();
             }''')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             
             await page.evaluate('''() => {
                 const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
@@ -100,14 +138,23 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 );
                 if (closeBtn) closeBtn.click();
             }''')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
 
-        print(f"  5.4 Kiểm tra lại Layout '{layout_name}' trong danh sách...")
-        await page.evaluate('''() => {
-            const refreshBtn = Array.from(document.querySelectorAll('button, a, span')).find(b => (b.innerText || '').includes('새로고침'));
-            if (refreshBtn) refreshBtn.click();
-        }''')
-        await asyncio.sleep(4)
+        print(f"  5.4 Tìm kiếm lại Layout '{layout_name}' để tiến hành Edit...")
+        await page.evaluate(f'''(layoutName) => {{
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            const searchInput = inputs.find(i => (i.placeholder || '').includes('검색') || (i.getAttribute('ng-model') || '').toLowerCase().includes('search')) || inputs[inputs.length - 1];
+            if (searchInput) {{
+                searchInput.value = layoutName;
+                searchInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                searchInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                
+                const searchBtn = Array.from(document.querySelectorAll('button, a, span')).find(b => (b.innerText || '').includes('검색'));
+                if (searchBtn) searchBtn.click();
+                else searchInput.dispatchEvent(new KeyboardEvent('keydown', {{'key': 'Enter'}}));
+            }}
+        }}''', layout_name)
+        await asyncio.sleep(2.4)
         
         print(f"  5.5 Mở màn hình Edit Layout '{layout_name}'...")
         await page.evaluate(f'''(layoutName) => {{
@@ -126,7 +173,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (targetLink) targetLink.click();
             }}
         }}''', layout_name)
-        await asyncio.sleep(4)
+        await asyncio.sleep(2.4)
         
         print(f"  5.6 Chuyển sang tab HTML (소스 편집)...")
         await page.evaluate('''() => {
@@ -137,7 +184,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
                 if (a) a.click();
             }
         }''')
-        await asyncio.sleep(3)
+        await asyncio.sleep(1.8)
         
         print(f"  5.7 So sánh nội dung HTML với file HTML chuẩn...")
         current_html = await page.evaluate('''() => {
@@ -164,19 +211,19 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             except Exception as e:
                 print(f"  Error setting HTML: {e}")
                 
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.2)
             print(f"  Lưu lại thay đổi Layout...")
             await page.evaluate('''() => {
                 const btn = document.querySelector('button[ng-click*="edit.save()"], button[x-ng-click*="edit.save()"]');
                 if (btn) btn.click();
             }''')
-            await asyncio.sleep(3)
+            await asyncio.sleep(1.8)
             
             await page.evaluate('''() => {
                 const confirmBtn = document.querySelector('.sweet-alert button.confirm');
                 if (confirmBtn) confirmBtn.click();
             }''')
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.6)
         else:
             print(f"  ✓ HTML đã khớp với file chuẩn.")
 
@@ -199,7 +246,9 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             const backBtn = btns.find(b => (b.textContent || '').includes('목록으로') || (b.textContent || '').includes('List'));
             if (backBtn) backBtn.click();
         }''')
-        await asyncio.sleep(3)
+        await asyncio.sleep(1.8)
         
-    print("  ✓ Hoàn thành kiểm tra và cập nhật toàn bộ Layout.")
+        print(f"  ✓ Đã xử lý xong Layout '{layout_name}'.")
+        
+    print("  ✓ Hoàn thành kiểm tra toàn bộ Layout.")
 
