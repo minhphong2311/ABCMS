@@ -1,7 +1,9 @@
 import asyncio
 
 async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None):
-    print("Starting page deployment for menus...")
+    print("\n" + "="*50)
+    print("6. KIỂM TRA PAGE")
+    print("="*50)
     if progress_cb:
         progress_cb(92, "Creating ready pages for menus (UI Mode)...")
 
@@ -11,7 +13,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
     ready_html = f"""<div class="content-box">
 	<div class="con-box no-pd">
 		<div class="img-box border">
-			<img src="{ready_img_url}" alt=""/>
+			<img src="{ready_img_url}" alt="ready"/>
 		</div>
 	</div>
 </div>"""
@@ -32,15 +34,14 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         try:
             if progress_cb:
                 progress_cb(min(99, 92 + int((i / len(leaf_menus)) * 7)), f"Processing page: {slug}")
-            print(f"[{slug}] Navigating to Page Manager...")
+            print(f"\n  6.1 Mở Folder '{folder}' (Page Manager)...")
             
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
-            if page.url == target_url_page:
-                print(f"[{slug}] Already on target page. Skipping reload...")
-                await asyncio.sleep(1)
-            else:
-                await page.goto(target_url_page, wait_until="domcontentloaded")
-                await asyncio.sleep(4)
+            await page.goto("about:blank")
+            await asyncio.sleep(1)
+            await page.goto(target_url_page, wait_until="domcontentloaded")
+            await asyncio.sleep(4)
+
             
             # Ensure Table view is selected
             try:
@@ -92,7 +93,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 # Keep going but it might fail
                 
             # 3. Check if page already exists in the folder
-            print(f"[{slug}] Checking if page exists...")
+            print(f"  6.2 Kiểm tra Page '{slug}' trong Folder '{folder}'...")
             page_exists = await page.evaluate('''async (slug) => {
                 const table = document.querySelector('table.table');
                 if (!table) return false;
@@ -100,8 +101,10 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             }''', slug)
             
             page_was_created = False
-            if not page_exists:
-                print(f"[{slug}] Page does not exist. Clicking Create Page...")
+            if page_exists:
+                print(f"  6.3 Page '{slug}' đã tồn tại → Chuyển sang kiểm tra Page tiếp theo.")
+            else:
+                print(f"  6.4 Page '{slug}' chưa tồn tại → Tiến hành Tạo Page...")
                 await page.evaluate('''() => {
                     const btn = Array.from(document.querySelectorAll('button')).find(b =>
                         b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('등록') || b.innerText.includes('Thêm'))
@@ -109,7 +112,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     if (btn) btn.click();
                 }''')
                 
-                # Wait for modal
                 try:
                     await page.wait_for_selector('.modal-dialog', timeout=5000)
                 except:
@@ -117,8 +119,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 await asyncio.sleep(1)
                     
                 # 4. Fill Modal Form
-                print(f"[{slug}] Assuring modal form is filled...")
-                # Pass folder name instead of ID
                 await page.evaluate(f'''async (args) => {{
                     const slug = args[0];
                     const menuName = args[1];
@@ -126,7 +126,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     const layoutName = args[3];
                     const folderName = args[4];
                     
-                    // Expand the menu tree inside the modal
                     const treeEl = document.querySelector('.modal-dialog div[js-tree="menuTree.config"]');
                     if (treeEl) {{
                         for (let i = 0; i < 20; i++) {{
@@ -138,7 +137,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         }}
                     }}
                     
-                    // Expand the folder tree inside the modal
                     const folderTreeEl = document.querySelector('.modal-dialog div[js-tree="folderTree.config"], .modal-dialog div[js-tree="pg.folderTree"]');
                     if (folderTreeEl) {{
                         for (let i = 0; i < 20; i++) {{
@@ -152,7 +150,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     
                     await new Promise(r => setTimeout(r, 1000));
                     
-                    // Select matching folder in modal tree by text
                     if (folderTreeEl && folderName) {{
                         const folderAnchors = Array.from(folderTreeEl.querySelectorAll('.jstree-anchor'));
                         const folderModalItem = folderAnchors.find(a => a.innerText.trim() === folderName);
@@ -172,7 +169,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         titleInput.dispatchEvent(new Event('input', {{bubbles: true}}));
                     }}
                     
-                    // Select matching menu in modal tree if available
                     const modalAnchors = Array.from(document.querySelectorAll('.modal-dialog .jstree-anchor'));
                     const menuId = args[5];
                     const modalItem = modalAnchors.find(a => (menuId && a.innerText.includes(String(menuId))) || a.innerText.trim() === menuName);
@@ -214,8 +210,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', ''))])
                 await asyncio.sleep(2.5)
 
-                
-                # Check duplicate warning in modal
                 has_warning = await page.evaluate('''() => {
                     const modal = document.querySelector('.modal-dialog');
                     if (!modal) return false;
@@ -223,7 +217,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                 }''')
                 
                 if has_warning:
-                    print(f"[{slug}] Warning: Page already exists according to modal warning. Closing modal and editing...")
                     try:
                         await page.get_by_role("button", name="닫기").click()
                     except:
@@ -231,8 +224,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     await asyncio.sleep(2)
                     page_exists = True
                 else:
-                    # 5. Save modal using "저장 후 편집" (Save)
-                    print(f"[{slug}] Saving modal using Save...")
                     try:
                         await page.evaluate('''() => {
                             const btn = Array.from(document.querySelectorAll('.modal-dialog button, .modal-dialog a')).find(b => 
@@ -243,134 +234,250 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         await asyncio.sleep(2)
                         page_was_created = True
                     except Exception as e:
-                        print(f"Error saving modal: {e}")
+                        print(f"  Error saving modal: {e}")
                     await asyncio.sleep(1)
                     
-            if page_exists and not page_was_created:
-                print(f"[{slug}] Page already exists. Proceeding to update HTML via API...")
-            
-            # 6. Save page HTML via API
-            print(f"[{slug}] Inserting ready HTML via UI...")
-            
+            print(f"  6.5 Mở màn hình Edit Page cho '{slug}'...")
             try:
-                # We need to open the editor from the grid if not already open
-                print(f"[{slug}] Opening editor for existing page...")
-                err = await page.evaluate(f'''async (slug) => {{
+                # Check if editor is already open for this page
+                is_editor_open = await page.evaluate(f'''(slug) => {{
                     try {{
-                        const htmlBtn = document.querySelector('button[data-cmd="html"]');
-                        if (htmlBtn && htmlBtn.offsetParent !== null) return null; // Already open
-                        
-                        const btns = Array.from(document.querySelectorAll('.pagination-sm a'));
-                        const btn100 = btns.find(b => b.innerText.trim() === '100');
-                        if (btn100) btn100.click();
-                        await new Promise(r => setTimeout(r, 2000));
-                        
-                        const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
-                        if (searchInput) {{
-                            searchInput.value = slug;
-                            searchInput.dispatchEvent(new Event('input'));
-                            searchInput.dispatchEvent(new Event('change'));
-                            const searchBtn = document.querySelector('button[ng-click*="search"], .zmdi-search');
-                            if (searchBtn) searchBtn.click();
-                            await new Promise(r => setTimeout(r, 2000));
-                        }}
-                        
-                        const rows = Array.from(document.querySelectorAll('table tbody tr'));
-                        for (let tr of rows) {{
-                            if (tr.innerText.includes(slug)) {{
-                                const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
-                                if (btn) {{
-                                    btn.click();
-                                    return null;
+                        const btn = document.querySelector('button[ng-click*="editor.save()"], button[x-ng-click*="editor.save()"]');
+                        if (!btn) return false;
+                        const s = window.angular && window.angular.element(btn).scope();
+                        if (s && s.editor && s.editor.item && (s.editor.item.filename === slug || s.editor.item.filename === slug + '.jsp')) return true;
+                        return !!btn;
+                    }} catch(e) {{ return false; }}
+                }}''', slug)
+
+                if not is_editor_open:
+                    print(f"  Mở editor từ danh sách trang...")
+                    await page.evaluate(f'''async (slug) => {{
+                        try {{
+                            const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
+                            if (searchInput) {{
+                                searchInput.value = slug;
+                                searchInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+                                searchInput.dispatchEvent(new Event('change', {{bubbles:true}}));
+                                const searchBtn = document.querySelector('button[ng-click*="search"], .zmdi-search');
+                                if (searchBtn) searchBtn.click();
+                                await new Promise(r => setTimeout(r, 2000));
+                            }}
+                            const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                            for (let tr of rows) {{
+                                if (tr.innerText.includes(slug)) {{
+                                    const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
+                                    if (btn) {{ btn.click(); return; }}
                                 }}
                             }}
-                        }}
-                        // Fallback if not found by slug
-                        const anyBtn = document.querySelector('.zmdi-brush');
-                        if (anyBtn) {{
-                            anyBtn.click();
-                            return null;
-                        }}
-                        return "Edit button not found in row";
-                    }} catch(e) {{
-                        return "Error clicking edit: " + e.message;
-                    }}
-                }}''', slug)
-                if err: print(f"[{slug}] Warning opening editor: {err}")
-                await asyncio.sleep(2)
-                    
-                # Wait for modal/editor
-                await asyncio.sleep(3)
-                
-                # 8. Paste HTML
-                print(f"[{slug}] Clicking HTML Code View...")
-                try:
-                    # Click the HTML view button using Playwright mouse simulation (only targeting visible ones)
-                    await page.locator('button[data-cmd="html"] >> visible=true').first.click()
-                except Exception as e:
-                    print(f"[{slug}] Could not click HTML view: {e}")
-                await asyncio.sleep(2)
-                
-                print(f"[{slug}] Pasting HTML via Keyboard...")
-                try:
-                    # Focus the visible textarea inside the editor
-                    await page.locator('textarea >> visible=true').first.focus()
-                    await asyncio.sleep(0.5)
-                    # Select all and replace content
-                    await page.keyboard.press("Control+A")
-                    await page.keyboard.press("Backspace")
-                    await page.keyboard.insert_text(ready_html)
-                except Exception as e:
-                    print(f"[{slug}] Could not paste HTML: {e}")
-                await asyncio.sleep(2)
-                
-                print(f"[{slug}] Clicking HTML Code View AGAIN...")
-                try:
-                    await page.locator('button[data-cmd="html"] >> visible=true').first.click()
-                except Exception as e:
-                    pass
-                await asyncio.sleep(2)
-
-                # 9. Save Editor
-                print(f"[{slug}] Saving Editor...")
-                try:
-                    saved = await page.evaluate('''() => {
-                        const btn1 = document.querySelector('button[x-ng-click="editor.save()"], button[ng-click="editor.save()"]');
-                        if (btn1) {
-                            btn1.click();
-                            return "editor.save clicked";
-                        }
-                        const btn2 = document.querySelector('button[x-ng-click="pg.save()"], button[ng-click="pg.save()"]');
-                        if (btn2) {
-                            btn2.click();
-                            return "pg.save clicked";
-                        }
-                        return "no save button found";
-                    }''')
-                    print(f"[{slug}] Save action result: {saved}")
+                            const anyBtn = document.querySelector('.zmdi-brush');
+                            if (anyBtn) anyBtn.click();
+                        }} catch(e) {{}}
+                    }}''', slug)
                     await asyncio.sleep(4)
-                except Exception as e:
-                    print(f"[{slug}] Error saving editor: {e}")
-                    
+                
+                print(f"  6.6 Chuyển sang View Code (Click nút </>)...")
+                
+                # Loop to verify HTML exists in View Code and paste + save if not present
+                max_attempts = 3
+                html_verified = False
+                
+                for attempt in range(1, max_attempts + 1):
+                    # Ensure View Code is clicked/active
+                    await page.evaluate('''() => {
+                        const btn1 = document.querySelector('.fr-command[data-cmd="html"]') || document.querySelector('button[data-cmd="html"]');
+                        if (btn1 && !btn1.classList.contains('fr-active')) {
+                            btn1.click();
+                        }
+                    }''')
+                    await asyncio.sleep(1.5)
+
+                    print(f"  6.7 Kiểm tra bên trong View Code (Lần thử {attempt}/{max_attempts})...")
+                    current_html = await page.evaluate('''() => {
+                        try {
+                            const cm = document.querySelector('.CodeMirror');
+                            if (cm && cm.CodeMirror) return cm.CodeMirror.getValue();
+                        } catch(e) {}
+                        try {
+                            let val = "";
+                            Array.from(document.querySelectorAll('*')).some(el => {
+                                const s = window.angular && window.angular.element(el).scope();
+                                if (s && s.editor && s.editor.item && s.editor.item.contentText) {
+                                    val = s.editor.item.contentText;
+                                    return true;
+                                }
+                            });
+                            return val;
+                        } catch(e) {}
+                        return "";
+                    }''')
+
+                    if current_html and current_html.strip() != "" and current_html.strip() != "<p><br></p>":
+                        print(f"  ✓ 6.7 THÀNH CÔNG: Đã có sẵn nội dung HTML trong View Code của Page '{slug}'!")
+                        html_verified = True
+                        break
+                    else:
+                        print(f"  --> Chưa có nội dung HTML trong View Code → Tiến hành nạp mã HTML chuẩn...")
+                        
+                        # Click HTML View
+                        print(f"  [{slug}] Clicking HTML Code View...")
+                        try:
+                            await page.locator('button[data-cmd="html"] >> visible=true').first.click()
+                        except Exception as e:
+                            print(f"  [{slug}] Could not click HTML view: {e}")
+                        await asyncio.sleep(2)
+                        
+                        # Paste HTML via Keyboard
+                        print(f"  [{slug}] Pasting HTML via Keyboard...")
+                        try:
+                            await page.locator('textarea, .CodeMirror-code >> visible=true').first.focus()
+                            await asyncio.sleep(0.5)
+                            await page.keyboard.press("Control+A")
+                            await page.keyboard.press("Backspace")
+                            await page.keyboard.insert_text(ready_html)
+                        except Exception as e:
+                            print(f"  [{slug}] Could not paste HTML: {e}")
+                        await asyncio.sleep(2)
+                        
+                        # Click HTML View AGAIN to sync
+                        print(f"  [{slug}] Clicking HTML Code View AGAIN...")
+                        try:
+                            await page.locator('button[data-cmd="html"] >> visible=true').first.click()
+                        except Exception as e:
+                            pass
+                        await asyncio.sleep(2)
+                        
+                        # Save Editor
+                        print(f"  [{slug}] Saving Editor...")
+                        try:
+                            saved = await page.evaluate('''() => {
+                                const btn1 = document.querySelector('button[x-ng-click="editor.save()"], button[ng-click="editor.save()"]');
+                                if (btn1) { btn1.click(); return "editor.save clicked"; }
+                                const btn2 = document.querySelector('button[x-ng-click="pg.save()"], button[ng-click="pg.save()"]');
+                                if (btn2) { btn2.click(); return "pg.save clicked"; }
+                                const btn3 = Array.from(document.querySelectorAll('button, a')).find(b => (b.innerText || '').trim().includes('저장') || (b.innerText || '').trim() === 'Save');
+                                if (btn3) { btn3.click(); return "Text 저장 clicked"; }
+                                return "no save button found";
+                            }''')
+                            print(f"  [{slug}] Save action result: {saved}")
+                        except Exception as e:
+                            print(f"  [{slug}] Error saving editor: {e}")
+                        
+                        await asyncio.sleep(4)
+
+                        # Handle SweetAlert (Success or confirm popup)
+                        await page.evaluate('''() => {
+                            const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
+                            if (confirmBtn) confirmBtn.click();
+                        }''')
+                        await asyncio.sleep(3)
+                        
+                        # Click Back / Close button to exit Edit Page
+                        print("  Nhấn Back/Đóng để thoát Edit Page...")
+                        await page.evaluate('''() => {
+                            const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
+                                (b.innerText || '').includes('이전으로') || 
+                                (b.innerText || '').includes('목록으로') || 
+                                (b.innerText || '').includes('닫기') ||
+                                (b.innerText || '').includes('목록') ||
+                                (b.innerText || '').includes('List')
+                            );
+                            if (closeBtn) closeBtn.click();
+                        }''')
+                        await asyncio.sleep(4)
+
+                if not html_verified:
+                    raise Exception(f"Kiểm tra thất bại sau {max_attempts} lần thử: Page '{slug}' chưa có nội dung HTML trong View Code.")
+
             except Exception as e:
-                print(f"[{slug}] Error saving HTML via UI: {e}")
+                print(f"  [Lỗi xử lý HTML page {slug}]: {e}")
             
-            # --- VERIFICATION STEP FOR PAGE ---
-            print(f"[{slug}] Verifying page creation in Page Manager...")
-            await page.goto(target_url, wait_until='domcontentloaded')
-            await asyncio.sleep(4)
-            verify_page = await page.evaluate(f'''(slug) => {{
-                const rows = Array.from(document.querySelectorAll('table tbody tr'));
-                return rows.some(tr => tr.innerText.includes(slug));
-            }}''', slug)
-            
-            if not verify_page:
-                raise Exception(f"Kiểm tra lại thất bại: Page '{slug}' chưa được lưu thành công vào CMS.")
-            print(f"Xác minh thành công: Page '{slug}' đã tồn tại trong CMS!")
-            # ----------------------------------
-            
-            await asyncio.sleep(1)
-            print(f"[{slug}] Done deploying page.")
+            # Go back to page manager for next page
+            await page.goto(target_url_page, wait_until='domcontentloaded')
+            await asyncio.sleep(3)
+            print(f"  6.8 Lặp lại cho đến khi kiểm tra hết tất cả Page trong Folder (Hoàn thành page {i+1}/{len(leaf_menus)}).")
+
             
         except Exception as e:
-            print(f"[{slug}] Error: {e}")
+            print(f"  [Lỗi page {slug}]: {e}")
+
+    print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
+
+    # --- KÍCH HOẠT PHA KIỂM TRA ĐỘC LẬP LẦN CUỐI (RE-VERIFY ALL PAGES) ---
+    print("\n" + "="*60)
+    print("  7. KIỂM TRA LẠI LẦN NỮA (FINAL RE-VERIFICATION PASS)")
+    print("="*60)
+    print("  Đang mở từng trang, chuyển vào View Code (</>) để kiểm tra lần cuối...")
+
+    all_passed = True
+    for i, m in enumerate(leaf_menus):
+        slug = m.get('slug', '').strip()
+        folder = m.get('folder', '').strip() or slug
+        if not slug: continue
+        
+        print(f"\n  [KIỂM TRA LẦN CUỐI {i+1}/{len(leaf_menus)}] Mở Edit Page cho '{slug}'...")
+        target_url = f'{site_url}/index.do?siteId={site_id}#!/page'
+        await page.goto(target_url, wait_until='domcontentloaded')
+        await asyncio.sleep(4)
+        
+        folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
+        try:
+            await page.evaluate(f'(() => {{ const el = document.querySelector("div[js-tree=\\"folderTree.config\\"] [id=\\"{folder_anchor_id}\\"]"); if (el) el.click(); }})()')
+            await asyncio.sleep(2)
+        except Exception:
+            pass
+            
+        await page.evaluate(f'''async (slug) => {{
+            const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
+            if (searchInput) {{
+                searchInput.value = slug;
+                searchInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+                searchInput.dispatchEvent(new Event('change', {{bubbles:true}}));
+                const searchBtn = document.querySelector('button[ng-click*="search"], .zmdi-search');
+                if (searchBtn) searchBtn.click();
+                await new Promise(r => setTimeout(r, 2000));
+            }}
+            const rows = Array.from(document.querySelectorAll('table tbody tr'));
+            for (let tr of rows) {{
+                if (tr.innerText.includes(slug)) {{
+                    const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
+                    if (btn) {{ btn.click(); return; }}
+                }}
+            }}
+            const anyBtn = document.querySelector('.zmdi-brush');
+            if (anyBtn) anyBtn.click();
+        }}''', slug)
+        await asyncio.sleep(4)
+        
+        # Switch to View Code
+        print(f"  Bấm nút </> để xem mã nguồn View Code của Page '{slug}'...")
+        await page.evaluate('''() => {
+            const btn1 = document.querySelector('.fr-command[data-cmd="html"]') || document.querySelector('button[data-cmd="html"]');
+            if (btn1 && !btn1.classList.contains('fr-active')) {
+                btn1.click();
+            }
+        }''')
+        # Pause on screen so user can watch View Code live
+        await asyncio.sleep(6)
+        
+        # Read HTML from View Code
+        html_code = await page.evaluate('''() => {
+            try {
+                const cm = document.querySelector('.CodeMirror');
+                if (cm && cm.CodeMirror) return cm.CodeMirror.getValue();
+            } catch(e) {}
+            return "";
+        }''')
+        
+        if html_code and html_code.strip() != "" and html_code.strip() != "<p><br></p>":
+            snippet = html_code.replace('\n', ' ')[:100]
+            print(f"  ✓ XÁC MINH VỚI TRÌNH DUYỆT THÀNH CÔNG: View Code của Page '{slug}' chứa {len(html_code)} ký tự HTML.")
+            print(f"    Code snippet: {snippet}...")
+        else:
+            print(f"  ❌ XÁC MINH LẦN CUỐI THẤT BẠI: View Code của Page '{slug}' KHÔNG CÓ MÃ HTML!")
+            all_passed = False
+
+    if not all_passed:
+        raise Exception("Pha kiểm tra độc lập lần cuối thất bại: Có trang vẫn chưa có mã HTML trong View Code.")
+
+    print("\n  ✓ 7.1 XÁC NHẬN HOÀN TẤT LẦN CUỐI: Tất cả các Page đều đã được kiểm tra lại và có mã HTML trong View Code!")
