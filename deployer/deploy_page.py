@@ -23,6 +23,9 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
     leaf_menus = [m for m in menus if m.get('id') not in parent_ids]
 
     for i, m in enumerate(leaf_menus):
+        if is_cancelled and is_cancelled():
+            raise Exception("Deploy cancelled by user")
+            
         slug = m.get('slug', '').strip()
         folder = m.get('folder', '').strip() or slug
         layout = m.get('layout', 'sub-template')

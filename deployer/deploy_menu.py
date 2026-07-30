@@ -48,7 +48,7 @@ async def update_menu(page, data):
         return true;
     }}''', data)
 
-async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item):
+async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None):
     print("\n" + "="*50)
     print("2. KIỂM TRA MENU")
     print("="*50)
@@ -62,6 +62,9 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
             progress_cb(min(100, int((current_item / max(1, total_items)) * 100)), msg)
 
     for m in menus:
+        if is_cancelled and is_cancelled():
+            raise Exception("Deploy cancelled by user")
+        
         report(f"Deploying menu: {m['name']}")
         print(f"\n  2.2 Kiểm tra Menu '{m['name']}' trong danh sách Menu...")
         cms_menus = await get_cms_menus(page, site_id)

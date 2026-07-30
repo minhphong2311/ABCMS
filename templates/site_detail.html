@@ -910,9 +910,31 @@ function deployMenus(siteId) {
                 '<div class="progress" style="height: 20px; background-color: #495057; border-radius: 4px;">' +
                 '<div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%; font-weight: bold;">0%</div></div>',
           allowOutsideClick: false,
+          showCancelButton: true,
+          cancelButtonText: '<i class="fas fa-stop-circle"></i> Cancel Deploy',
+          cancelButtonColor: '#dc3545', // Bootstrap danger color
+          showConfirmButton: false,
           background: '#343a40',
           color: '#fff',
-          didOpen: () => { Swal.showLoading(); }
+          customClass: {
+              cancelButton: 'btn btn-outline-danger px-4 py-2 mt-3'
+          },
+          buttonsStyling: false // Use custom Bootstrap classes instead of default sweetalert styling
+      }).then((result) => {
+          if (result.dismiss === Swal.DismissReason.cancel) {
+              fetch('/api/deploy_cancel', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ task_id: siteId + '--deploy-menus' })
+              }).then(() => {
+                  resetDeployMenuBtn();
+                  $(document).Toasts('create', {
+                      class: 'bg-warning',
+                      title: 'Cancelled',
+                      body: 'The deployment process has been cancelled.'
+                  });
+              });
+          }
       });
       checkDeployMenuStatus(siteId);
     } else {

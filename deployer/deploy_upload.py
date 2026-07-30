@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-async def deploy_upload_image(page, site_url, site_id, progress_cb=None):
+async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_cancelled=None):
     try:
         print("\n" + "="*50)
         print("4. KIỂM TRA UPLOAD")

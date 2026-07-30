@@ -1,6 +1,6 @@
 import asyncio
 
-async def check_and_deploy_site(page, site_url, site_id, username, password, progress_cb=None):
+async def check_and_deploy_site(page, site_url, site_id, username, password, progress_cb=None, is_cancelled=None):
     print("\n" + "="*50)
     print("1. KIỂM TRA SITE")
     print("="*50)

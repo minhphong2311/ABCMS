@@ -83,7 +83,9 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             await asyncio.sleep(5)
             
             # --- KIỂM TRA VÀ TẠO SITE NẾU CHƯA CÓ ---
-            await check_and_deploy_site(page, site_url, site_id, username, password, progress_cb)
+            await check_and_deploy_site(page, site_url, site_id, username, password, progress_cb, is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # Tính toán các thư mục cần tạo
             unique_folders = set()
@@ -97,17 +99,25 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             current_item = 0
             
             # --- 1. TẠO MENU VÀ CHỈ ĐỊNH URL ---
-            created_menu_cds, current_item = await deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item)
+            created_menu_cds, current_item = await deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item, is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 2. TẠO CÁC FOLDER ---
-            current_item = await deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item)
+            current_item = await deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item, is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 3. UPLOAD HÌNH ẢNH DÙNG CHUNG ---
-            await deploy_upload_image(page, site_url, site_id, progress_cb)
+            await deploy_upload_image(page, site_url, site_id, progress_cb, is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- TẠO LAYOUT TEMPLATE ---
             from deployer.deploy_layout import deploy_layouts
             await deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 4. TẠO PAGE VÀ INJECT HTML ---
             await deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled)

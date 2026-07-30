@@ -1,6 +1,6 @@
 import asyncio
 
-async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item):
+async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item, is_cancelled=None):
     print("\n" + "="*50)
     print("3. KIỂM TRA FOLDER")
     print("="*50)
@@ -21,6 +21,9 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
     
     folders_created = False
     for folder in unique_folders_list:
+        if is_cancelled and is_cancelled():
+            raise Exception("Deploy cancelled by user")
+            
         report(f"Checking folder: {folder}")
         print(f"\n  3.2 Kiểm tra Folder '{folder}' theo thứ tự Menu...")
         folder_anchor_id = f'/{site_id}/{folder}_anchor'

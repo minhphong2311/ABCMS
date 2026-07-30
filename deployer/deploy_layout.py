@@ -22,7 +22,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     
     for layout_name in layouts_to_check:
         if is_cancelled and is_cancelled():
-            return
+            raise Exception("Deploy cancelled by user")
         if progress_cb:
             progress_cb(40, f"Checking layout: {layout_name}")
             
