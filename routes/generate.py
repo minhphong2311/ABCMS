@@ -679,8 +679,23 @@ Return ONLY the full updated CSS code. Make sure you apply the requested changes
 If the user complains that it doesn't look like the design, rely on your frontend expertise to tweak margins, paddings, fonts, or colors to make it look professional and beautiful.
 Do not wrap it in markdown block if it causes extra characters, but if you do, I will strip them. Just return valid CSS.
 """
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
-        text = response.text.strip()
+        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.0-flash-lite']
+        text = None
+        for model in models_to_try:
+            try:
+                print(f"[Gemini] Trying CSS feedback with model {model}...")
+                response = client.models.generate_content(model=model, contents=prompt)
+                if response and response.text:
+                    text = response.text.strip()
+                    break
+            except Exception as e:
+                print(f"[Gemini] CSS feedback model {model} error: {e}")
+                import time
+                time.sleep(2)
+
+        if not text:
+            print("Gemini API call failed for all models.")
+            return css_content
 
         if text.startswith('```css'):
             text = text[6:]
@@ -772,7 +787,7 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     MAX_ITERATIONS = 3
     for iteration in range(1, MAX_ITERATIONS + 1):
         if task_id and task_id in GENERATE_TASKS:
-            GENERATE_TASKS[task_id]['message'] = f"Checking interface via AI (Iteration {iteration}/{MAX_ITERATIONS})..."
+            GENERATE_TASKS[task_id]['message'] = f"Kiểm tra chất lượng 100% theo Figma Checklist (Lần {iteration}/{MAX_ITERATIONS})..."
 
         temp_html_path = os.path.join(output_dir, f'temp_render_{menu_name}.html')
         css_guide_tags = "".join([f'\n    <link rel="stylesheet" href="{link}">' for link in css_links])
@@ -822,14 +837,16 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
             return html, css
 
         print(f"[{menu_name}] Sending visual comparison to Gemini (Iteration {iteration})...")
-        prompt = f"""You are an expert Frontend Developer. Compare the 2 images:
+        prompt = f"""You are an expert Frontend Developer. Perform a strict quality verification comparing the 2 images:
 - Image 1: Figma design.
 - Image 2: Current HTML/CSS render.
 
-If identical, return JSON with status "PERFECT".
-If there are discrepancies, fix the HTML/CSS to match Image 1 perfectly.
+Goal: Ensure 100% visual match between HTML/CSS render and Figma design!
 
-RULES:
+Checklist to strictly enforce:
+{quality_checklist}
+
+Template Rules to follow:
 1. Do not use absolute positioning classes like `fg-*`.
 2. Follow the structure provided in these templates:
    Structure template: {structure_template}
@@ -837,10 +854,11 @@ RULES:
 3. Maintain all image/background tags.
 4. Keep CSS formatting (one rule per line).
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
-6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers as shown in the template. Do not leave text or headings floating outside of a `.con-box`.
+6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers (`.con-box → h4`, `.con-box02 → h5`, `.con-box03 → h6`). Do not leave text or headings floating outside of a `.con-box`.
 7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`, `ul-type-bar`, `ol-type01`, `con-box02`). DO NOT invent new classes or keep Figma's raw classes for these text and structure elements.
-8. FINAL QUALITY CHECKLIST: You must follow this checklist:
-{quality_checklist}
+
+If 100% identical according to all checklist points, return JSON with status "PERFECT".
+If there are discrepancies, fix the HTML/CSS to match Image 1 (Figma) 100%.
 
 Current HTML:
 {html}
@@ -859,11 +877,29 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
                 text = '{"status": "SUCCESS", "html": "<div class=\\"content-box\\"><div class=\\"con-box\\"><h4 class=\\"h4-tit01\\">Demo Title</h4><p class=\\"con-p\\">This is a mocked response because of DEMO_KEY.</p></div></div>", "css": ".content-box { padding: 20px; }"}'
             else:
                 with compare_and_fix_visuals.api_lock:
-                    response = client.models.generate_content(
-                        model='gemini-3.5-flash',
-                        contents=[prompt, target_pil, render_pil]
-                    )
-                text = response.text.strip()
+                    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.0-flash-lite']
+                    text = None
+                    last_error = None
+                    for model in models_to_try:
+                        for attempt in range(2):
+                            try:
+                                print(f"[{menu_name}] Trying Gemini Vision model {model} (Attempt {attempt+1})...")
+                                response = client.models.generate_content(
+                                    model=model,
+                                    contents=[prompt, target_pil, render_pil]
+                                )
+                                if response and response.text:
+                                    text = response.text.strip()
+                                    break
+                            except Exception as e:
+                                last_error = e
+                                print(f"[{menu_name}] Model {model} error: {e}")
+                                import time
+                                time.sleep(2)
+                        if text:
+                            break
+                    if not text and last_error:
+                        raise last_error
             
             if '```json' in text:
                 text = text.split('```json')[1].split('```')[0].strip()
