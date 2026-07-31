@@ -1,0 +1,119 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Pretendard GOV', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    color: #222222;
+    background-color: #ffffff;
+    line-height: 1.6;
+    word-break: keep-all;
+}
+
+.content-box {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1096px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+}
+
+.con-box {
+    margin-bottom: 40px;
+    box-sizing: border-box;
+}
+
+.h4-tit01 {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #0066cc;
+    margin: 0 0 16px 0;
+    word-break: keep-all;
+}
+
+.h5-tit01 {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #222222;
+    margin: 0 0 24px 0;
+    word-break: keep-all;
+}
+
+.h6-tit01 {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #222222;
+    margin: 0 0 16px 0;
+    word-break: keep-all;
+}
+
+.con-p {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: #666666;
+    margin: 0 0 24px 0;
+    word-break: keep-all;
+}
+
+.sign-box {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: 40px;
+}
+
+.sign-title {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #222222;
+    margin: 0;
+}
+
+.sign-name {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #222222;
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.sign-name strong {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #222222;
+}
+
+@media screen and (max-width: 1024px) {
+    .content-box {
+        padding: 0 20px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .content-box {
+        padding: 0 16px;
+    }
+}

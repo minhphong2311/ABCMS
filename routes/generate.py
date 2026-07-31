@@ -520,17 +520,21 @@ def compile_figma_node_to_html_css(design_data, node_id, image_map=None):
 
             css_rules.append(f".{class_name} {{ { ' '.join(styles) } }}")
 
-            tag = "div"
+            tag = "p"
+            cls_name = "con-p"
             if font_size >= 28:
-                tag = "h1"
+                tag = "h4"
+                cls_name = "h4-tit01"
             elif font_size >= 22:
-                tag = "h2"
+                tag = "h5"
+                cls_name = "h5-tit01"
             elif font_size >= 18:
-                tag = "h3"
+                tag = "h6"
+                cls_name = "h6-tit01"
 
             import html
             safe_text = html.escape(char_text).replace('\n', '<br>')
-            return f"<{tag} class='{class_name}'>{safe_text}</{tag}>\n"
+            return f"<{tag} class='{cls_name} {class_name}'>{safe_text}</{tag}>\n"
 
         elif ntype in ['FRAME', 'GROUP', 'COMPONENT', 'INSTANCE']:
             layout_mode = node.get('layoutMode', 'NONE')
@@ -583,7 +587,13 @@ def compile_figma_node_to_html_css(design_data, node_id, image_map=None):
             for child in node.get('children', []):
                 children_html += compile_node(child, parent=node)
 
-            return f"<div class='{class_name}'>\n{children_html}</div>\n"
+            wrapper_cls = class_name
+            if is_root:
+                wrapper_cls = f"content-box {class_name}"
+            elif parent and parent.get('is_root'):
+                wrapper_cls = f"con-box {class_name}"
+
+            return f"<div class='{wrapper_cls}'>\n{children_html}</div>\n"
 
         else:
             styles.append("display: block;")
@@ -596,8 +606,22 @@ def compile_figma_node_to_html_css(design_data, node_id, image_map=None):
             css_rules.append(f".{class_name} {{ { ' '.join(styles) } }}")
             return f"<div class='{class_name}'></div>\n"
 
-    html_result = compile_node(document, is_root=True)
-    css_result = "\n".join(css_rules)
+    raw_html = compile_node(document, is_root=True)
+    if 'content-box' not in raw_html:
+        html_result = f'<div class="content-box">\n<div class="con-box">\n{raw_html}\n</div>\n</div>'
+    else:
+        html_result = raw_html
+
+    default_responsive_css = """
+.content-box { box-sizing: border-box; width: 100%; max-width: 1096px; margin: 0 auto; padding: 0 20px; position: relative; }
+@media screen and (max-width: 1024px) {
+    .content-box { padding: 0 20px; }
+}
+@media screen and (max-width: 768px) {
+    .content-box { padding: 0 16px; }
+}
+"""
+    css_result = "\n".join(css_rules) + "\n" + default_responsive_css
     return html_result, css_result
 
 
@@ -710,6 +734,108 @@ Do not wrap it in markdown block if it causes extra characters, but if you do, I
         return css_content
 
 
+def apply_structural_templates(html, css, api_key, menu_name, task_id=None):
+    print(f"[{menu_name}] --- Structural Refinement Start ---")
+    import os
+    import json
+
+    structure_template = ''
+    table_template = ''
+    try:
+        base = os.path.dirname(os.path.dirname(__file__))
+        structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
+        table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
+        
+        if os.path.exists(structure_path):
+            with open(structure_path, 'r', encoding='utf-8') as f:
+                structure_template = f.read()
+        if os.path.exists(table_path):
+            with open(table_path, 'r', encoding='utf-8') as f:
+                table_template = f.read()
+    except Exception as e:
+        print(f"Error loading templates: {e}")
+
+    css_guide_instruction = (
+        "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS:\n"
+        "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng riêng biệt và phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau. (VD:\n.class1 { font-size: 20px; color: #333; }\n.class2 { margin-bottom: 15px; }\n)\n"
+        "Tuyệt đối không gộp toàn bộ file thành 1 dòng duy nhất, và tuyệt đối KHÔNG xuống dòng bên trong dấu ngoặc nhọn {}.\n"
+        f"2. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_name}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon.\n"
+        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`."
+    )
+
+    prompt = f"""Bạn là một chuyên gia Frontend Developer.
+Nhiệm vụ của bạn là tái cấu trúc lại đoạn HTML/CSS thô được sinh ra từ Figma (tọa độ absolute) thành một layout chuẩn semantic, responsive, sử dụng Flexbox/Grid, và phải TUYỆT ĐỐI tuân thủ cấu trúc của dự án.
+
+Nội dung HTML thô hiện tại:
+```html
+{html[:10000]}
+```
+
+Nội dung CSS thô hiện tại:
+```css
+{css[:10000]}
+```
+{css_guide_instruction}
+
+TÀI LIỆU THAM KHẢO VỀ CẤU TRÚC VÀ SUB-TEMPLATE:
+Mẫu cấu trúc giao diện chung (structure-template.html):
+```html
+{structure_template}
+```
+Mẫu bảng (table-template.html):
+```html
+{table_template}
+```
+
+Nhiệm vụ:
+1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng (phần tử cha bọc các con, dùng `.content-box`, `.con-box`).
+2. Xóa các class `fg-*` mang tính position absolute và đổi thành layout semantic với margin, padding, flex, grid.
+3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`.
+4. Trả về JSON chứa HTML và CSS mới.
+
+Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
+{{
+  "html": "toàn bộ nội dung HTML mới",
+  "css": "toàn bộ nội dung CSS mới"
+}}"""
+
+    try:
+        from google import genai as _genai
+        client = _genai.Client(api_key=api_key)
+        
+        models_to_try = ['gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
+        text = None
+        for model in models_to_try:
+            try:
+                print(f"[{menu_name}] Trying Structural Model {model}...")
+                response = client.models.generate_content(model=model, contents=prompt)
+                if response and response.text:
+                    text = response.text.strip()
+                    break
+            except Exception as e:
+                print(f"[{menu_name}] Model {model} error: {e}")
+                import time
+                time.sleep(1)
+                
+        if text:
+            if '```json' in text:
+                text = text.split('```json')[1].split('```')[0].strip()
+            elif text.startswith('```'):
+                text = text.split('```')[1].split('```')[0].strip()
+                
+            result = json.loads(text)
+            
+            new_html = result.get('html', html)
+            new_css = result.get('css', css)
+            print(f"[{menu_name}] Structural Refinement SUCCESS!")
+            return new_html, new_css
+
+    except Exception as e:
+        print(f"[{menu_name}] Structural Refinement Error: {e}")
+        
+    return html, css
+
+
 def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, gemini_api_key, task_id=None):
     import urllib.parse
     import requests
@@ -787,14 +913,15 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     MAX_ITERATIONS = 3
     for iteration in range(1, MAX_ITERATIONS + 1):
         if task_id and task_id in GENERATE_TASKS:
-            GENERATE_TASKS[task_id]['message'] = f"Kiểm tra chất lượng 100% theo Figma Checklist (Lần {iteration}/{MAX_ITERATIONS})..."
+            GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/{MAX_ITERATIONS})..."
 
         temp_html_path = os.path.join(output_dir, f'temp_render_{menu_name}.html')
         css_guide_tags = "".join([f'\n    <link rel="stylesheet" href="{link}">' for link in css_links])
         full_html = f"""<!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">{css_guide_tags}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">{css_guide_tags}
     <link rel="stylesheet" href="style.css">
     <style>
         body {{ margin: 0; padding: 0; }}
@@ -856,11 +983,11 @@ Template Rules to follow:
 3. Maintain all image/background tags.
 4. Keep CSS formatting (one rule per line).
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
-6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers (`.con-box → h4`, `.con-box02 → h5`, `.con-box03 → h6`). Do not leave text or headings floating outside of a `.con-box`.
-7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`, `ul-type-bar`, `ol-type01`, `con-box02`). DO NOT invent new classes or keep Figma's raw classes for these text and structure elements.
+6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
+7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
+8. CRITICAL RESPONSIVE RULE: Ensure layout is 100% responsive for Desktop, Tablet, and Mobile. Include media queries in CSS. Never leave fixed pixel widths.
 
-If 100% identical according to all checklist points, return JSON with status "PERFECT".
-If there are discrepancies, fix the HTML/CSS to match Image 1 (Figma) 100%.
+CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL 7 checklist steps pixel-by-pixel. If there is ANY difference in layout, fonts, margins, or responsiveness, you MUST return "NEEDS_FIX" and provide the corrected HTML and CSS.
 
 Current HTML:
 {html}
@@ -875,17 +1002,17 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
             if gemini_api_key == "DEMO_KEY":
                 print(f"[{menu_name}] Using DEMO_KEY. Mocking AI response...")
                 import time
-                time.sleep(3) # Simulate AI thinking
-                text = '{"status": "SUCCESS", "html": "<div class=\\"content-box\\"><div class=\\"con-box\\"><h4 class=\\"h4-tit01\\">Demo Title</h4><p class=\\"con-p\\">This is a mocked response because of DEMO_KEY.</p></div></div>", "css": ".content-box { padding: 20px; }"}'
+                time.sleep(3)
+                text = '{"status": "SUCCESS", "html": "<div class=\\"content-box\\"><div class=\\"con-box\\"><h4 class=\\"h4-tit01\\">Demo Title</h4><p class=\\"con-p\\">Mock response.</p></div></div>", "css": ".content-box { padding: 20px; }"}'
             else:
                 with compare_and_fix_visuals.api_lock:
-                    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.0-flash-lite']
+                    models_to_try = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-flash-latest', 'gemini-3.5-flash']
                     text = None
                     last_error = None
                     for model in models_to_try:
                         for attempt in range(2):
                             try:
-                                print(f"[{menu_name}] Trying Gemini Vision model {model} (Attempt {attempt+1})...")
+                                print(f"[{menu_name}] Trying Gemini model {model} (Attempt {attempt+1})...")
                                 response = client.models.generate_content(
                                     model=model,
                                     contents=[prompt, target_pil, render_pil]
@@ -901,26 +1028,39 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
                         if text:
                             break
                     if not text and last_error:
-                        raise last_error
-            
-            if '```json' in text:
-                text = text.split('```json')[1].split('```')[0].strip()
-            elif text.startswith('```'):
-                text = text.split('```')[1].split('```')[0].strip()
+                        print(f"[{menu_name}] Warning: Gemini API call failed ({last_error}).")
+                        if task_id and task_id in GENERATE_TASKS:
+                            GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/3) Failed. Fallback to semantic rules."
+                            import time
+                            time.sleep(2)
+                        break
 
-            result = json.loads(text)
+            if text:
+                if '```json' in text:
+                    text = text.split('```json')[1].split('```')[0].strip()
+                elif text.startswith('```'):
+                    text = text.split('```')[1].split('```')[0].strip()
 
-            if result.get('status') == 'PERFECT':
-                print(f"[{menu_name}] Visual match is PERFECT at iteration {iteration}!")
-                break
+                result = json.loads(text)
 
-            html = result.get('html', html)
-            css = result.get('css', css)
-            print(f"[{menu_name}] Visual correction applied (Iteration {iteration}).")
+                if result.get('status') == 'PERFECT':
+                    if iteration < 2:
+                        print(f"[{menu_name}] AI claimed PERFECT on iteration {iteration}. Forcing double-check...")
+                        if task_id and task_id in GENERATE_TASKS:
+                            GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/3): Double-checking for strict adherence..."
+                            import time
+                            time.sleep(1)
+                    else:
+                        print(f"[{menu_name}] Visual match is PERFECT at iteration {iteration}!")
+                        break
+
+                html = result.get('html', html)
+                css = result.get('css', css)
+                print(f"[{menu_name}] Visual correction applied (Iteration {iteration}).")
 
         except Exception as e:
             print(f"[{menu_name}] Gemini Vision Error: {e}")
-            raise Exception(f"Gemini API Error: {e}")
+            break
 
     return html, css
 
@@ -969,6 +1109,11 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
         gemini_api_key = config.get('gemini_api_key', '').strip()
         if gemini_api_key:
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying structural templates..."}
+            html_result, css_result = apply_structural_templates(
+                html_result, css_result, gemini_api_key, menu_slug, task_id
+            )
+
             GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
             html_result, css_result = compare_and_fix_visuals(
                 figma_token, figma_link, html_result, css_result,
@@ -983,9 +1128,18 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
         html_path = os.path.join(target_dir, f"{menu_slug}.html")
         css_path = os.path.join(target_dir, f"{menu_slug}.css")
 
+        base_style_src = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'layout', 'style.css')
+        if os.path.exists(base_style_src):
+            import shutil
+            shutil.copy(base_style_src, os.path.join(target_dir, "style.css"))
+            site_root_dir = os.path.join(OUTPUT_DIR, site_id)
+            os.makedirs(site_root_dir, exist_ok=True)
+            shutil.copy(base_style_src, os.path.join(site_root_dir, "style.css"))
+
         final_html = (
             f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
             f'    <meta charset="UTF-8">\n'
+            f'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
             f'    <title>{menu.get("name", menu_slug)}</title>\n'
             f'    <link rel="stylesheet" href="style.css">\n'
             f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
