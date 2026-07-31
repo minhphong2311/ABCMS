@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 import asyncio
 
 async def check_and_deploy_site(page, site_url, site_id, username, password, progress_cb=None, is_cancelled=None):

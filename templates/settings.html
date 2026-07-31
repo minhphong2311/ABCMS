@@ -1,3 +1,7 @@
+<!--
+Author: sawyer88
+Email: phongnguyen@andvina.com
+-->
 {% extends 'base.html' %}
 
 {% block title %}System Settings{% endblock %}
@@ -16,7 +20,9 @@
         <p class="text-muted text-sm">Gemini API Key is shared across all Sites for the AI to understand user feedback and analyze/change HTML/CSS UI.</p>
         
         <div class="form-group mb-0">
-          <label for="gemini_key_input">Gemini API Key</label>
+          <label for="gemini_key_input">Gemini API Key 
+            <small class="text-muted ml-2">(<a href="https://aistudio.google.com/app/apikey" target="_blank"><i class="fas fa-external-link-alt"></i> Get API Key here</a>)</small>
+          </label>
           <div class="input-group">
             <div class="input-group-prepend">
               <span class="input-group-text"><i class="fas fa-key"></i></span>

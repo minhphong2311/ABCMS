@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 import asyncio
 from playwright.async_api import async_playwright
 import os

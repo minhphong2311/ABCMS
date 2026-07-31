@@ -1,3 +1,7 @@
+/*
+Author: sawyer88
+Email: phongnguyen@andvina.com
+*/
 const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
 const currentTheme = localStorage.getItem('theme');
 

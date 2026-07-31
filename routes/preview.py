@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 """
 routes/preview.py
 Blueprint xử lý chức năng Preview trang đã generate.

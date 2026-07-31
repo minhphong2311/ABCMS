@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 """
 routes/delete.py
 Blueprint xử lý chức năng Delete (xóa) menu/page trong site detail.

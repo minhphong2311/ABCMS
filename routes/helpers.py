@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 """
 routes/helpers.py
 Shared utilities dùng chung cho toàn bộ app.

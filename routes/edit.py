@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 """
 routes/edit.py
 Blueprint xử lý chức năng Edit (chỉnh sửa) menu/page trong site detail.

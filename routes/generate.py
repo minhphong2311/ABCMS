@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 """
 routes/generate.py
 Blueprint xử lý chức năng Generate page từ Figma.

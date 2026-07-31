@@ -1,3 +1,6 @@
+# Author: sawyer88
+# Email: phongnguyen@andvina.com
+
 import asyncio
 
 async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None):
