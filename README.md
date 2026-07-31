@@ -39,7 +39,6 @@ It helps developers preview designs and automatically push source code from thei
 
 ```text
 ├── app.py                # Main Flask server running the web builder dashboard
-├── deploy_menus.py       # Main script to orchestrate the deployment workflow
 ├── automation.py         # Playwright automation task engine for CMS deployment
 ├── deployer/             # Core deployment modules (site, menu, folder, upload, page)
 ├── routes/               # Flask blueprints for API routes (menu, site, deploy, generate)

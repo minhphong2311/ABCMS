@@ -11,7 +11,7 @@ from deployer.deploy_folder import deploy_folders
 from deployer.deploy_upload import deploy_upload_image
 from deployer.deploy_page import deploy_pages
 
-async def deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
+async def full_deploy_task_async(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
     # Safe print to avoid cp949 encode errors on Windows
     def safe_print(*args, **kwargs):
         msg = " ".join(str(a) for a in args)
@@ -147,5 +147,5 @@ async def deploy_menus_task_async(site_url, site_id, username, password, menus, 
             except:
                 pass
 
-def run_deploy_menus(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
-    return asyncio.run(deploy_menus_task_async(site_url, site_id, username, password, menus, progress_cb, is_cancelled))
+def run_full_deploy(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
+    return asyncio.run(full_deploy_task_async(site_url, site_id, username, password, menus, progress_cb, is_cancelled))

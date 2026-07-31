@@ -12,7 +12,7 @@ import threading
 from flask import Blueprint, request, jsonify
 from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
 from automation import run_deploy
-from deploy_menus import run_deploy_menus
+from deployer.deploy import run_full_deploy
 
 deploy_bp = Blueprint('deploy', __name__)
 
@@ -134,7 +134,7 @@ def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus
         return DEPLOY_TASKS.get(task_id, {}).get("status") == "cancelling"
 
     try:
-        result = run_deploy_menus(
+        result = run_full_deploy(
             site_url=site_url,
             site_id=site_id,
             username=username,
