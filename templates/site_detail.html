@@ -141,10 +141,10 @@ Email: phongnguyen@andvina.com
     <div class="card card-outline card-primary">
       <div class="card-header bg-light py-2 d-flex align-items-center">
         <h3 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem; line-height: 1.5;"><i class="fas fa-sitemap text-primary"></i></h3>
-        <button type="button" id="btn-deploy-menus" class="btn btn-warning btn-sm text-white" style="margin-left: auto;" onclick="deployMenus('{{ site.id }}')" title="Deploy Menus">
+        <button type="button" id="btn-deploy-menus" class="btn btn-warning btn-sm text-white" style="margin-left: auto;" onclick="deployMenus('{{ site.id }}')" title="Deploy">
           <i class="fas fa-cloud-upload-alt"></i>
         </button>
-        <button type="button" id="btn-cancel-deploy-menus" class="btn btn-danger btn-sm text-white ml-2" style="display:none;" onclick="cancelDeployMenus()" title="Cancel Deployment">
+        <button type="button" id="btn-cancel-deploy-menus" class="btn btn-danger btn-sm text-white ml-2" style="display:none;" onclick="cancelDeployMenus()" title="Cancel">
           <i class="fas fa-times"></i>
         </button>
         <div class="ml-3" title="Check / Uncheck All" style="margin-right: -4px;">
@@ -937,7 +937,7 @@ function deployMenus(siteId) {
   .then(data => {
     if(data.success) {
       Swal.fire({
-          title: 'Deploying Menus...',
+          title: 'Deploying ...',
           html: '<div style="margin-bottom:15px; font-size: 0.9em; min-height: 20px;" id="swal-progress-text">Starting...</div>' +
                 '<div class="progress" style="height: 20px; background-color: #495057; border-radius: 4px;">' +
                 '<div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%; font-weight: bold;">0%</div></div>',
