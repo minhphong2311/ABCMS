@@ -125,7 +125,7 @@ def api_deploy():
 def api_deploy_status():
     return jsonify(DEPLOY_TASKS)
 
-def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus):
+def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, password, menus):
     DEPLOY_TASKS[task_id] = {"status": "running", "progress": 0, "message": "Starting deployment..."}
     
     def progress_callback(percent, msg):
@@ -140,6 +140,7 @@ def run_deploy_menus_async(task_id, site_url, site_id, username, password, menus
         result = run_full_deploy(
             site_url=site_url,
             site_id=site_id,
+            site_name=site_name,
             username=username,
             password=password,
             menus=menus,
@@ -201,6 +202,7 @@ def api_deploy_menus():
             task_id,
             site['url'],
             site_id,
+            site.get('name', site_id),
             site.get('username', ''),
             site.get('password', ''),
             menus

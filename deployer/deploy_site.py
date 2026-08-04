@@ -3,7 +3,7 @@
 
 import asyncio
 
-async def check_and_deploy_site(page, site_url, site_id, username, password, progress_cb=None, is_cancelled=None):
+async def check_and_deploy_site(page, site_url, site_id, site_name, username, password, progress_cb=None, is_cancelled=None):
     print("\n" + "="*50)
     print("1. KIỂM TRA SITE")
     print("="*50)
@@ -52,7 +52,7 @@ async def check_and_deploy_site(page, site_url, site_id, username, password, pro
                     let injector = window.angular.element(document.body).injector();
                     if (!injector || !injector.has('siteService')) return "No siteService";
                     
-                    let res = await injector.get('siteService').insert({{ siteId: '{site_id}', siteNm: '{site_id}' }});
+                    let res = await injector.get('siteService').insert({{ siteId: '{site_id}', siteNm: '{site_name}' }});
                     return res;
                 }} catch (e) {{
                     return "Error: " + e.message;

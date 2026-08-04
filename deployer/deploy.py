@@ -11,7 +11,7 @@ from deployer.deploy_folder import deploy_folders
 from deployer.deploy_upload import deploy_upload_image
 from deployer.deploy_page import deploy_pages
 
-async def full_deploy_task_async(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
+async def full_deploy_task_async(site_url, site_id, site_name, username, password, menus, progress_cb=None, is_cancelled=None):
     # Safe print to avoid cp949 encode errors on Windows
     def safe_print(*args, **kwargs):
         msg = " ".join(str(a) for a in args)
@@ -90,7 +90,7 @@ async def full_deploy_task_async(site_url, site_id, username, password, menus, p
             await asyncio.sleep(5)
             
             # --- KIỂM TRA VÀ TẠO SITE NẾU CHƯA CÓ ---
-            await check_and_deploy_site(page, site_url, site_id, username, password, progress_cb, is_cancelled)
+            await check_and_deploy_site(page, site_url, site_id, site_name, username, password, progress_cb, is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
@@ -147,5 +147,5 @@ async def full_deploy_task_async(site_url, site_id, username, password, menus, p
             except:
                 pass
 
-def run_full_deploy(site_url, site_id, username, password, menus, progress_cb=None, is_cancelled=None):
-    return asyncio.run(full_deploy_task_async(site_url, site_id, username, password, menus, progress_cb, is_cancelled))
+def run_full_deploy(site_url, site_id, site_name, username, password, menus, progress_cb=None, is_cancelled=None):
+    return asyncio.run(full_deploy_task_async(site_url, site_id, site_name, username, password, menus, progress_cb, is_cancelled))
