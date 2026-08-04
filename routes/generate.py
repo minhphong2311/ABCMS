@@ -760,8 +760,9 @@ def apply_structural_templates(html, css, api_key, menu_name, task_id=None):
 
     css_guide_instruction = (
         "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS:\n"
-        "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng riêng biệt và phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau. (VD:\n.class1 { font-size: 20px; color: #333; }\n.class2 { margin-bottom: 15px; }\n)\n"
-        "Tuyệt đối không gộp toàn bộ file thành 1 dòng duy nhất, và tuyệt đối KHÔNG xuống dòng bên trong dấu ngoặc nhọn {}.\n"
+        "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng duy nhất (Single-line CSS). Phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau.\n"
+        "Ví dụ ĐÚNG: `.class1 { font-size: 20px; color: #333; }`\n"
+        "Tuyệt đối KHÔNG ĐƯỢC CÓ XUỐNG DÒNG bên trong dấu ngoặc nhọn {}.\n"
         f"2. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_name}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon.\n"
         "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`."
     )
@@ -984,7 +985,7 @@ Template Rules to follow:
    Structure template: {structure_template}
    Table template: {table_template}
 3. Maintain all image/background tags.
-4. Keep CSS formatting (one rule per line).
+4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{}`. Example: `.class { color: red; margin: 0; }`
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
 6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
 7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
@@ -1176,6 +1177,7 @@ CRITICAL STRUCTURE RULES:
 2. Inside `.content-box`, group related sections into `<div class="con-box">`.
 3. Use class names from this structure template:
 {structure_template}
+4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
