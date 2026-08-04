@@ -256,9 +256,9 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     folder_el = False
 
                 if not folder_el:
-                    print(f'[{slug}] Folder "{folder}" not found in tree. Creating via right-click...')
-                    # Right click ROOT
-                    await page.locator('.jstree-anchor').first.click(button="right", force=True)
+                    print(f'[{slug}] Folder "{folder}" not found in tree. Creating via right-click on site root...')
+                    # Right click site root folder
+                    await page.locator(f'[id="/{site_id}_anchor"]').first.click(button="right", force=True)
                     await asyncio.sleep(1)
                     # Click Add Folder
                     await page.locator('.vakata-context li a', has_text=re.compile(r'Thêm|추가|Add', re.IGNORECASE)).first.click()

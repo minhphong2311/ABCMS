@@ -42,8 +42,8 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         else:
             print(f"  3.4 Folder '{folder}' chưa tồn tại → Tiến hành tạo Folder '{folder}' qua UI...")
             try:
-                # 1. Right click the first anchor (Root folder)
-                await page.locator('.jstree-anchor').first.click(button="right", force=True)
+                # 1. Right click the site root folder
+                await page.locator(f'[id="/{site_id}_anchor"]').first.click(button="right", force=True)
                 await asyncio.sleep(1)
                 
                 # 2. Click Add Folder (support Korean, Vietnamese, English)
