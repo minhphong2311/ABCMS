@@ -147,7 +147,7 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
                 print(f'[{slug}] Clicked start upload for missing images. Waiting for upload...')
                 await asyncio.sleep(5)
         except Exception as e:
-            print(f'[{slug}] Batch upload error: {e}')
+            raise Exception(f'Batch upload error: {e}')
 
         # Fallback individual retry if any file is still missing
         for img_path, img_name in missing_images:
@@ -307,6 +307,18 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
                 await asyncio.sleep(2)
 
+            # FORCE LIST VIEW
+            print(f'[{slug}] Ensuring List View is active...')
+            await page.evaluate('''() => {
+                const listBtn = document.querySelector('a[ng-click*="layout = \'list\'"], i.fa-list');
+                if (listBtn) {
+                    const aTag = listBtn.closest('a');
+                    if (aTag) aTag.click();
+                    else listBtn.click();
+                }
+            }''')
+            await asyncio.sleep(2)
+
             # STEP 4: CHECK PAGE EXISTS
             print(f'[{slug}] Checking if {slug}.jsp exists...')
             page_exists = await page.evaluate(f'''() => {{
@@ -385,13 +397,16 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     context.remove_listener('page', on_page)
                 except Exception:
                     pass
-            else:
                 # PAGE NOT EXISTS: create page, click save+edit -> same tab editor
                 print(f'[{slug}] Creating new page...')
-                await page.evaluate('''() => {
-                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('Thêm')));
-                    if (btn) btn.click();
+                add_btn_clicked = await page.evaluate('''() => {
+                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('Thêm') || b.innerText.includes('등록') || b.innerText.includes('추가') || b.innerText.includes('Add')));
+                    if (btn) { btn.click(); return true; }
+                    return false;
                 }''')
+                if not add_btn_clicked:
+                    raise Exception("Không tìm thấy nút 'Thêm mới' (Add Page) trên giao diện!")
+                
                 await page.wait_for_selector('.modal-dialog, .modal-content', timeout=10000)
                 await asyncio.sleep(2)
 
@@ -399,7 +414,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await page.evaluate(f'''(slug) => {{
                     const set = (sel, val) => {{
                         const el = document.querySelector(sel);
-                        if (!el) return;
+                        if (!el) throw new Error("Không tìm thấy input: " + sel);
                         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
                         setter.call(el, val);
                         el.dispatchEvent(new Event('input', {{bubbles:true}}));
@@ -552,59 +567,73 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await editor_page.locator('.fr-command[data-cmd=\"html\"]').first.click(force=True)
                 await asyncio.sleep(1)
             except Exception as e:
-                print(f'[{slug}] HTML inject error: {e}')
+                raise Exception(f'Không thể Inject HTML (Bước 6 thất bại). Lỗi: {e}')
 
-            # STEP 8: CSS
+            # STEP 8: INJECT CSS
             print(f'[{slug}] Switching to CSS tab...')
-            await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
-                if (t) t.click();
-            }''')
-            await asyncio.sleep(1)
-            await editor_page.evaluate('''(css) => {
-                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
-                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
-                Array.from(document.querySelectorAll('*')).some(el => {
-                    const s = window.angular && window.angular.element(el).scope();
-                    if (s && s.editor && s.editor.item) {
-                        s.$apply(() => {
-                            s.editor.item.cssText = css;
-                            if (s.editor.cssTabList && s.editor.cssTabList[0]) {
-                                s.editor.cssTabList[0].text = css;
-                                s.editor.cssTabList[0].modified = true;
-                            }
-                        });
-                        return true;
-                    }
-                });
-            }''', css_content)
-            await asyncio.sleep(1)
+            try:
+                css_tab_clicked = await editor_page.evaluate('''() => {
+                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim().includes('CSS'));
+                    if (t) { t.click(); return true; }
+                    return false;
+                }''')
+                if not css_tab_clicked:
+                    raise Exception("Không tìm thấy tab CSS!")
+                await asyncio.sleep(1)
+                
+                await editor_page.evaluate('''(css) => {
+                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
+                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
+                    Array.from(document.querySelectorAll('*')).some(el => {
+                        const s = window.angular && window.angular.element(el).scope();
+                        if (s && s.editor && s.editor.item) {
+                            s.$apply(() => {
+                                s.editor.item.cssText = css;
+                                if (s.editor.cssTabList && s.editor.cssTabList[0]) {
+                                    s.editor.cssTabList[0].text = css;
+                                    s.editor.cssTabList[0].modified = true;
+                                }
+                            });
+                            return true;
+                        }
+                    });
+                }''', css_content)
+                await asyncio.sleep(1)
+            except Exception as ex:
+                raise Exception(f"Không thể Inject CSS (Bước 8 thất bại): {ex}")
 
-            # STEP 9: JS
+            # STEP 9: INJECT JS
             print(f'[{slug}] Switching to JS tab...')
-            await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
-                if (t) t.click();
-            }''')
-            await asyncio.sleep(1)
-            await editor_page.evaluate('''(js) => {
-                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
-                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
-                Array.from(document.querySelectorAll('*')).some(el => {
-                    const s = window.angular && window.angular.element(el).scope();
-                    if (s && s.editor && s.editor.item) {
-                        s.$apply(() => {
-                            s.editor.item.jsText = js;
-                            if (s.editor.jsTabList && s.editor.jsTabList[0]) {
-                                s.editor.jsTabList[0].text = js;
-                                s.editor.jsTabList[0].modified = true;
-                            }
-                        });
-                        return true;
-                    }
-                });
-            }''', js_content)
-            await asyncio.sleep(1)
+            try:
+                js_tab_clicked = await editor_page.evaluate('''() => {
+                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim().includes('JS'));
+                    if (t) { t.click(); return true; }
+                    return false;
+                }''')
+                if not js_tab_clicked:
+                    raise Exception("Không tìm thấy tab JS!")
+                await asyncio.sleep(1)
+                
+                await editor_page.evaluate('''(js) => {
+                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
+                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
+                    Array.from(document.querySelectorAll('*')).some(el => {
+                        const s = window.angular && window.angular.element(el).scope();
+                        if (s && s.editor && s.editor.item) {
+                            s.$apply(() => {
+                                s.editor.item.jsText = js;
+                                if (s.editor.jsTabList && s.editor.jsTabList[0]) {
+                                    s.editor.jsTabList[0].text = js;
+                                    s.editor.jsTabList[0].modified = true;
+                                }
+                            });
+                            return true;
+                        }
+                    });
+                }''', js_content)
+                await asyncio.sleep(1)
+            except Exception as ex:
+                raise Exception(f"Không thể Inject JS (Bước 9 thất bại): {ex}")
 
             # STEP 10: SAVE
             print(f'[{slug}] Saving...')
