@@ -256,32 +256,25 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     folder_el = False
 
                 if not folder_el:
-                    print(f'[{slug}] Folder not found in tree. Creating folder "{folder}" via UI...')
-                    try:
-                        # 1. Right click the first anchor (Root folder)
-                        await page.locator('.jstree-anchor').first.click(button="right", force=True)
-                        await asyncio.sleep(1)
-                        
-                        # 2. Click Add Folder (support Korean, Vietnamese, English)
-                        await page.locator('.vakata-context a', has_text=re.compile(r'Thêm|추가|Add|createFolder', re.IGNORECASE)).first.click()
-                        await asyncio.sleep(1)
-                        
-                        # 3. Fill form
-                        # The inputs might not have name="folder", so we fill the first two text inputs
-                        inputs = page.locator('.modal-content input[type="text"]')
-                        await inputs.nth(0).fill(folder)
-                        await inputs.nth(1).fill(folder)
-                        
-                        # 4. Save
-                        await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
-                        await asyncio.sleep(2)
-                    except Exception as ex:
-                        raise Exception(f"Failed to create folder '{folder}' via UI: {ex}")
-                    await asyncio.sleep(2)
+                    print(f'[{slug}] Folder "{folder}" not found in tree. Creating via right-click...')
+                    # Right click ROOT
+                    await page.locator('.jstree-anchor').first.click(button="right", force=True)
+                    await asyncio.sleep(1)
+                    # Click Add Folder
+                    await page.locator('.vakata-context li a', has_text=re.compile(r'Thêm|추가|Add', re.IGNORECASE)).first.click()
+                    await asyncio.sleep(1)
+                    # Fill folder name
+                    inputs = page.locator('.modal-content input[type="text"]')
+                    await inputs.nth(0).fill(folder)
+                    await inputs.nth(1).fill(folder)
+                    # Click Save
+                    await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
+                    await asyncio.sleep(3)
+                    
                     print(f'[{slug}] Reloading page to sync tree...')
                     await page.reload(wait_until='domcontentloaded')
                     await page.wait_for_load_state('networkidle')
-                    await page.wait_for_function('() => !!document.querySelector(\".jstree-anchor\")', timeout=20000)
+                    await page.wait_for_function('() => !!document.querySelector(".jstree-anchor")', timeout=20000)
                     
                     # Re-select "페이지" tab
                     await page.evaluate('''() => {
@@ -291,17 +284,17 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     }''')
                     await asyncio.sleep(2)
                     try:
-                        await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
+                        await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=10000)
                     except Exception:
-                        raise Exception(f'Thư mục "{folder}" chưa được tạo trong CMS. Vui lòng tạo thư mục này thủ công trên CMS trước khi Deploy!')
+                        raise Exception(f'Thư mục "{folder}" không tạo được. Vui lòng tạo thủ công!')
 
-                await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
+                await page.evaluate(f"(() => {{ const el = document.getElementById('{folder_anchor_id}'); if (el) el.click(); }})()")
                 await asyncio.sleep(2)
 
             # FORCE LIST VIEW
             print(f'[{slug}] Ensuring List View is active...')
             await page.evaluate('''() => {
-                const listBtn = document.querySelector('a[ng-click*="layout = \'list\'"], i.fa-list');
+                const listBtn = document.querySelector(`a[ng-click*="layout = 'list'"], i.fa-list`);
                 if (listBtn) {
                     const aTag = listBtn.closest('a');
                     if (aTag) aTag.click();
@@ -388,6 +381,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     context.remove_listener('page', on_page)
                 except Exception:
                     pass
+            else:
                 # PAGE NOT EXISTS: create page, click save+edit -> same tab editor
                 print(f'[{slug}] Creating new page...')
                 add_btn_clicked = await page.evaluate('''() => {
