@@ -985,7 +985,7 @@ Template Rules to follow:
    Structure template: {structure_template}
    Table template: {table_template}
 3. Maintain all image/background tags.
-4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{}`. Example: `.class { color: red; margin: 0; }`
+4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{{}}`. Example: `.class {{ color: red; margin: 0; }}`
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
 6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
 7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
