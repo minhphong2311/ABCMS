@@ -378,14 +378,14 @@ Email: phongnguyen@andvina.com
                 </td>
                 <td class="text-right py-2" style="vertical-align: middle;">
                   <div class="d-flex align-items-center justify-content-end h-100">
-                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
+                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link and not menu.image_path %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
                     <a href="/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{{ menu.folder or '' }}--{{ menu.slug }}/?t=' + Date.now()" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
                     
                     <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
                     
-                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
+                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-image="{{ menu.image_path or '' }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
                     
                     <form action="/site/{{ site.id }}/delete-menu/{{ menu.folder or '' }}--{{ menu.slug }}" method="POST" class="d-inline-flex align-items-center" style="margin: 0; padding: 0;" onsubmit="confirmDeleteMenu(event, this)">
                       <button type="submit" class="btn btn-danger btn-sm page-action-btn" title="Delete">
@@ -478,7 +478,7 @@ Email: phongnguyen@andvina.com
               <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1"
                       id="generate-grid-btn-{{ menu.folder or '' }}--{{ menu.slug }}"
                       onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)"
-                      {% if not menu.figma_link %}disabled title="Please enter Figma Link to generate"{% endif %} title="Generate">
+                      {% if not menu.figma_link and not menu.image_path %}disabled title="Please enter Figma Link or upload Image to generate"{% endif %} title="Generate">
                 <i class="fas fa-cogs"></i>
               </button>
               
@@ -515,6 +515,7 @@ Email: phongnguyen@andvina.com
                       data-folder="{{ menu.folder or '' }}"
                       data-slug="{{ menu.slug }}"
                       data-figma="{{ menu.figma_link }}"
+                      data-image="{{ menu.image_path or '' }}"
                       data-layout="{{ menu.layout }}"
                       onclick="openEditMenuModal(this)">
                 <i class="fas fa-edit"></i>
@@ -562,7 +563,7 @@ Email: phongnguyen@andvina.com
 <!-- Add Page Modal (Add Page) -->
 <div class="modal fade" id="addMenuModal" tabindex="-1" aria-labelledby="addMenuModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form action="/site/{{ site.id }}/add-menu" method="POST">
+    <form action="/site/{{ site.id }}/add-menu" method="POST" enctype="multipart/form-data">
       <div class="modal-content">
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title" id="addMenuModalLabel">Add Page</h5>
@@ -596,6 +597,10 @@ Email: phongnguyen@andvina.com
             <label for="figma_link">Link Figma Dev Mode</label>
             <textarea class="form-control" id="figma_link" name="figma_link" style="height: 170px;" placeholder="Paste Figma Dev Mode Link containing file-key and node-id..."></textarea>
           </div>
+          <div class="form-group mt-3">
+            <label for="image_file">Or Upload Image (Prioritize Figma if both exist)</label>
+            <input type="file" class="form-control-file" id="image_file" name="image_file" accept="image/*">
+          </div>
         </div>
         <div class="modal-footer justify-content-between">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -609,7 +614,7 @@ Email: phongnguyen@andvina.com
 <!-- Edit Page Modal (Edit Trang) -->
 <div class="modal fade" id="editMenuModal" tabindex="-1" aria-labelledby="editMenuModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form id="editMenuForm" method="POST">
+    <form id="editMenuForm" method="POST" enctype="multipart/form-data">
       <div class="modal-content">
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title" id="editMenuModalLabel">Edit trang</h5>
@@ -644,6 +649,19 @@ Email: phongnguyen@andvina.com
           <div class="form-group">
             <label for="edit_figma_link">Link Figma Dev Mode</label>
             <textarea class="form-control" id="edit_figma_link" name="figma_link" style="height: 170px;"></textarea>
+          </div>
+          <div class="form-group mt-3">
+            <label for="edit_image_file">Or Upload Image (Prioritize Figma if both exist)</label>
+            <input type="file" class="form-control-file" id="edit_image_file" name="image_file" accept="image/*" onchange="document.getElementById('remove_image').value='0';">
+            <input type="hidden" id="remove_image" name="remove_image" value="0">
+            <div id="edit_image_status" class="mt-3" style="display: none;">
+                <div class="position-relative d-inline-block">
+                    <img id="edit_image_preview" src="" alt="Uploaded Image" class="img-thumbnail" style="max-height: 150px;">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -10px; right: -10px; border-radius: 50%;" onclick="removeUploadedImage()" title="Remove Image">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer justify-content-between">
@@ -1286,6 +1304,7 @@ function openEditMenuModal(btnElement) {
     const slug = btnElement.getAttribute('data-slug') || '';
     const figmaLink = btnElement.getAttribute('data-figma') || '';
     const layout = btnElement.getAttribute('data-layout') || '';
+    const imagePath = btnElement.getAttribute('data-image') || '';
     
     // Find menu to get parent_id
     const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
@@ -1297,12 +1316,31 @@ function openEditMenuModal(btnElement) {
     document.getElementById('edit_figma_link').value = figmaLink;
     document.getElementById('edit_layout').value = layout;
     
+    const statusDiv = document.getElementById('edit_image_status');
+    const imgPreview = document.getElementById('edit_image_preview');
+    document.getElementById('remove_image').value = "0";
+
+    if (imagePath) {
+        const filename = imagePath.split(/[\\/]/).pop();
+        imgPreview.src = `/uploads/{{ site.id }}/${filename}`;
+        statusDiv.style.display = 'block';
+    } else {
+        statusDiv.style.display = 'none';
+        imgPreview.src = '';
+    }
+    
     // Set form action dynamically with composite key
     const paramKey = (folder ? folder + '--' : '--') + slug;
     document.getElementById('editMenuForm').action = `/site/{{ site.id }}/edit-menu/${paramKey}`;
     
     // Show modal
     $('#editMenuModal').modal('show');
+}
+
+function removeUploadedImage() {
+    document.getElementById('remove_image').value = "1";
+    document.getElementById('edit_image_status').style.display = 'none';
+    document.getElementById('edit_image_file').value = '';
 }
 
 function confirmDeleteMenu(event, formElement) {
@@ -1616,13 +1654,13 @@ function bulkGenerateSelected(siteId) {
         const slug = val.substring(sepIndex + 2);
         
         const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
-        if (menu && menu.figma_link) {
+        if (menu && (menu.figma_link || menu.image_path)) {
             generateList.push({ folder, slug, val });
         }
     }
     
     if (generateList.length === 0) {
-        Swal.fire('Info', 'No selected pages have a Figma Link. Cannot generate.', 'info');
+        Swal.fire('Info', 'No selected pages have a Figma Link or Image. Cannot generate.', 'info');
         return;
     }
     

@@ -2,7 +2,7 @@
 # Email: phongnguyen@andvina.com
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 
 # ---------------------------------------------------------------------------
 # App initialization
@@ -214,6 +214,10 @@ def api_save_config():
         config['slug_method'] = data['slug_method']
     save_config(config)
     return jsonify({'success': True, 'message': 'Config saved'})
+
+@app.route('/uploads/<site_id>/<filename>')
+def serve_upload(site_id, filename):
+    return send_from_directory(os.path.join(app.root_path, 'data', 'uploads', site_id), filename)
 
 
 # ---------------------------------------------------------------------------

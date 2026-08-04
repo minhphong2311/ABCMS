@@ -1073,6 +1073,7 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
 # ---------------------------------------------------------------------------
 
 def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, config, menu, site, feedback):
+    import shutil
     try:
         GENERATE_TASKS[task_id] = {"status": "running", "message": "Parsing Figma link..."}
         if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
@@ -1080,52 +1081,128 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
         folder, menu_slug = parse_folder_slug(menu_param)
         figma_link = menu.get('figma_link', '').strip()
-        if not figma_link:
-            raise Exception("No Figma link found for this page.")
-
-        file_key, node_id = parse_figma_url(figma_link)
-        if not file_key or not node_id:
-            raise Exception("Invalid Figma link format.")
-
-        if not figma_token:
-            raise Exception("Figma token is missing in settings.")
-
-        GENERATE_TASKS[task_id] = {"status": "running", "message": "Fetching Figma design..."}
-        design_data = fetch_figma_node(file_key, node_id, figma_token)
-        if not design_data or 'nodes' not in design_data or node_id not in design_data['nodes']:
-            raise Exception("Could not fetch design from Figma API.")
-
-        GENERATE_TASKS[task_id] = {"status": "running", "message": "Downloading assets..."}
-        document = design_data['nodes'][node_id]['document']
-        used_refs = extract_used_image_refs(document)
-        image_map = fetch_figma_images(file_key, figma_token)
-        local_image_map = download_and_map_figma_images(image_map, target_dir, menu_slug, used_refs)
-
-        # Export icons
-        export_figma_icons(file_key, document, figma_token, target_dir, menu_slug)
-
-        GENERATE_TASKS[task_id] = {"status": "running", "message": "Compiling HTML/CSS..."}
-        compile_result = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
-        if not compile_result:
-            raise Exception("Failed to compile HTML/CSS.")
-        html_result, css_result = compile_result
-
+        image_path = menu.get('image_path', '').strip()
+        
+        html_result = ""
+        css_result = ""
         gemini_api_key = config.get('gemini_api_key', '').strip()
-        if gemini_api_key:
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying structural templates..."}
-            html_result, css_result = apply_structural_templates(
-                html_result, css_result, gemini_api_key, menu_slug, task_id
-            )
 
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
-            html_result, css_result = compare_and_fix_visuals(
-                figma_token, figma_link, html_result, css_result,
-                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id
-            )
+        if figma_link:
+            file_key, node_id = parse_figma_url(figma_link)
+            if not file_key or not node_id:
+                raise Exception("Invalid Figma link format.")
 
-            if feedback:
-                GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying feedback..."}
-                css_result = apply_dynamic_css_feedback(css_result, feedback)
+            if not figma_token:
+                raise Exception("Figma token is missing in settings.")
+
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Fetching Figma design..."}
+            design_data = fetch_figma_node(file_key, node_id, figma_token)
+            if not design_data or 'nodes' not in design_data or node_id not in design_data['nodes']:
+                raise Exception("Could not fetch design from Figma API.")
+
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Downloading assets..."}
+            document = design_data['nodes'][node_id]['document']
+            used_refs = extract_used_image_refs(document)
+            image_map = fetch_figma_images(file_key, figma_token)
+            local_image_map = download_and_map_figma_images(image_map, target_dir, menu_slug, used_refs)
+
+            # Export icons
+            export_figma_icons(file_key, document, figma_token, target_dir, menu_slug)
+
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Compiling HTML/CSS..."}
+            compile_result = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
+            if not compile_result:
+                raise Exception("Failed to compile HTML/CSS.")
+            html_result, css_result = compile_result
+
+            if gemini_api_key:
+                GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying structural templates..."}
+                html_result, css_result = apply_structural_templates(
+                    html_result, css_result, gemini_api_key, menu_slug, task_id
+                )
+
+                GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
+                html_result, css_result = compare_and_fix_visuals(
+                    figma_token, figma_link, html_result, css_result,
+                    [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id
+                )
+
+                if feedback:
+                    GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying feedback..."}
+                    css_result = apply_dynamic_css_feedback(css_result, feedback)
+
+        elif image_path:
+            
+            abs_image_path = image_path
+            if not os.path.isabs(abs_image_path):
+                root_path = os.path.dirname(os.path.dirname(__file__))
+                abs_image_path = os.path.join(root_path, abs_image_path)
+                
+            if not os.path.exists(abs_image_path):
+                raise Exception(f"Image file not found on server at {abs_image_path}.")
+            if not gemini_api_key:
+                raise Exception("Gemini API Key is required for Image-to-HTML generation.")
+                
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Uploading image to AI..."}
+            from google import genai
+            client = genai.Client(api_key=gemini_api_key)
+            
+            # Copy image to output/images/menu_slug/ for reference if needed
+            images_dir = os.path.join(target_dir, "images", menu_slug)
+            os.makedirs(images_dir, exist_ok=True)
+            ext = os.path.splitext(abs_image_path)[1]
+            dest_image_name = f"source_image{ext}"
+            dest_image_path = os.path.join(images_dir, dest_image_name)
+            shutil.copy(abs_image_path, dest_image_path)
+            
+            gemini_file = client.files.upload(file=abs_image_path)
+            
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Generating HTML/CSS from Image..."}
+            
+            structure_template = ''
+            try:
+                base = os.path.dirname(os.path.dirname(__file__))
+                structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
+                if os.path.exists(structure_path):
+                    with open(structure_path, 'r', encoding='utf-8') as f:
+                        structure_template = f.read()
+            except Exception: pass
+            
+            prompt = f"""You are an expert Frontend Developer. 
+Your task is to convert this screenshot into responsive HTML and CSS.
+
+CRITICAL STRUCTURE RULES:
+1. Wrap the entire page content in `<div class="content-box">`. 
+2. Inside `.content-box`, group related sections into `<div class="con-box">`.
+3. Use class names from this structure template:
+{structure_template}
+
+Return ONLY a valid JSON object matching this schema without markdown formatting:
+{{
+  "html": "full HTML content inside body",
+  "css": "full CSS content, one rule per line"
+}}
+"""
+            response = client.models.generate_content(
+                model='gemini-3.5-flash',
+                contents=[gemini_file, prompt]
+            )
+            
+            text = response.text.strip()
+            if '```json' in text: text = text.split('```json')[1].split('```')[0].strip()
+            elif text.startswith('```'): text = text.split('```')[1].split('```')[0].strip()
+            
+            import json
+            result = json.loads(text)
+            html_result = result.get('html', '')
+            css_result = result.get('css', '')
+
+            # Create a thumbnail from the image
+            thumb_path = os.path.join(target_dir, "thumb.jpg")
+            if not os.path.exists(thumb_path):
+                shutil.copy(abs_image_path, thumb_path)
+        else:
+            raise Exception("No Figma link or uploaded image found for this page.")
 
         # Write files
         html_path = os.path.join(target_dir, f"{menu_slug}.html")
@@ -1133,7 +1210,6 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
         base_style_src = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'layout', 'style.css')
         if os.path.exists(base_style_src):
-            import shutil
             shutil.copy(base_style_src, os.path.join(target_dir, "style.css"))
             site_root_dir = os.path.join(OUTPUT_DIR, site_id)
             os.makedirs(site_root_dir, exist_ok=True)

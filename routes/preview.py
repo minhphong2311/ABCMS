@@ -20,6 +20,9 @@ def preview_index(site_id, menu_param):
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
     menu_name = menu_slug
+    figma_link = ''
+    image_path = ''
+    
     if site:
         menu = next(
             (m for m in site.get('menus', [])
@@ -28,12 +31,17 @@ def preview_index(site_id, menu_param):
         )
         if menu:
             menu_name = menu['name']
+            figma_link = menu.get('figma_link', '')
+            image_path = menu.get('image_path', '')
+            
     return render_template(
         'preview_frame.html',
         site_id=site_id,
         menu_param=menu_param,
         menu_name=menu_name,
-        site_name=site['name'] if site else site_id
+        site_name=site['name'] if site else site_id,
+        figma_link=figma_link,
+        image_path=image_path
     )
 
 

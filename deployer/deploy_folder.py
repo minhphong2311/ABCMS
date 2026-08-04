@@ -44,8 +44,11 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             await page.evaluate(f'''async () => {{
                 try {{ 
                     if (typeof window.angular === 'undefined') return;
-                    let injector = window.angular.element(document.body).injector();
-                    if (injector) await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}"); 
+                    const root = document.querySelector('[ng-app]') || document.body;
+                    let injector = window.angular.element(root).injector();
+                    if (injector && injector.has("pageService")) {{
+                        await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}");
+                    }}
                 }} catch(e) {{}}
             }}''')
             await asyncio.sleep(0.9)

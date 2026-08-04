@@ -256,9 +256,15 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     folder_el = False
 
                 if not folder_el:
-                    print(f'[{slug}] Folder not found in tree. Creating folder...')
-                    await page.evaluate(f'window.angular.element(document.body).injector().get(\"pageService\").addFolder(\"{site_id}\", \"/{site_id}\", \"{folder}\")')
-                    await asyncio.sleep(3)
+                    print(f'[{slug}] Folder not found in tree. Creating folder "{folder}"...')
+                    await page.evaluate(f'''async () => {{
+                        const root = document.querySelector('[ng-app]') || document.body;
+                        const injector = window.angular.element(root).injector();
+                        if (injector && injector.has("pageService")) {{
+                            await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}");
+                        }}
+                    }}''')
+                    await asyncio.sleep(2)
                     print(f'[{slug}] Reloading page to sync tree...')
                     await page.reload(wait_until='domcontentloaded')
                     await page.wait_for_load_state('networkidle')
@@ -309,7 +315,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 card_click_res = await page.evaluate(f'''(slug) => {{
                     const cardEl = Array.from(document.querySelectorAll('*')).find(el => {{
                         const s = window.angular && window.angular.element(el).scope();
-                        return s && s.item && s.item.filename === slug + '.jsp';
+                        return s && s.item && (s.item.filename === slug + '.jsp' || s.item.filename === slug);
                     }});
                     if (cardEl) {{
                         cardEl.click();
@@ -484,15 +490,19 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await editor_page.wait_for_load_state('domcontentloaded', timeout=15000)
             except Exception:
                 pass
-            await editor_page.wait_for_function(f'''() => {{
-                try {{
-                    return Array.from(document.querySelectorAll('*')).some(el => {{
-                        const s = window.angular && window.angular.element(el).scope();
-                        return s && s.editor && s.editor.item && s.editor.item.filename === '{slug}.jsp';
-                    }});
-                }} catch(e) {{ return false; }}
-            }}''', timeout=25000)
-            print(f'[{slug}] Editor ready!')
+            try:
+                await editor_page.wait_for_function(f'''() => {{
+                    try {{
+                        return Array.from(document.querySelectorAll('*')).some(el => {{
+                            const s = window.angular && window.angular.element(el).scope();
+                            return s && s.editor && s.editor.item && s.editor.item.filename === '{slug}.jsp';
+                        }});
+                    }} catch(e) {{ return false; }}
+                }}''', timeout=25000)
+                print(f'[{slug}] Editor ready!')
+            except Exception as e:
+                if str(e) == 'Deploy cancelled by user': raise
+                print(f'[{slug}] Editor Angular scope wait timed out, continuing anyway...')
 
             # STEP 7: HTML
             print(f'[{slug}] Injecting HTML...')
