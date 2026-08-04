@@ -407,6 +407,19 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 
                 await page.wait_for_selector('.modal-dialog, .modal-content', timeout=10000)
                 await asyncio.sleep(2)
+                
+                # IMPORTANT: Select the folder inside the modal's "폴더 선택" column
+                if folder:
+                    print(f'[{slug}] Selecting folder "{folder}" inside the Add Page modal...')
+                    await page.evaluate(f'''(folderName) => {{
+                        const modal = document.querySelector('.modal-content');
+                        if (modal) {{
+                            const anchors = Array.from(modal.querySelectorAll('.jstree-anchor'));
+                            const el = anchors.find(a => (a.innerText || a.textContent || '').trim().toLowerCase() === folderName.toLowerCase());
+                            if (el) el.click();
+                        }}
+                    }}''', folder)
+                    await asyncio.sleep(1)
 
                 # Fill form: Title and Filename
                 await page.evaluate(f'''(slug) => {{
