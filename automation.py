@@ -248,6 +248,17 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             if folder:
                 folder_anchor_id = f'/{site_id}/{folder}_anchor'
                 print(f'[{slug}] Selecting folder: {folder}')
+                
+                # Expand root folder if it's closed
+                await page.evaluate(f'''() => {{
+                    const rootNode = document.getElementById('/{site_id}');
+                    if (rootNode && rootNode.classList.contains('jstree-closed')) {{
+                        const icon = rootNode.querySelector('.jstree-icon.jstree-ocl');
+                        if (icon) icon.click();
+                    }}
+                }}''')
+                await asyncio.sleep(1)
+
                 try:
                     # Wait up to 8 seconds for the folder anchor to render in the DOM
                     await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=8000)
@@ -288,7 +299,9 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     except Exception:
                         raise Exception(f'Thư mục "{folder}" không tạo được. Vui lòng tạo thủ công!')
 
-                await page.evaluate(f"(() => {{ const el = document.getElementById('{folder_anchor_id}'); if (el) el.click(); }})()")
+                # Select folder reliably using Playwright
+                print(f'[{slug}] Clicking folder anchor: {folder_anchor_id}')
+                await page.locator(f'[id="{folder_anchor_id}"]').first.click(force=True)
                 await asyncio.sleep(2)
 
             # FORCE LIST VIEW

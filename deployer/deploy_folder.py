@@ -29,6 +29,17 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             
         report(f"Checking folder: {folder}")
         print(f"\n  3.2 Kiểm tra Folder '{folder}' theo thứ tự Menu...")
+        
+        # Expand root folder if it's closed
+        await page.evaluate(f'''() => {{
+            const rootNode = document.getElementById('/{site_id}');
+            if (rootNode && rootNode.classList.contains('jstree-closed')) {{
+                const icon = rootNode.querySelector('.jstree-icon.jstree-ocl');
+                if (icon) icon.click();
+            }}
+        }}''')
+        await asyncio.sleep(1)
+
         folder_anchor_id = f'/{site_id}/{folder}_anchor'
         try:
             await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
