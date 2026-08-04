@@ -304,8 +304,13 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         await asyncio.sleep(1.2)
                         if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         page_was_created = True
+                        
+                        # Wait for the transition to the editor page to complete
+                        try:
+                            await page.wait_for_selector('button[ng-click*="editor.save()"], button[x-ng-click*="editor.save()"]', timeout=8000)
+                        except:
+                            pass
                     except Exception as e:
-                        if str(e) == 'Deploy cancelled by user': raise
                         if str(e) == 'Deploy cancelled by user': raise
                         print(f"  Error saving modal: {e}")
                     await asyncio.sleep(0.6)
@@ -398,9 +403,9 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         # Click HTML View
                         print(f"  [{slug}] Clicking HTML Code View...")
                         try:
+                            await page.wait_for_selector('button[data-cmd="html"]', state="visible", timeout=8000)
                             await page.locator('button[data-cmd="html"] >> visible=true').first.click()
                         except Exception as e:
-                            if str(e) == 'Deploy cancelled by user': raise
                             if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Could not click HTML view: {e}")
                         await asyncio.sleep(1.2)
@@ -409,14 +414,14 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         # Paste HTML via Keyboard
                         print(f"  [{slug}] Pasting HTML via Keyboard...")
                         try:
-                            await page.locator('textarea, .CodeMirror-code >> visible=true').first.focus()
+                            await page.wait_for_selector('.CodeMirror-code', state="visible", timeout=5000)
+                            await page.locator('.CodeMirror-code >> visible=true').first.focus()
                             await asyncio.sleep(0.5)
                             if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                             await page.keyboard.press("Control+A")
                             await page.keyboard.press("Backspace")
                             await page.keyboard.insert_text(ready_html)
                         except Exception as e:
-                            if str(e) == 'Deploy cancelled by user': raise
                             if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Could not paste HTML: {e}")
                         await asyncio.sleep(1.2)

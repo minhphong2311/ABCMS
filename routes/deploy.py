@@ -48,7 +48,8 @@ def api_deploy():
     data = request.json or {}
     site_id = data.get('site_id')
     menu_slug = data.get('menu_slug')
-    folder = data.get('folder', '').strip()
+    original_folder = data.get('folder', '').strip()
+    folder = original_folder
     if not folder:
         folder = menu_slug
 
@@ -64,7 +65,7 @@ def api_deploy():
     if not menu:
         return jsonify({'success': False, 'message': 'Page not found!'})
 
-    task_id = f"{site_id}--{folder}--{menu_slug}"
+    task_id = f"{site_id}--{original_folder}--{menu_slug}"
     if DEPLOY_TASKS.get(task_id, {}).get('status') == 'running':
         return jsonify({'success': False, 'message': 'This page is currently being deployed!'})
 

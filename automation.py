@@ -147,7 +147,7 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
                 print(f'[{slug}] Clicked start upload for missing images. Waiting for upload...')
                 await asyncio.sleep(5)
         except Exception as e:
-            raise Exception(f'Batch upload error: {e}')
+            print(f'[{slug}] Batch upload error: {e}')
 
         # Fallback individual retry if any file is still missing
         for img_path, img_name in missing_images:
@@ -248,25 +248,6 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             if folder:
                 folder_anchor_id = f'/{site_id}/{folder}_anchor'
                 print(f'[{slug}] Selecting folder: {folder}')
-                
-                # Ensure '폴더별' (Folder) tab is active in the sidebar
-                await page.evaluate('''() => {
-                    const tabs = Array.from(document.querySelectorAll('.nav-tabs li a'));
-                    const folderTab = tabs.find(t => (t.innerText || '').includes('폴더별'));
-                    if (folderTab) folderTab.click();
-                }''')
-                await asyncio.sleep(0.5)
-                
-                # Expand root folder if it's closed
-                await page.evaluate(f'''() => {{
-                    const rootNode = document.getElementById('/{site_id}');
-                    if (rootNode && rootNode.classList.contains('jstree-closed')) {{
-                        const icon = rootNode.querySelector('.jstree-icon.jstree-ocl');
-                        if (icon) icon.click();
-                    }}
-                }}''')
-                await asyncio.sleep(1)
-
                 try:
                     # Wait up to 8 seconds for the folder anchor to render in the DOM
                     await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=8000)
@@ -275,33 +256,13 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     folder_el = False
 
                 if not folder_el:
-                    print(f'[{slug}] Folder "{folder}" not found in tree. Creating via right-click on site root...')
-                    # Right click site root folder
-                    await page.locator(f'[id="/{site_id}_anchor"]').first.click(button="right", force=True)
-                    await asyncio.sleep(1)
-                    # Click Add Folder
-                    await page.locator('.vakata-context li a', has_text=re.compile(r'Thêm|추가|Add', re.IGNORECASE)).first.click()
-                    await asyncio.sleep(1)
-                    
-                    # Fill form - check for inline input first
-                    input_loc = page.locator('.jstree-rename-input')
-                    if await input_loc.count() > 0:
-                        await input_loc.first.fill(folder)
-                        await input_loc.first.press("Enter")
-                        await asyncio.sleep(2)
-                    else:
-                        # Fallback to modal
-                        inputs = page.locator('.modal-content input[type="text"]')
-                        await inputs.nth(0).fill(folder)
-                        if await inputs.count() > 1:
-                            await inputs.nth(1).fill(folder)
-                        await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
-                        await asyncio.sleep(2)
-                    
+                    print(f'[{slug}] Folder not found in tree. Creating folder...')
+                    await page.evaluate(f'window.angular.element(document.body).injector().get(\"pageService\").addFolder(\"{site_id}\", \"/{site_id}\", \"{folder}\")')
+                    await asyncio.sleep(3)
                     print(f'[{slug}] Reloading page to sync tree...')
                     await page.reload(wait_until='domcontentloaded')
                     await page.wait_for_load_state('networkidle')
-                    await page.wait_for_function('() => !!document.querySelector(".jstree-anchor")', timeout=20000)
+                    await page.wait_for_function('() => !!document.querySelector(\".jstree-anchor\")', timeout=20000)
                     
                     # Re-select "페이지" tab
                     await page.evaluate('''() => {
@@ -310,27 +271,10 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                         if (pageTab) pageTab.click();
                     }''')
                     await asyncio.sleep(2)
-                    try:
-                        await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=10000)
-                    except Exception:
-                        raise Exception(f'Thư mục "{folder}" không tạo được. Vui lòng tạo thủ công!')
+                    await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
 
-                # Select folder reliably using Playwright
-                print(f'[{slug}] Clicking folder anchor: {folder_anchor_id}')
-                await page.locator(f'[id="{folder_anchor_id}"]').first.click(force=True)
+                await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
                 await asyncio.sleep(2)
-
-            # FORCE LIST VIEW
-            print(f'[{slug}] Ensuring List View is active...')
-            await page.evaluate('''() => {
-                const listBtn = document.querySelector(`a[ng-click*="layout = 'list'"], i.fa-list`);
-                if (listBtn) {
-                    const aTag = listBtn.closest('a');
-                    if (aTag) aTag.click();
-                    else listBtn.click();
-                }
-            }''')
-            await asyncio.sleep(2)
 
             # STEP 4: CHECK PAGE EXISTS
             print(f'[{slug}] Checking if {slug}.jsp exists...')
@@ -365,7 +309,7 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 card_click_res = await page.evaluate(f'''(slug) => {{
                     const cardEl = Array.from(document.querySelectorAll('*')).find(el => {{
                         const s = window.angular && window.angular.element(el).scope();
-                        return s && s.item && (s.item.filename === slug + '.jsp' || s.item.filename === slug);
+                        return s && s.item && s.item.filename === slug + '.jsp';
                     }});
                     if (cardEl) {{
                         cardEl.click();
@@ -413,35 +357,18 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
             else:
                 # PAGE NOT EXISTS: create page, click save+edit -> same tab editor
                 print(f'[{slug}] Creating new page...')
-                add_btn_clicked = await page.evaluate('''() => {
-                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('Thêm') || b.innerText.includes('등록') || b.innerText.includes('추가') || b.innerText.includes('Add')));
-                    if (btn) { btn.click(); return true; }
-                    return false;
+                await page.evaluate('''() => {
+                    const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && (b.innerText.includes('페이지 등록') || b.innerText.includes('Thêm')));
+                    if (btn) btn.click();
                 }''')
-                if not add_btn_clicked:
-                    raise Exception("Không tìm thấy nút 'Thêm mới' (Add Page) trên giao diện!")
-                
                 await page.wait_for_selector('.modal-dialog, .modal-content', timeout=10000)
                 await asyncio.sleep(2)
-                
-                # IMPORTANT: Select the folder inside the modal's "폴더 선택" column
-                if folder:
-                    print(f'[{slug}] Selecting folder "{folder}" inside the Add Page modal...')
-                    await page.evaluate(f'''(folderName) => {{
-                        const modal = document.querySelector('.modal-content');
-                        if (modal) {{
-                            const anchors = Array.from(modal.querySelectorAll('.jstree-anchor'));
-                            const el = anchors.find(a => (a.innerText || a.textContent || '').trim().toLowerCase() === folderName.toLowerCase());
-                            if (el) el.click();
-                        }}
-                    }}''', folder)
-                    await asyncio.sleep(1)
 
                 # Fill form: Title and Filename
                 await page.evaluate(f'''(slug) => {{
                     const set = (sel, val) => {{
                         const el = document.querySelector(sel);
-                        if (!el) throw new Error("Không tìm thấy input: " + sel);
+                        if (!el) return;
                         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
                         setter.call(el, val);
                         el.dispatchEvent(new Event('input', {{bubbles:true}}));
@@ -557,19 +484,15 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await editor_page.wait_for_load_state('domcontentloaded', timeout=15000)
             except Exception:
                 pass
-            try:
-                await editor_page.wait_for_function(f'''() => {{
-                    try {{
-                        return Array.from(document.querySelectorAll('*')).some(el => {{
-                            const s = window.angular && window.angular.element(el).scope();
-                            return s && s.editor && s.editor.item && s.editor.item.filename === '{slug}.jsp';
-                        }});
-                    }} catch(e) {{ return false; }}
-                }}''', timeout=25000)
-                print(f'[{slug}] Editor ready!')
-            except Exception as e:
-                if str(e) == 'Deploy cancelled by user': raise
-                print(f'[{slug}] Editor Angular scope wait timed out, continuing anyway...')
+            await editor_page.wait_for_function(f'''() => {{
+                try {{
+                    return Array.from(document.querySelectorAll('*')).some(el => {{
+                        const s = window.angular && window.angular.element(el).scope();
+                        return s && s.editor && s.editor.item && s.editor.item.filename === '{slug}.jsp';
+                    }});
+                }} catch(e) {{ return false; }}
+            }}''', timeout=25000)
+            print(f'[{slug}] Editor ready!')
 
             # STEP 7: HTML
             print(f'[{slug}] Injecting HTML...')
@@ -594,73 +517,59 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 await editor_page.locator('.fr-command[data-cmd=\"html\"]').first.click(force=True)
                 await asyncio.sleep(1)
             except Exception as e:
-                raise Exception(f'Không thể Inject HTML (Bước 6 thất bại). Lỗi: {e}')
+                print(f'[{slug}] HTML inject error: {e}')
 
-            # STEP 8: INJECT CSS
+            # STEP 8: CSS
             print(f'[{slug}] Switching to CSS tab...')
-            try:
-                css_tab_clicked = await editor_page.evaluate('''() => {
-                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim().includes('CSS'));
-                    if (t) { t.click(); return true; }
-                    return false;
-                }''')
-                if not css_tab_clicked:
-                    raise Exception("Không tìm thấy tab CSS!")
-                await asyncio.sleep(1)
-                
-                await editor_page.evaluate('''(css) => {
-                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
-                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
-                    Array.from(document.querySelectorAll('*')).some(el => {
-                        const s = window.angular && window.angular.element(el).scope();
-                        if (s && s.editor && s.editor.item) {
-                            s.$apply(() => {
-                                s.editor.item.cssText = css;
-                                if (s.editor.cssTabList && s.editor.cssTabList[0]) {
-                                    s.editor.cssTabList[0].text = css;
-                                    s.editor.cssTabList[0].modified = true;
-                                }
-                            });
-                            return true;
-                        }
-                    });
-                }''', css_content)
-                await asyncio.sleep(1)
-            except Exception as ex:
-                raise Exception(f"Không thể Inject CSS (Bước 8 thất bại): {ex}")
+            await editor_page.evaluate('''() => {
+                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
+                if (t) t.click();
+            }''')
+            await asyncio.sleep(1)
+            await editor_page.evaluate('''(css) => {
+                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
+                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
+                Array.from(document.querySelectorAll('*')).some(el => {
+                    const s = window.angular && window.angular.element(el).scope();
+                    if (s && s.editor && s.editor.item) {
+                        s.$apply(() => {
+                            s.editor.item.cssText = css;
+                            if (s.editor.cssTabList && s.editor.cssTabList[0]) {
+                                s.editor.cssTabList[0].text = css;
+                                s.editor.cssTabList[0].modified = true;
+                            }
+                        });
+                        return true;
+                    }
+                });
+            }''', css_content)
+            await asyncio.sleep(1)
 
-            # STEP 9: INJECT JS
+            # STEP 9: JS
             print(f'[{slug}] Switching to JS tab...')
-            try:
-                js_tab_clicked = await editor_page.evaluate('''() => {
-                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim().includes('JS'));
-                    if (t) { t.click(); return true; }
-                    return false;
-                }''')
-                if not js_tab_clicked:
-                    raise Exception("Không tìm thấy tab JS!")
-                await asyncio.sleep(1)
-                
-                await editor_page.evaluate('''(js) => {
-                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
-                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
-                    Array.from(document.querySelectorAll('*')).some(el => {
-                        const s = window.angular && window.angular.element(el).scope();
-                        if (s && s.editor && s.editor.item) {
-                            s.$apply(() => {
-                                s.editor.item.jsText = js;
-                                if (s.editor.jsTabList && s.editor.jsTabList[0]) {
-                                    s.editor.jsTabList[0].text = js;
-                                    s.editor.jsTabList[0].modified = true;
-                                }
-                            });
-                            return true;
-                        }
-                    });
-                }''', js_content)
-                await asyncio.sleep(1)
-            except Exception as ex:
-                raise Exception(f"Không thể Inject JS (Bước 9 thất bại): {ex}")
+            await editor_page.evaluate('''() => {
+                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
+                if (t) t.click();
+            }''')
+            await asyncio.sleep(1)
+            await editor_page.evaluate('''(js) => {
+                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
+                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
+                Array.from(document.querySelectorAll('*')).some(el => {
+                    const s = window.angular && window.angular.element(el).scope();
+                    if (s && s.editor && s.editor.item) {
+                        s.$apply(() => {
+                            s.editor.item.jsText = js;
+                            if (s.editor.jsTabList && s.editor.jsTabList[0]) {
+                                s.editor.jsTabList[0].text = js;
+                                s.editor.jsTabList[0].modified = true;
+                            }
+                        });
+                        return true;
+                    }
+                });
+            }''', js_content)
+            await asyncio.sleep(1)
 
             # STEP 10: SAVE
             print(f'[{slug}] Saving...')

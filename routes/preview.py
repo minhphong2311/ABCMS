@@ -48,8 +48,11 @@ def preview_index(site_id, menu_param):
 @preview_bp.route('/preview/<site_id>/<menu_param>/raw')
 def preview_raw(site_id, menu_param):
     folder, menu_slug = parse_folder_slug(menu_param)
+    
+    if not folder:
+        folder = menu_slug
 
-    dir_path = os.path.join(OUTPUT_DIR, site_id, folder) if folder else os.path.join(OUTPUT_DIR, site_id)
+    dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
     html_path = os.path.join(dir_path, f'{menu_slug}.html')
 
     if not os.path.exists(html_path):
@@ -72,9 +75,13 @@ def preview_raw(site_id, menu_param):
 
 @preview_bp.route('/preview/<site_id>/<menu_param>/<path:filename>')
 def preview_asset(site_id, menu_param, filename):
-    folder, _ = parse_folder_slug(menu_param)
+    folder, menu_slug = parse_folder_slug(menu_param)
+    
+    if not folder:
+        folder = menu_slug
+        
     # Check folder dir first
-    dir_path = os.path.join(OUTPUT_DIR, site_id, folder) if folder else os.path.join(OUTPUT_DIR, site_id)
+    dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
     file_path = os.path.join(dir_path, filename)
     if os.path.exists(file_path):
         return send_from_directory(dir_path, filename)
