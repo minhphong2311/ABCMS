@@ -1273,10 +1273,10 @@ def generate_files(site_id, menu_param):
     if not menu:
         return jsonify({'success': False, 'message': 'Page not found!'}), 404
 
-    if folder:
-        target_dir = os.path.join(OUTPUT_DIR, site_id, folder)
-    else:
-        target_dir = os.path.join(OUTPUT_DIR, site_id)
+    if not folder:
+        folder = menu_slug
+
+    target_dir = os.path.join(OUTPUT_DIR, site_id, folder)
     os.makedirs(target_dir, exist_ok=True)
 
     config = get_config()

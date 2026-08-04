@@ -248,7 +248,4 @@ def assign_folders_from_roots(menus):
         return get_root_slug(m['parent_id'])
 
     for m in menus:
-        if not m.get('parent_id'):
-            m['folder'] = ''
-        else:
-            m['folder'] = get_root_slug(m['id'])
+        m['folder'] = get_root_slug(m['id'])

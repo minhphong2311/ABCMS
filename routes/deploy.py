@@ -48,7 +48,9 @@ def api_deploy():
     data = request.json or {}
     site_id = data.get('site_id')
     menu_slug = data.get('menu_slug')
-    folder = data.get('folder', '')
+    folder = data.get('folder', '').strip()
+    if not folder:
+        folder = menu_slug
 
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
@@ -56,7 +58,7 @@ def api_deploy():
         return jsonify({'success': False, 'message': 'Site not found!'})
 
     menu = next(
-        (m for m in site['menus'] if (m.get('folder') or '') == folder and m.get('slug') == menu_slug),
+        (m for m in site['menus'] if m.get('slug') == menu_slug),
         None
     )
     if not menu:
