@@ -41,21 +41,52 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             print(f"  3.3 Folder '{folder}' đã tồn tại → Kiểm tra Folder của Menu tiếp theo.")
         else:
             print(f"  3.4 Folder '{folder}' chưa tồn tại → Tiến hành tạo Folder '{folder}' qua UI...")
-            try:
-                # Right click the first anchor (Root folder)
-                await page.locator('.jstree-anchor').first.click(button="right", force=True)
-                await asyncio.sleep(1)
-                # Click "Thêm thư mục"
-                await page.click('.vakata-context a[rel="createFolder"], .vakata-context a:has-text("Thêm thư mục"), .vakata-context a:has-text("폴더 추가")')
-                await asyncio.sleep(1)
-                # Fill the form
-                await page.fill('.modal-content input[name="folder"]', folder)
-                await page.fill('.modal-content input[name="folderNm"]', folder)
-                # Save
-                await page.click('.modal-content button[ng-click*="save"], .modal-content button.btn-primary')
-                await asyncio.sleep(2)
-            except Exception as ex:
-                print(f"  [Lỗi] Không thể tạo thư mục qua UI: {ex}")
+            ui_creation_result = await page.evaluate(f'''async (folderName) => {{
+                try {{
+                    // 1. Right click root folder
+                    const anchor = document.querySelector('.jstree-anchor');
+                    if (!anchor) return "Error: No .jstree-anchor found";
+                    
+                    // Dispatch contextmenu event
+                    const ev = new MouseEvent('contextmenu', {{ bubbles: true, cancelable: false, view: window, button: 2, buttons: 2, clientX: anchor.getBoundingClientRect().left, clientY: anchor.getBoundingClientRect().top }});
+                    anchor.dispatchEvent(ev);
+                    
+                    // Wait for context menu
+                    await new Promise(r => setTimeout(r, 1000));
+                    
+                    // 2. Click Add Folder
+                    const menuItems = Array.from(document.querySelectorAll('.vakata-context a'));
+                    const addBtn = menuItems.find(a => (a.innerText||'').includes('Thêm') || (a.innerText||'').includes('추가') || (a.innerText||'').includes('Add') || a.getAttribute('rel') === 'createFolder');
+                    if (!addBtn) return "Error: Context menu 'Add Folder' not found. Menu HTML: " + (document.querySelector('.vakata-context') ? document.querySelector('.vakata-context').innerHTML : 'none');
+                    addBtn.click();
+                    
+                    // Wait for modal
+                    await new Promise(r => setTimeout(r, 1000));
+                    
+                    // 3. Fill form
+                    const modal = document.querySelector('.modal-content');
+                    if (!modal) return "Error: Modal not found";
+                    
+                    const inputs = Array.from(modal.querySelectorAll('input[type="text"]'));
+                    if (inputs.length < 2) return "Error: Form inputs not found in modal";
+                    
+                    inputs[0].value = folderName; inputs[0].dispatchEvent(new Event('input', {{bubbles: true}}));
+                    inputs[1].value = folderName; inputs[1].dispatchEvent(new Event('input', {{bubbles: true}}));
+                    
+                    // 4. Save
+                    const saveBtn = Array.from(modal.querySelectorAll('button')).find(b => (b.innerText||'').includes('Lưu') || (b.innerText||'').includes('저장') || (b.innerText||'').includes('Save') || b.className.includes('btn-primary'));
+                    if (!saveBtn) return "Error: Save button not found";
+                    saveBtn.click();
+                    
+                    return "Success";
+                }} catch (e) {{
+                    return "Exception: " + e.toString();
+                }}
+            }}''', folder)
+            
+            if ui_creation_result != "Success":
+                print(f"  [Lỗi] Không thể tạo thư mục qua UI: {ui_creation_result}")
+                raise Exception(f"Không thể tạo thư mục '{folder}' qua UI: {ui_creation_result}")
             if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             folders_created = True
             
