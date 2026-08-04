@@ -13,7 +13,7 @@ from .helpers import load_data, save_data, parse_folder_slug
 
 edit_bp = Blueprint('edit', __name__)
 
-def handle_image_upload(site_id, image_file):
+def handle_image_upload(site_id, menu_id, image_file):
     if image_file and image_file.filename:
         from flask import current_app
         import os
@@ -21,7 +21,7 @@ def handle_image_upload(site_id, image_file):
         
         upload_dir = os.path.join(current_app.root_path, 'data', 'uploads', site_id)
         os.makedirs(upload_dir, exist_ok=True)
-        filename = secure_filename(image_file.filename)
+        filename = f"{menu_id}_{secure_filename(image_file.filename)}"
         save_path = os.path.join(upload_dir, filename)
         image_file.save(save_path)
         
@@ -62,7 +62,7 @@ def add_menu(site_id):
         'order': len(site.get('menus', []))
     }
 
-    image_path = handle_image_upload(site_id, image_file)
+    image_path = handle_image_upload(site_id, new_menu['id'], image_file)
     if image_path:
         new_menu['image_path'] = image_path
 
@@ -127,8 +127,18 @@ def edit_menu(site_id, menu_param):
                 pass
             menu['image_path'] = ''
     else:
-        image_path = handle_image_upload(site_id, image_file)
+        image_path = handle_image_upload(site_id, menu['id'], image_file)
         if image_path:
+            if 'image_path' in menu and menu['image_path'] and menu['image_path'] != image_path:
+                try:
+                    old_path = menu['image_path']
+                    if not os.path.isabs(old_path):
+                        from flask import current_app
+                        old_path = os.path.join(current_app.root_path, old_path)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                except Exception:
+                    pass
             menu['image_path'] = image_path
 
     save_data(sites)
