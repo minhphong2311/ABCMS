@@ -29,13 +29,14 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             
         report(f"Checking folder: {folder}")
         print(f"\n  3.2 Kiểm tra Folder '{folder}' theo thứ tự Menu...")
-        folder_anchor_id = f'/{site_id}/{folder}_anchor'
-        try:
-            await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=3000)
-            folder_el = True
-        except Exception as e:
-            if str(e) == 'Deploy cancelled by user': raise
-            folder_el = False
+        # Find folder by text match instead of hardcoded ID
+        folder_anchor_id = await page.evaluate(f'''(folderName) => {{
+            const anchors = Array.from(document.querySelectorAll('.jstree-anchor'));
+            const folderNode = anchors.find(a => (a.innerText || a.textContent || '').trim() === folderName);
+            return folderNode ? folderNode.id : null;
+        }}''', folder)
+        
+        folder_el = bool(folder_anchor_id)
         
         if folder_el:
             print(f"  3.3 Folder '{folder}' đã tồn tại → Kiểm tra Folder của Menu tiếp theo.")
@@ -96,11 +97,18 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
             if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             print(f"  3.5 Kiểm tra lại Folder '{folder}' trong danh sách...")
             try:
-                await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)
+                folder_anchor_id = await page.evaluate(f'''(folderName) => {{
+                    const anchors = Array.from(document.querySelectorAll('.jstree-anchor'));
+                    const folderNode = anchors.find(a => (a.innerText || a.textContent || '').trim() === folderName);
+                    return folderNode ? folderNode.id : null;
+                }}''', folder)
+                if not folder_anchor_id:
+                    raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
                 print(f"  ✓ 3.5 Kiểm tra lại THÀNH CÔNG: Thư mục '{folder}' đã tồn tại.")
             except Exception as e:
                 if str(e) == 'Deploy cancelled by user': raise
-                raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
+                if 'Thư mục' in str(e): raise
+                raise Exception(f"Lỗi kiểm tra lại thư mục '{folder}': {e}")
     
     print("  ✓ 3.5 Hoàn thành kiểm tra và xác nhận lại toàn bộ Folder theo đúng thứ tự.")
     return current_item

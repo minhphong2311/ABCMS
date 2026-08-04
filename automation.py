@@ -246,14 +246,15 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
 
             # STEP 3: SELECT FOLDER
             if folder:
-                folder_anchor_id = f'/{site_id}/{folder}_anchor'
                 print(f'[{slug}] Selecting folder: {folder}')
-                try:
-                    # Wait up to 8 seconds for the folder anchor to render in the DOM
-                    await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=8000)
-                    folder_el = True
-                except Exception:
-                    folder_el = False
+                # Find folder by text match instead of hardcoded ID
+                folder_anchor_id = await page.evaluate(f'''(folderName) => {{
+                    const anchors = Array.from(document.querySelectorAll('.jstree-anchor'));
+                    const folderNode = anchors.find(a => (a.innerText || a.textContent || '').trim() === folderName);
+                    return folderNode ? folderNode.id : null;
+                }}''', folder)
+                
+                folder_el = bool(folder_anchor_id)
 
                 if not folder_el:
                     print(f'[{slug}] Folder not found in tree. Creating folder "{folder}" via UI...')
@@ -316,9 +317,17 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     }''')
                     await asyncio.sleep(2)
                     try:
-                        await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
-                    except Exception:
-                        raise Exception(f'Thư mục "{folder}" chưa được tạo trong CMS. Vui lòng tạo thư mục này thủ công trên CMS trước khi Deploy!')
+                        folder_anchor_id = await page.evaluate(f'''(folderName) => {{
+                            const anchors = Array.from(document.querySelectorAll('.jstree-anchor'));
+                            const folderNode = anchors.find(a => (a.innerText || a.textContent || '').trim() === folderName);
+                            return folderNode ? folderNode.id : null;
+                        }}''', folder)
+                        
+                        if not folder_anchor_id:
+                            raise Exception(f'Thư mục "{folder}" chưa được tạo trong CMS. Vui lòng tạo thư mục này thủ công trên CMS trước khi Deploy!')
+                    except Exception as ex:
+                        if 'Thư mục' in str(ex): raise
+                        raise Exception(f'Lỗi kiểm tra thư mục: {ex}')
 
                 await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
                 await asyncio.sleep(2)
