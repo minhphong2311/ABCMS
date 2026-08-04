@@ -2,11 +2,7 @@
 # Email: phongnguyen@andvina.com
 
 import os
-import json
-import time
-import threading
-import uuid
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 
 # ---------------------------------------------------------------------------
 # App initialization
@@ -22,9 +18,9 @@ app.secret_key = 'super-secret-key-for-cms-builder'
 from routes.helpers import (
     load_data, save_data,
     get_config, save_config,
-    make_unique_slug, generate_slug_for_text,
-    parse_folder_slug, delete_menu_files,
-    DATA_FILE, OUTPUT_DIR, CONFIG_FILE
+    generate_slug_for_text,
+    parse_folder_slug,
+    OUTPUT_DIR
 )
 
 # ---------------------------------------------------------------------------
@@ -199,7 +195,8 @@ def api_get_config():
         'success': True,
         'gemini_api_key': config.get('gemini_api_key', ''),
         'figma_token': config.get('figma_token', ''),
-        'show_ui': config.get('show_ui', True)
+        'show_ui': config.get('show_ui', True),
+        'slug_method': config.get('slug_method', 'google')
     })
 
 
@@ -213,8 +210,11 @@ def api_save_config():
         config['figma_token'] = data['figma_token']
     if 'show_ui' in data:
         config['show_ui'] = bool(data['show_ui'])
+    if 'slug_method' in data:
+        config['slug_method'] = data['slug_method']
     save_config(config)
     return jsonify({'success': True, 'message': 'Config saved'})
+
 
 # ---------------------------------------------------------------------------
 # Chat AI API

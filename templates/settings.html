@@ -57,7 +57,20 @@ Email: phongnguyen@andvina.com
           <input type="checkbox" class="custom-control-input" id="show_ui_input" checked>
           <label class="custom-control-label font-weight-bold" for="show_ui_input">Enable UI Display Mode (headless=False)</label>
         </div>
-        <small class="form-text text-muted mt-2"><i class="fas fa-info-circle mr-1"></i>When enabled, the browser will open a visible window (headless=False). When disabled, the browser will run in headless mode (headless=True).</small>
+        <small class="form-text text-muted mt-2 mb-4"><i class="fas fa-info-circle mr-1"></i>When enabled, the browser will open a visible window (headless=False). When disabled, the browser will run in headless mode (headless=True).</small>
+
+        <!-- Slug Translation Configuration -->
+        <h5 class="mb-3"><i class="fas fa-language text-warning mr-2"></i>Page Slug Generation Method</h5>
+        <p class="text-muted text-sm">Choose how the system generates URL slugs from Page Names (e.g., Vietnamese/Korean).</p>
+        
+        <div class="form-group">
+          <select class="form-control" id="slug_method_input">
+            <option value="google">Google Translate (Default - No API Key required)</option>
+            <option value="gemini">AI Gemini Translation (Requires Gemini API Key)</option>
+            <option value="none">No Translation (Just remove accents)</option>
+          </select>
+        </div>
+        <small class="form-text text-muted mt-2"><i class="fas fa-info-circle mr-1"></i>If translated, "Giới thiệu" -> "about-us". If No Translation, "Giới thiệu" -> "gioi-thieu".</small>
 
         <div class="mt-4 text-right">
           <button type="button" class="btn btn-primary px-4" id="btnSaveConfig">
@@ -97,6 +110,9 @@ Email: phongnguyen@andvina.com
           if (typeof data.show_ui !== 'undefined') {
               document.getElementById('show_ui_input').checked = !!data.show_ui;
           }
+          if (typeof data.slug_method !== 'undefined') {
+              document.getElementById('slug_method_input').value = data.slug_method;
+          }
       });
       
       // Save config when button is clicked
@@ -109,7 +125,8 @@ Email: phongnguyen@andvina.com
           const payload = {
               gemini_api_key: document.getElementById('gemini_key_input').value.trim(),
               figma_token: document.getElementById('figma_token_input').value.trim(),
-              show_ui: document.getElementById('show_ui_input').checked
+              show_ui: document.getElementById('show_ui_input').checked,
+              slug_method: document.getElementById('slug_method_input').value
           };
           
           $.ajax({

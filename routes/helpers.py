@@ -94,16 +94,35 @@ def make_unique_slug(slug, existing_slugs):
 def generate_slug_for_text(text):
     if not text:
         return ''
+    
     config = get_config()
-    api_key = config.get('gemini_api_key', '').strip()
-    if not api_key:
-        import urllib.parse
-        return urllib.parse.quote(text).lower()
+    slug_method = config.get('slug_method', 'google')
+    
     try:
-        from google import genai
-        import re
-        client = genai.Client(api_key=api_key)
-        prompt = f'''Translate this EXACTLY to a short URL slug (lowercase english words, hyphen separated).
+        from slugify import slugify
+        
+        if slug_method == 'google':
+            from deep_translator import GoogleTranslator
+            # Dịch ngôn ngữ đầu vào (Hàn/Việt...) sang tiếng Anh bằng deep-translator
+            translated = GoogleTranslator(source='auto', target='en').translate(text)
+            
+            # Google Translate web endpoint đôi khi trả về trang lỗi 500 nếu bị rate limit
+            if translated and ('500 server error' in translated.lower() or 'that\'s an error' in translated.lower() or 'that’s an error' in translated.lower()):
+                print("Google Translate bị lỗi 500, tự động fallback về bỏ dấu.")
+                slug = slugify(text)
+            else:
+                slug = slugify(translated)
+            
+        elif slug_method == 'gemini':
+            # Dùng Gemini API
+            api_key = config.get('gemini_api_key', '').strip()
+            if not api_key:
+                slug = slugify(text)  # Fallback
+            else:
+                from google import genai
+                import re
+                client = genai.Client(api_key=api_key)
+                prompt = f'''Translate this EXACTLY to a short URL slug (lowercase english words, hyphen separated).
 Output ONLY the slug, nothing else. No explanations, no markdown, no punctuation.
 Examples:
 - 부동산AI융합학과 -> real-estate-ai
@@ -111,11 +130,18 @@ Examples:
 - 학과/학생활동 -> student-activities
 Input: {text}
 Output:'''
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
-        slug = response.text.strip().lower()
-        # grab only the first line in case model adds explanations
-        slug = slug.split('\n')[0].strip()
-        slug = re.sub(r'[^a-z0-9\-]+', '', slug)
+                response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+                slug_raw = response.text.strip().lower()
+                slug_raw = slug_raw.split('\n')[0].strip()
+                slug = re.sub(r'[^a-z0-9\-]+', '', slug_raw)
+                
+        else: # 'none'
+            # Chỉ loại bỏ dấu, không dịch (ví dụ: Giới Thiệu -> gioi-thieu)
+            slug = slugify(text)
+        
+        if not slug:
+            import urllib.parse
+            return urllib.parse.quote(text).lower()
         return slug
     except Exception as e:
         print('Error auto generating slug:', e)
