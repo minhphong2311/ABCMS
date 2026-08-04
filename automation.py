@@ -249,6 +249,14 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 folder_anchor_id = f'/{site_id}/{folder}_anchor'
                 print(f'[{slug}] Selecting folder: {folder}')
                 
+                # Ensure '폴더별' (Folder) tab is active in the sidebar
+                await page.evaluate('''() => {
+                    const tabs = Array.from(document.querySelectorAll('.nav-tabs li a'));
+                    const folderTab = tabs.find(t => (t.innerText || '').includes('폴더별'));
+                    if (folderTab) folderTab.click();
+                }''')
+                await asyncio.sleep(0.5)
+                
                 # Expand root folder if it's closed
                 await page.evaluate(f'''() => {{
                     const rootNode = document.getElementById('/{site_id}');
@@ -274,13 +282,21 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     # Click Add Folder
                     await page.locator('.vakata-context li a', has_text=re.compile(r'Thêm|추가|Add', re.IGNORECASE)).first.click()
                     await asyncio.sleep(1)
-                    # Fill folder name
-                    inputs = page.locator('.modal-content input[type="text"]')
-                    await inputs.nth(0).fill(folder)
-                    await inputs.nth(1).fill(folder)
-                    # Click Save
-                    await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
-                    await asyncio.sleep(3)
+                    
+                    # Fill form - check for inline input first
+                    input_loc = page.locator('.jstree-rename-input')
+                    if await input_loc.count() > 0:
+                        await input_loc.first.fill(folder)
+                        await input_loc.first.press("Enter")
+                        await asyncio.sleep(2)
+                    else:
+                        # Fallback to modal
+                        inputs = page.locator('.modal-content input[type="text"]')
+                        await inputs.nth(0).fill(folder)
+                        if await inputs.count() > 1:
+                            await inputs.nth(1).fill(folder)
+                        await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
+                        await asyncio.sleep(2)
                     
                     print(f'[{slug}] Reloading page to sync tree...')
                     await page.reload(wait_until='domcontentloaded')

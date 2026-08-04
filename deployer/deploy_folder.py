@@ -30,6 +30,14 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         report(f"Checking folder: {folder}")
         print(f"\n  3.2 Kiểm tra Folder '{folder}' theo thứ tự Menu...")
         
+        # Ensure '폴더별' (Folder) tab is active in the sidebar
+        await page.evaluate('''() => {
+            const tabs = Array.from(document.querySelectorAll('.nav-tabs li a'));
+            const folderTab = tabs.find(t => (t.innerText || '').includes('폴더별'));
+            if (folderTab) folderTab.click();
+        }''')
+        await asyncio.sleep(0.5)
+        
         # Expand root folder if it's closed
         await page.evaluate(f'''() => {{
             const rootNode = document.getElementById('/{site_id}');
@@ -62,15 +70,20 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
                 await page.locator('.vakata-context a', has_text=re.compile(r'Thêm|추가|Add|createFolder', re.IGNORECASE)).first.click()
                 await asyncio.sleep(1)
                 
-                # 3. Fill form
-                # The inputs might not have name="folder", so we fill the first two text inputs
-                inputs = page.locator('.modal-content input[type="text"]')
-                await inputs.nth(0).fill(folder)
-                await inputs.nth(1).fill(folder)
-                
-                # 4. Save
-                await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
-                await asyncio.sleep(2)
+                # 3. Fill form - check for inline input first
+                input_loc = page.locator('.jstree-rename-input')
+                if await input_loc.count() > 0:
+                    await input_loc.first.fill(folder)
+                    await input_loc.first.press("Enter")
+                    await asyncio.sleep(2)
+                else:
+                    # Fallback to modal
+                    inputs = page.locator('.modal-content input[type="text"]')
+                    await inputs.nth(0).fill(folder)
+                    if await inputs.count() > 1:
+                        await inputs.nth(1).fill(folder)
+                    await page.locator('.modal-content button', has_text=re.compile(r'Lưu|저장|Save|primary', re.IGNORECASE)).first.click()
+                    await asyncio.sleep(2)
             except Exception as ex:
                 print(f"  [Lỗi] Không thể tạo thư mục qua UI: {ex}")
                 raise Exception(f"Không thể tạo thư mục '{folder}' qua UI: {ex}")
