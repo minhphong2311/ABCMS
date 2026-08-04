@@ -256,14 +256,22 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                     folder_el = False
 
                 if not folder_el:
-                    print(f'[{slug}] Folder not found in tree. Creating folder "{folder}"...')
-                    await page.evaluate(f'''async () => {{
-                        const root = document.querySelector('[ng-app]') || document.body;
-                        const injector = window.angular.element(root).injector();
-                        if (injector && injector.has("pageService")) {{
-                            await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}");
-                        }}
-                    }}''')
+                    print(f'[{slug}] Folder not found in tree. Creating folder "{folder}" via UI...')
+                    try:
+                        # Right click the first anchor (Root folder)
+                        await page.locator('.jstree-anchor').first.click(button="right", force=True)
+                        await asyncio.sleep(1)
+                        # Click "Thêm thư mục"
+                        await page.click('.vakata-context a[rel="createFolder"], .vakata-context a:has-text("Thêm thư mục"), .vakata-context a:has-text("폴더 추가")')
+                        await asyncio.sleep(1)
+                        # Fill the form
+                        await page.fill('.modal-content input[name="folder"]', folder)
+                        await page.fill('.modal-content input[name="folderNm"]', folder)
+                        # Save
+                        await page.click('.modal-content button[ng-click*="save"], .modal-content button.btn-primary')
+                        await asyncio.sleep(2)
+                    except Exception as ex:
+                        print(f"[{slug}] Failed to create folder via UI: {ex}")
                     await asyncio.sleep(2)
                     print(f'[{slug}] Reloading page to sync tree...')
                     await page.reload(wait_until='domcontentloaded')
@@ -277,7 +285,10 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                         if (pageTab) pageTab.click();
                     }''')
                     await asyncio.sleep(2)
-                    await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
+                    try:
+                        await page.wait_for_selector(f'[id=\"{folder_anchor_id}\"]', timeout=10000)
+                    except Exception:
+                        raise Exception(f'Thư mục "{folder}" chưa được tạo trong CMS. Vui lòng tạo thư mục này thủ công trên CMS trước khi Deploy!')
 
                 await page.evaluate(f'(() => {{ const el = document.getElementById(\"{folder_anchor_id}\"); if (el) el.click(); }})()')
                 await asyncio.sleep(2)

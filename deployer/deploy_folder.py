@@ -40,18 +40,22 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
         if folder_el:
             print(f"  3.3 Folder '{folder}' đã tồn tại → Kiểm tra Folder của Menu tiếp theo.")
         else:
-            print(f"  3.4 Folder '{folder}' chưa tồn tại → Tiến hành tạo Folder '{folder}'...")
-            await page.evaluate(f'''async () => {{
-                try {{ 
-                    if (typeof window.angular === 'undefined') return;
-                    const root = document.querySelector('[ng-app]') || document.body;
-                    let injector = window.angular.element(root).injector();
-                    if (injector && injector.has("pageService")) {{
-                        await injector.get("pageService").addFolder("{site_id}", "/{site_id}", "{folder}");
-                    }}
-                }} catch(e) {{}}
-            }}''')
-            await asyncio.sleep(0.9)
+            print(f"  3.4 Folder '{folder}' chưa tồn tại → Tiến hành tạo Folder '{folder}' qua UI...")
+            try:
+                # Right click the first anchor (Root folder)
+                await page.locator('.jstree-anchor').first.click(button="right", force=True)
+                await asyncio.sleep(1)
+                # Click "Thêm thư mục"
+                await page.click('.vakata-context a[rel="createFolder"], .vakata-context a:has-text("Thêm thư mục"), .vakata-context a:has-text("폴더 추가")')
+                await asyncio.sleep(1)
+                # Fill the form
+                await page.fill('.modal-content input[name="folder"]', folder)
+                await page.fill('.modal-content input[name="folderNm"]', folder)
+                # Save
+                await page.click('.modal-content button[ng-click*="save"], .modal-content button.btn-primary')
+                await asyncio.sleep(2)
+            except Exception as ex:
+                print(f"  [Lỗi] Không thể tạo thư mục qua UI: {ex}")
             if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             folders_created = True
             
