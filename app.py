@@ -42,6 +42,14 @@ app.register_blueprint(delete_bp)
 app.register_blueprint(menu_bp)
 
 # ---------------------------------------------------------------------------
+# Serve Assets
+# ---------------------------------------------------------------------------
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory('assets', filename)
+
+# ---------------------------------------------------------------------------
 # Slug API
 # ---------------------------------------------------------------------------
 

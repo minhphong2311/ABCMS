@@ -287,10 +287,17 @@ Email: phongnguyen@andvina.com
       </div>
       <div class="modal-body p-4 bg-white">
         <div class="d-flex justify-content-between mb-3">
-          <div>
-            <button class="btn btn-success btn-sm" onclick="triggerExcelUpload()"><i class="fas fa-file-excel"></i> Import Excel</button>
+          <div class="d-flex align-items-center">
+            <div class="btn-group" role="group">
+              <button class="btn btn-success btn-sm" onclick="triggerExcelUpload()"><i class="fas fa-file-excel"></i> Import Excel</button>
+              <a href="/assets/examples/menu-import.xlsx" class="btn btn-outline-success btn-sm" title="Download Excel Example"><i class="fas fa-download"></i> Sample</a>
+            </div>
             <input type="file" id="excelFileInput" style="display: none;" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
-            <button class="btn btn-info btn-sm ml-2" onclick="triggerImageUpload()"><i class="fas fa-file-image"></i> Import Image</button>
+            
+            <div class="btn-group ml-2" role="group">
+              <button class="btn btn-info btn-sm" onclick="triggerImageUpload()"><i class="fas fa-file-image"></i> Import Image</button>
+              <a href="/assets/examples/menu-import.png" target="_blank" class="btn btn-outline-info btn-sm" title="View Image Example"><i class="fas fa-image"></i> Sample</a>
+            </div>
             <input type="file" id="imageFileInput" style="display: none;" accept="image/*" onchange="handleImageUpload(event)">
           </div>
           <button class="btn btn-primary btn-sm" onclick="showInlineAdd(null)"><i class="fas fa-plus"></i> Add Menu</button>
