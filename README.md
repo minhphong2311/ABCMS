@@ -31,7 +31,7 @@ It helps developers preview designs and automatically push source code from thei
 
 5. **UI & UX Standardizations**:
    - **Standardized Toast Notifications**: SweetAlert2 top-end toast notifications with timer progress bars and full Dark Mode support across all pages.
-   - **Perfected Action Button Alignment**: Table rows feature `vertical-align: middle` precision centering for action buttons (Generate, Preview, Deploy, Edit, Delete).
+   - **Perfected Action Button Alignment**: Table rows are precision-centered vertically, ensuring all action buttons (Generate, Preview, Deploy, Edit, Delete) align perfectly for a cleaner and more polished UI.
 
 ---
 
@@ -79,7 +79,7 @@ python app.py
 Then navigate to [http://localhost:5000](http://localhost:5000) in your web browser.
 
 ### 4. Configuration
-Ensure you have set up your API keys and Playwright UI display mode in the dashboard's **System Settings** panel to enable AI and automation features.
+Ensure you have set up your API keys and Playwright UI display mode in the dashboard's **System Settings** panel ([http://localhost:5000/settings](http://localhost:5000/settings)) to enable AI and automation features.
 
 ---
 
