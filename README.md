@@ -56,7 +56,7 @@ It helps developers preview designs and automatically push source code from thei
 ### Option 1: Automatic Setup via Antigravity AI (Recommended for Non-Developers)
 If you don't have coding experience or want to save time, you can let the AI set everything up for you:
 1. Open the **Antigravity IDE** (or Gemini IDE) in a new empty folder.
-2. In the chat window, simply type: *"Please clone the repository https://github.com/minhphong2311/ABCMS.git, set up the environment, and run the project for me"*.
+2. In the chat window, simply type: *"pull git https://github.com/minhphong2311/ABCMS, start app.py"*.
 3. The AI Agent will automatically clone the code, read the project rules, install all dependencies (Python, Flask, Playwright, etc.), download the required browsers, and launch the web dashboard for you automatically!
 
 ### Option 2: Manual Setup (For Developers)
