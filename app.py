@@ -384,4 +384,19 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    def ensure_playwright_browsers():
+        import subprocess
+        import sys
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "playwright", "install", "chromium"], 
+                check=True, 
+                stdout=subprocess.DEVNULL, 
+                stderr=subprocess.DEVNULL
+            )
+        except Exception as e:
+            print(f"Warning: Failed to ensure playwright browsers: {e}")
+            
+    print("Checking and installing Playwright browsers if necessary...")
+    ensure_playwright_browsers()
     app.run(debug=True, port=5000)
