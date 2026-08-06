@@ -40,6 +40,8 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
     for d in candidate_dirs:
         if os.path.exists(d) and os.path.isdir(d):
             for f in os.listdir(d):
+                if f.lower().startswith('source_image.'):
+                    continue
                 if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp')):
                     full_p = os.path.join(d, f)
                     if os.path.isfile(full_p) and full_p not in [x[0] for x in local_images]:
