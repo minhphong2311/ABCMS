@@ -75,7 +75,18 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
         # Auto-accept any dialogs (alerts, confirms) to prevent them from blocking the deployment
         page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))
         
+        # --- Helper cho progress ---
+        def get_scaled_cb(base_cb, start_pct, end_pct):
+            if not base_cb:
+                return None
+            def scaled_cb(local_pct, msg):
+                actual_pct = start_pct + (local_pct / 100.0) * (end_pct - start_pct)
+                base_cb(int(actual_pct), msg)
+            return scaled_cb
+
         try:
+            if progress_cb:
+                progress_cb(0, "Site: logging in to CMS...")
             print(f'Logging in to CMS for menu deploy: {site_url}')
             await page.goto(site_url)
             await page.wait_for_selector('input[name="userId"]', timeout=15000)
@@ -84,20 +95,13 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             await page.click('button[type="submit"]')
             await asyncio.sleep(4)
             
+            if progress_cb:
+                progress_cb(1, "Site: navigating to dashboard...")
             target_url = f'{site_url}/index.do?siteId={site_id}#!/menu'
             print(f'Navigating to Menu Manager: {target_url}')
             await page.goto(target_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
             
-            # --- Helper cho progress ---
-            def get_scaled_cb(base_cb, start_pct, end_pct):
-                if not base_cb:
-                    return None
-                def scaled_cb(local_pct, msg):
-                    actual_pct = start_pct + (local_pct / 100.0) * (end_pct - start_pct)
-                    base_cb(int(actual_pct), msg)
-                return scaled_cb
-
             # --- KIỂM TRA VÀ TẠO SITE NẾU CHƯA CÓ ---
             await check_and_deploy_site(page, site_url, site_id, site_name, username, password, get_scaled_cb(progress_cb, 0, 5), is_cancelled)
             

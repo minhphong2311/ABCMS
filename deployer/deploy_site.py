@@ -8,6 +8,8 @@ async def check_and_deploy_site(page, site_url, site_id, site_name, username, pa
     print("1. KIỂM TRA SITE")
     print("="*50)
     print(f"  1.1 Tìm Site ID: {site_id}")
+    if progress_cb:
+        progress_cb(10, f"Site: checking {site_id}")
     try:
         site_check = await page.evaluate(f'''async () => {{
             try {{
