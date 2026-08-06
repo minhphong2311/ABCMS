@@ -339,7 +339,7 @@ Email: phongnguyen@andvina.com
               <tr class="page-card-wrapper" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
                 <td class="text-center py-3">
                   <div class="custom-control custom-checkbox">
-                    <input type="checkbox" class="custom-control-input menu-checkbox" id="check-list-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="updateBulkActionsBtn()">
+                    <input type="checkbox" class="custom-control-input menu-checkbox" id="check-list-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="syncCheckbox(this); updateBulkActionsBtn()">
                     <label class="custom-control-label" for="check-list-{{ menu.id }}"></label>
                   </div>
                 </td>
@@ -419,7 +419,7 @@ Email: phongnguyen@andvina.com
         <div class="card-header d-flex justify-content-between align-items-center py-2 bg-light w-100" style="display: flex !important; justify-content: space-between !important; width: 100%;">
           <div class="d-flex align-items-center">
             <div class="custom-control custom-checkbox mr-2">
-              <input type="checkbox" class="custom-control-input menu-checkbox" id="check-grid-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="updateBulkActionsBtn()">
+              <input type="checkbox" class="custom-control-input menu-checkbox" id="check-grid-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="syncCheckbox(this); updateBulkActionsBtn()">
               <label class="custom-control-label" for="check-grid-{{ menu.id }}"></label>
             </div>
             <h5 class="card-title font-weight-bold mb-0 text-dark" style="float: none; display: inline-block; margin-bottom: 0;">
@@ -1631,6 +1631,11 @@ function toggleAllChecks(checked) {
     if (checkAllList) checkAllList.checked = checked;
     if (checkAllGlobal) checkAllGlobal.checked = checked;
     updateBulkActionsBtn();
+}
+
+function syncCheckbox(changedCb) {
+    const twins = document.querySelectorAll('.menu-checkbox[value="' + changedCb.value + '"]');
+    twins.forEach(t => t.checked = changedCb.checked);
 }
 
 function updateBulkActionsBtn() {
