@@ -103,6 +103,12 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
+            # --- TẠO LAYOUT TEMPLATE TRƯỚC MENU ---
+            from deployer.deploy_layout import deploy_layouts
+            await deploy_layouts(page, site_url, site_id, get_scaled_cb(progress_cb, 5, 15), is_cancelled)
+            
+            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
+            
             # Tính toán các thư mục cần tạo
             unique_folders = set()
             for m in menus:
@@ -114,7 +120,7 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             total_items = len(menus) + len(unique_folders_list) + 1
             current_item = 0
             
-            menu_folder_cb = get_scaled_cb(progress_cb, 5, 70)
+            menu_folder_cb = get_scaled_cb(progress_cb, 15, 80)
             
             # --- 1. TẠO MENU VÀ CHỈ ĐỊNH URL ---
             created_menu_cds, current_item = await deploy_menu_items(page, site_id, menus, menu_folder_cb, total_items, current_item, is_cancelled)
@@ -127,13 +133,7 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 3. UPLOAD HÌNH ẢNH DÙNG CHUNG ---
-            await deploy_upload_image(page, site_url, site_id, get_scaled_cb(progress_cb, 70, 75), is_cancelled)
-            
-            if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
-            
-            # --- TẠO LAYOUT TEMPLATE ---
-            from deployer.deploy_layout import deploy_layouts
-            await deploy_layouts(page, site_url, site_id, get_scaled_cb(progress_cb, 75, 85), is_cancelled)
+            await deploy_upload_image(page, site_url, site_id, get_scaled_cb(progress_cb, 80, 85), is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             

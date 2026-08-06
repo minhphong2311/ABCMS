@@ -9,7 +9,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     print("5. KIỂM TRA LAYOUT")
     print("="*50)
     if progress_cb:
-        progress_cb(0, "Checking and creating layouts")
+        progress_cb(0, "Layout: checking layouts")
     
     target_url = f"{site_url}/index.do?siteId={site_id}#!/res-layout"
     try:
@@ -30,7 +30,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
             raise Exception("Deploy cancelled by user")
         if progress_cb:
             pct = int((i / len(layouts_to_check)) * 100)
-            progress_cb(pct, f"Checking layout: {layout_name}")
+            progress_cb(pct, f"Layout: checking {layout_name}")
             
         print(f"\n  5.1 Tìm kiếm Layout theo tên: '{layout_name}'...")
         try:
@@ -78,7 +78,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         else:
             print(f"  5.3 Layout '{layout_name}' chưa tồn tại → Tiến hành Tạo Layout '{layout_name}'...")
             if progress_cb:
-                progress_cb(pct + 5, f"Creating layout: {layout_name}")
+                progress_cb(pct + 5, f"Layout: creating {layout_name}")
                 
             await page.evaluate('''() => {
                 const addBtn = document.querySelector('[x-ng-click*="addLayout"]') || 
@@ -277,6 +277,6 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         print(f"  ✓ Đã xử lý xong Layout '{layout_name}'.")
         
     if progress_cb:
-        progress_cb(100, "Layouts checking completed")
+        progress_cb(100, "Layout: completed")
     print("  ✓ Hoàn thành kiểm tra toàn bộ Layout.")
 

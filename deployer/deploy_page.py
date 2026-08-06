@@ -8,7 +8,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
     print("6. KIỂM TRA PAGE")
     print("="*50)
     if progress_cb:
-        progress_cb(0, "Creating ready pages for menus (UI Mode)...")
+        progress_cb(0, "Page: starting page generation")
 
     # Ready HTML content
     res_org = 'kookmin'
@@ -49,8 +49,11 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             continue
 
         try:
-            if progress_cb:
-                progress_cb(min(100, int((i / max(1, len(leaf_menus))) * 100)), f"Processing page: {slug}")
+            def report(msg, fraction=0.0):
+                if progress_cb:
+                    progress_cb(min(100, int(((i + fraction) / max(1, len(leaf_menus))) * 100)), msg)
+            
+            report(f"Page: processing {slug}", 0.1)
             print(f"\n  6.1 Mở Folder '{folder}' (Page Manager)...")
             
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
@@ -115,6 +118,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             
             # 2. Select folder on main screen
             folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
+            report(f"Page: selecting folder for {slug}", 0.3)
             print(f"[{slug}] Selecting folder: {folder_anchor_id}")
             try:
                 await page.wait_for_selector(f'div[js-tree="folderTree.config"] [id="{folder_anchor_id}"]', timeout=5000)
@@ -140,6 +144,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             if page_exists:
                 print(f"  6.3 Page '{slug}' đã tồn tại → Chuyển sang kiểm tra Page tiếp theo.")
             else:
+                report(f"Page: creating {slug}", 0.5)
                 print(f"  6.4 Page '{slug}' chưa tồn tại → Tiến hành Tạo Page...")
                 await page.evaluate('''() => {
                     const btn = Array.from(document.querySelectorAll('button')).find(b =>
@@ -356,6 +361,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     await asyncio.sleep(2.4)
                     if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                 
+                report(f"Page: editing code for {slug}", 0.7)
                 print(f"  6.6 Chuyển sang View Code (Click nút </>)...")
                 
                 # Loop to verify HTML exists in View Code and paste + save if not present
@@ -439,6 +445,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
                         # Save Editor
+                        report(f"Page: saving {slug}", 0.9)
                         print(f"  [{slug}] Saving Editor...")
                         try:
                             saved = await page.evaluate('''() => {
@@ -504,6 +511,6 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
 
     print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
     if progress_cb:
-        progress_cb(100, "All pages completed.")
+        progress_cb(100, "Page: completed")
 
 

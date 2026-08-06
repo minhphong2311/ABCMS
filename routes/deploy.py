@@ -149,7 +149,8 @@ def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, pass
         )
         
         if is_cancelled():
-            DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": "Deploy cancelled by user"}
+            last_msg = DEPLOY_TASKS.get(task_id, {}).get("message", "Unknown stage")
+            DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": f"Deployment stopped at [{last_msg}]"}
         else:
             DEPLOY_TASKS[task_id] = {
                 "status": "success" if result.get('success') else "error",

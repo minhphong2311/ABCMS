@@ -879,8 +879,8 @@ function checkDeployMenuStatus(siteId) {
                         clearInterval(deployMenuCheckInterval);
                         resetDeployMenuBtn();
                         Swal.fire({
-                            title: 'Success', 
-                            text: task.message || 'Menus deployed successfully!', 
+                            title: 'Deployment Progress', 
+                            text: 'Deployment completed successfully.', 
                             icon: 'success',
                             background: '#343a40',
                             color: '#fff'
@@ -899,8 +899,8 @@ function checkDeployMenuStatus(siteId) {
                         clearInterval(deployMenuCheckInterval);
                         resetDeployMenuBtn();
                         Swal.fire({
-                            title: 'Cancelled', 
-                            text: 'Menu deployment was cancelled.', 
+                            title: 'Deployment cancelled', 
+                            text: task.message || 'Deployment stopped by user.', 
                             icon: 'info',
                             background: '#343a40',
                             color: '#fff'

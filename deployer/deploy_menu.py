@@ -58,17 +58,15 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
     print("  2.1 Mở danh sách Menu.")
     created_menu_cds = {}
     
-    def report(msg):
-        nonlocal current_item
-        current_item += 1
+    def report(msg, fraction=0.0):
         if progress_cb:
-            progress_cb(min(100, int((current_item / max(1, total_items)) * 100)), msg)
+            progress_cb(min(100, int(((current_item + fraction) / max(1, total_items)) * 100)), msg)
 
     for m in menus:
         if is_cancelled and is_cancelled():
             raise Exception("Deploy cancelled by user")
         
-        report(f"Deploying menu: {m['name']}")
+        report(f"Menu: checking {m['name']}", 0.1)
         print(f"\n  2.2 Kiểm tra Menu '{m['name']}' trong danh sách Menu...")
         cms_menus = await get_cms_menus(page, site_id)
         
@@ -99,6 +97,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
             print(f"  2.3 Menu '{m['name']}' đã tồn tại (menuCd: {existing['menuCd']}) → Chuyển sang bước 3 (kiểm tra menu tiếp theo).")
             menu_cd = existing['menuCd']
         else:
+            report(f"Menu: creating {m['name']}", 0.4)
             print(f"  2.4 Menu '{m['name']}' chưa tồn tại → Tiến hành Tạo Menu '{m['name']}'...")
             async def add_menu(m, pid=None):
                 if pid is None:
@@ -138,6 +137,7 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
         
         existing_url = existing.get('page') if existing else None
         if url and existing_url != url:
+            report(f"Menu: updating URL for {m['name']}", 0.7)
             print(f"  Cập nhật URL cho '{m['name']}' -> '{url}'...")
             info_res = await get_menu_info(page, menu_cd)
             if info_res and 'item' in info_res:
@@ -162,12 +162,15 @@ async def deploy_menu_items(page, site_id, menus, progress_cb, total_items, curr
                 except: pass
                 
         # Verification Step
+        report(f"Menu: verifying {m['name']}", 0.9)
         print(f"  2.5 Kiểm tra lại toàn bộ danh sách Menu để xác nhận...")
         verify_menus = await get_cms_menus(page, site_id)
         is_verified = any(str(cm.get('menuCd')) == str(menu_cd) for cm in verify_menus)
         if not is_verified:
             raise Exception(f"Kiểm tra lại thất bại: Menu '{m['name']}' chưa được tạo thành công trên hệ thống CMS.")
         print(f"  ✓ 2.5 Xác nhận thành công: Menu '{m['name']}' đã tồn tại (menuCd: {menu_cd}).")
+        
+        current_item += 1
 
     print("  ✓ Hoàn tất kiểm tra và tạo Menu.")
     return created_menu_cds, current_item
