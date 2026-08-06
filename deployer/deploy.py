@@ -145,14 +145,14 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             await deploy_pages(page, site_url, site_id, menus, get_scaled_cb(progress_cb, 85, 100), total_items, current_item, is_cancelled)
 
             if progress_cb:
-                progress_cb(100, "Completed!")
-            return {'success': True, 'message': 'Menus, folders and ready pages deployed successfully!'}
+                progress_cb(100, "Page: completed")
+            return {'success': True, 'message': 'Site, Layouts, Menus, Folders, Images and Pages deployed successfully!'}
 
         except Exception as e:
             import traceback
             traceback.print_exc()
-            print(f'Menu deploy ERROR: {e}')
-            return {'success': False, 'message': f'Menu deploy error: {str(e)}'}
+            print(f'Deploy ERROR: {e}')
+            return {'success': False, 'message': f'Deploy error: {str(e)}'}
         finally:
             await browser.close()
             # Restore original print

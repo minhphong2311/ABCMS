@@ -876,16 +876,18 @@ function checkDeployMenuStatus(siteId) {
                             if (text) text.innerText = msg;
                         }
                     } else if (task.status === 'success') {
+                        window.isDeploying = false;
                         clearInterval(deployMenuCheckInterval);
                         resetDeployMenuBtn();
                         Swal.fire({
-                            title: 'Deployment Progress', 
-                            text: 'Deployment completed successfully.', 
+                            title: 'Deployment Complete', 
+                            text: 'All deployment tasks have been completed successfully.', 
                             icon: 'success',
                             background: '#343a40',
                             color: '#fff'
                         });
                     } else if (task.status === 'error') {
+                        window.isDeploying = false;
                         clearInterval(deployMenuCheckInterval);
                         resetDeployMenuBtn();
                         Swal.fire({
@@ -896,6 +898,7 @@ function checkDeployMenuStatus(siteId) {
                             color: '#fff'
                         });
                     } else if (task.status === 'cancelled') {
+                        window.isDeploying = false;
                         clearInterval(deployMenuCheckInterval);
                         resetDeployMenuBtn();
                         Swal.fire({
@@ -954,6 +957,7 @@ function deployMenus(siteId) {
   .then(r => r.json())
   .then(data => {
     if(data.success) {
+      window.isDeploying = true;
       Swal.fire({
           title: 'Deploying ...',
           html: '<div style="margin-bottom:15px; font-size: 0.9em; min-height: 20px;" id="swal-progress-text">Starting...</div>' +
@@ -971,7 +975,7 @@ function deployMenus(siteId) {
           },
           buttonsStyling: false // Use custom Bootstrap classes instead of default sweetalert styling
       }).then((result) => {
-          if (result.dismiss === Swal.DismissReason.cancel) {
+          if (window.isDeploying && result.dismiss === Swal.DismissReason.cancel) {
               fetch('/api/deploy_cancel', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
