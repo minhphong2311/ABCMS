@@ -759,11 +759,11 @@ def apply_structural_templates(html, css, api_key, menu_name, task_id=None):
         print(f"Error loading templates: {e}")
 
     css_guide_instruction = (
-        "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS:\n"
+        "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS VÀ HTML:\n"
         "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng duy nhất (Single-line CSS). Phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau.\n"
         "Ví dụ ĐÚNG: `.class1 { font-size: 20px; color: #333; }`\n"
         "Tuyệt đối KHÔNG ĐƯỢC CÓ XUỐNG DÒNG bên trong dấu ngoặc nhọn {}.\n"
-        f"2. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_name}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon.\n"
+        "2. QUY ĐỊNH VỀ HÌNH ẢNH (IMAGES & ICONS): BẮT BUỘC sử dụng thẻ `<img>` HTML cho các hình ảnh thông thường (banner, ảnh minh họa, sản phẩm, v.v.). TUYỆT ĐỐI KHÔNG dùng `background` hay `background-image` trong CSS cho hình ảnh thông thường. CHỈ được phép dùng CSS background hoặc pseudo-elements (::before, ::after) cho các icon hoặc các yếu tố trang trí nhỏ bé.\n"
         "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`."
     )
 
@@ -984,7 +984,7 @@ Template Rules to follow:
 2. Follow the structure provided in these templates:
    Structure template: {structure_template}
    Table template: {table_template}
-3. Maintain all image/background tags.
+3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
 4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{{}}`. Example: `.class {{ color: red; margin: 0; }}`
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
 6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
@@ -1178,6 +1178,7 @@ CRITICAL STRUCTURE RULES:
 3. Use class names from this structure template:
 {structure_template}
 4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
+5. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
