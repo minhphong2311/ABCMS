@@ -8,7 +8,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
     print("6. KIỂM TRA PAGE")
     print("="*50)
     if progress_cb:
-        progress_cb(92, "Creating ready pages for menus (UI Mode)...")
+        progress_cb(0, "Creating ready pages for menus (UI Mode)...")
 
     # Ready HTML content
     res_org = 'kookmin'
@@ -50,7 +50,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
 
         try:
             if progress_cb:
-                progress_cb(min(99, 92 + int((i / len(leaf_menus)) * 7)), f"Processing page: {slug}")
+                progress_cb(min(100, int((i / max(1, len(leaf_menus))) * 100)), f"Processing page: {slug}")
             print(f"\n  6.1 Mở Folder '{folder}' (Page Manager)...")
             
             target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
@@ -503,5 +503,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
             print(f"  [Lỗi page {slug}]: {e}")
 
     print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
+    if progress_cb:
+        progress_cb(100, "All pages completed.")
 
 

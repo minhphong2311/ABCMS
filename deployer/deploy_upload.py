@@ -11,7 +11,7 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         print("="*50)
         print("  4.1 Mở Upload (Giao diện Quản lý hình ảnh res-img).")
         if progress_cb:
-            progress_cb(90, "Uploading img-ready.png to CMS...")
+            progress_cb(50, "Uploading img-ready.png to CMS...")
         
         target_url_res = f'{site_url}/index.do?siteId={site_id}#!/res-img'
         

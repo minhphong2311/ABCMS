@@ -26,7 +26,7 @@ async def check_and_deploy_site(page, site_url, site_id, site_name, username, pa
         if not site_check:
             print(f"  1.3 Site chưa tồn tại → Đang tiến hành tạo Site ID '{site_id}'...")
             if progress_cb:
-                progress_cb(10, f"Creating new Site ID: {site_id}...")
+                progress_cb(50, f"Creating new Site ID: {site_id}...")
             
             site_creation_url = f'{site_url}/index.do#!/site'
             
@@ -82,9 +82,13 @@ async def check_and_deploy_site(page, site_url, site_id, site_name, username, pa
             print(f"  1.4 Kiểm tra lại Site ID...")
             if not isinstance(res, dict) or not res.get('success'):
                 raise Exception(f"Kiểm tra lại thất bại: Site ID '{site_id}' chưa được tạo thành công trên hệ thống CMS. Lỗi: {res}")
+            if progress_cb:
+                progress_cb(100, f"Site ID '{site_id}' created successfully.")
             print(f"  ✓ 1.4 Kiểm tra lại Site ID THÀNH CÔNG: Site '{site_id}' đã sẵn sàng.")
                 
         else:
+            if progress_cb:
+                progress_cb(100, f"Site ID '{site_id}' is ready.")
             print(f"  1.2 Site đã tồn tại ({site_id}) → Chuyển sang bước 2.")
     except Exception as e:
         if str(e) == 'Deploy cancelled by user': raise

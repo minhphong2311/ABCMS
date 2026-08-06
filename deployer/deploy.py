@@ -89,8 +89,17 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             await page.goto(target_url, wait_until="domcontentloaded")
             await asyncio.sleep(5)
             
+            # --- Helper cho progress ---
+            def get_scaled_cb(base_cb, start_pct, end_pct):
+                if not base_cb:
+                    return None
+                def scaled_cb(local_pct, msg):
+                    actual_pct = start_pct + (local_pct / 100.0) * (end_pct - start_pct)
+                    base_cb(int(actual_pct), msg)
+                return scaled_cb
+
             # --- KIỂM TRA VÀ TẠO SITE NẾU CHƯA CÓ ---
-            await check_and_deploy_site(page, site_url, site_id, site_name, username, password, progress_cb, is_cancelled)
+            await check_and_deploy_site(page, site_url, site_id, site_name, username, password, get_scaled_cb(progress_cb, 0, 5), is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
@@ -105,29 +114,31 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             total_items = len(menus) + len(unique_folders_list) + 1
             current_item = 0
             
+            menu_folder_cb = get_scaled_cb(progress_cb, 5, 70)
+            
             # --- 1. TẠO MENU VÀ CHỈ ĐỊNH URL ---
-            created_menu_cds, current_item = await deploy_menu_items(page, site_id, menus, progress_cb, total_items, current_item, is_cancelled)
+            created_menu_cds, current_item = await deploy_menu_items(page, site_id, menus, menu_folder_cb, total_items, current_item, is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 2. TẠO CÁC FOLDER ---
-            current_item = await deploy_folders(page, site_url, site_id, unique_folders_list, progress_cb, total_items, current_item, is_cancelled)
+            current_item = await deploy_folders(page, site_url, site_id, unique_folders_list, menu_folder_cb, total_items, current_item, is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 3. UPLOAD HÌNH ẢNH DÙNG CHUNG ---
-            await deploy_upload_image(page, site_url, site_id, progress_cb, is_cancelled)
+            await deploy_upload_image(page, site_url, site_id, get_scaled_cb(progress_cb, 70, 75), is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- TẠO LAYOUT TEMPLATE ---
             from deployer.deploy_layout import deploy_layouts
-            await deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled)
+            await deploy_layouts(page, site_url, site_id, get_scaled_cb(progress_cb, 75, 85), is_cancelled)
             
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 4. TẠO PAGE VÀ INJECT HTML ---
-            await deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled)
+            await deploy_pages(page, site_url, site_id, menus, get_scaled_cb(progress_cb, 85, 100), total_items, current_item, is_cancelled)
 
             if progress_cb:
                 progress_cb(100, "Completed!")

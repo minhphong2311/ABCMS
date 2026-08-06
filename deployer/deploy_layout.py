@@ -9,7 +9,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     print("5. KIỂM TRA LAYOUT")
     print("="*50)
     if progress_cb:
-        progress_cb(30, "Checking and creating layouts")
+        progress_cb(0, "Checking and creating layouts")
     
     target_url = f"{site_url}/index.do?siteId={site_id}#!/res-layout"
     try:
@@ -25,11 +25,12 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
     base_dir = os.path.dirname(os.path.dirname(__file__))
     layout_dir = os.path.join(base_dir, 'assets', 'layout')
     
-    for layout_name in layouts_to_check:
+    for i, layout_name in enumerate(layouts_to_check):
         if is_cancelled and is_cancelled():
             raise Exception("Deploy cancelled by user")
         if progress_cb:
-            progress_cb(40, f"Checking layout: {layout_name}")
+            pct = int((i / len(layouts_to_check)) * 100)
+            progress_cb(pct, f"Checking layout: {layout_name}")
             
         print(f"\n  5.1 Tìm kiếm Layout theo tên: '{layout_name}'...")
         try:
@@ -77,7 +78,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         else:
             print(f"  5.3 Layout '{layout_name}' chưa tồn tại → Tiến hành Tạo Layout '{layout_name}'...")
             if progress_cb:
-                progress_cb(45, f"Creating layout: {layout_name}")
+                progress_cb(pct + 5, f"Creating layout: {layout_name}")
                 
             await page.evaluate('''() => {
                 const addBtn = document.querySelector('[x-ng-click*="addLayout"]') || 
@@ -275,5 +276,7 @@ async def deploy_layouts(page, site_url, site_id, progress_cb, is_cancelled=None
         
         print(f"  ✓ Đã xử lý xong Layout '{layout_name}'.")
         
+    if progress_cb:
+        progress_cb(100, "Layouts checking completed")
     print("  ✓ Hoàn thành kiểm tra toàn bộ Layout.")
 
