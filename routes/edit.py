@@ -9,7 +9,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from flask import Blueprint, request, redirect, url_for, flash, jsonify
-from .helpers import load_data, save_data, parse_folder_slug
+from .helpers import load_data, save_data, parse_folder_slug, assign_folders_from_roots
 
 edit_bp = Blueprint('edit', __name__)
 
@@ -44,17 +44,11 @@ def add_menu(site_id):
         flash('Site not found!', 'danger')
         return redirect(url_for('index'))
 
-    folder = ""
-    if parent_id:
-        parent_menu = next((m for m in site['menus'] if m['id'] == parent_id), None)
-        if parent_menu:
-            folder = parent_menu.get('slug', '')
-
     new_menu = {
         'id': str(uuid.uuid4()),
         'name': menu_name,
         'slug': menu_slug,
-        'folder': folder,
+        'folder': "",
         'figma_link': figma_link,
         'layout': layout,
         'parent_id': parent_id if parent_id else None,
@@ -70,6 +64,7 @@ def add_menu(site_id):
         site['menus'] = []
     site['menus'].append(new_menu)
 
+    assign_folders_from_roots(site['menus'])
     save_data(sites)
     flash(f'Successfully added page "{menu_name}"!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
@@ -84,14 +79,6 @@ def edit_menu(site_id, menu_param):
     image_file = request.files.get('image_file')
 
     sites = load_data()
-    site = next((s for s in sites if s['id'] == site_id), None)
-
-    new_folder = ""
-    if new_parent_id and site:
-        parent_menu = next((m for m in site['menus'] if m['id'] == new_parent_id), None)
-        if parent_menu:
-            new_folder = parent_menu.get('slug', '')
-
     site = next((s for s in sites if s['id'] == site_id), None)
     if not site:
         flash('Site not found!', 'danger')
@@ -108,7 +95,7 @@ def edit_menu(site_id, menu_param):
 
     menu['name'] = new_name
     menu['slug'] = new_slug
-    menu['folder'] = new_folder
+    menu['folder'] = ""
     menu['figma_link'] = new_figma
     menu['layout'] = new_layout
     menu['parent_id'] = new_parent_id if new_parent_id else None
@@ -141,6 +128,7 @@ def edit_menu(site_id, menu_param):
                     pass
             menu['image_path'] = image_path
 
+    assign_folders_from_roots(site['menus'])
     save_data(sites)
     flash(f'Successfully updated page "{new_name}"!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))

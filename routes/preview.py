@@ -13,10 +13,7 @@ from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
 
 preview_bp = Blueprint('preview', __name__)
 
-
-@preview_bp.route('/preview/<site_id>/<menu_param>/')
-def preview_index(site_id, menu_param):
-    folder, menu_slug = parse_folder_slug(menu_param)
+def render_preview_index(site_id, folder, menu_slug):
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
     menu_name = menu_slug
@@ -37,7 +34,9 @@ def preview_index(site_id, menu_param):
     return render_template(
         'preview_frame.html',
         site_id=site_id,
-        menu_param=menu_param,
+        menu_param=f"{folder}--{menu_slug}",
+        folder=folder,
+        menu_slug=menu_slug,
         menu_name=menu_name,
         site_name=site['name'] if site else site_id,
         figma_link=figma_link,
@@ -45,15 +44,20 @@ def preview_index(site_id, menu_param):
     )
 
 
-@preview_bp.route('/preview/<site_id>/<menu_param>/raw')
-def preview_raw(site_id, menu_param):
-    folder, menu_slug = parse_folder_slug(menu_param)
-    
-    if not folder:
-        folder = menu_slug
+@preview_bp.route('/preview/<site_id>/<folder>/<slug>.do')
+def preview_index(site_id, folder, slug):
+    return render_preview_index(site_id, folder, slug)
 
+
+@preview_bp.route('/preview/<site_id>/<slug>.do')
+def preview_index_no_folder(site_id, slug):
+    return render_preview_index(site_id, slug, slug)
+
+
+@preview_bp.route('/preview/raw/<site_id>/<folder>/<slug>.html')
+def preview_raw(site_id, folder, slug):
     dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
-    html_path = os.path.join(dir_path, f'{menu_slug}.html')
+    html_path = os.path.join(dir_path, f'{slug}.html')
 
     if not os.path.exists(html_path):
         return "File not found", 404
@@ -61,11 +65,10 @@ def preview_raw(site_id, menu_param):
     with open(html_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
 
-    # Inject cache-buster for local css/js to ensure preview updates instantly
     t = int(time.time() * 1000)
     html_content = html_content.replace(
-        f'href="{menu_slug}.css"',
-        f'href="{menu_slug}.css?t={t}"'
+        f'href="{slug}.css"',
+        f'href="{slug}.css?t={t}"'
     )
 
     response = make_response(html_content)
@@ -73,19 +76,23 @@ def preview_raw(site_id, menu_param):
     return response
 
 
-@preview_bp.route('/preview/<site_id>/<menu_param>/<path:filename>')
-def preview_asset(site_id, menu_param, filename):
-    folder, menu_slug = parse_folder_slug(menu_param)
-    
-    if not folder:
-        folder = menu_slug
-        
-    # Check folder dir first
+@preview_bp.route('/preview/raw/<site_id>/<slug>.html')
+def preview_raw_no_folder(site_id, slug):
+    return preview_raw(site_id, slug, slug)
+
+
+@preview_bp.route('/preview/raw/<site_id>/<folder>/<path:filename>')
+def preview_asset_folder(site_id, folder, filename):
     dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
     file_path = os.path.join(dir_path, filename)
     if os.path.exists(file_path):
         return send_from_directory(dir_path, filename)
     
-    # Fallback to site root (e.g. for style.css or images common to the site)
+    site_root = os.path.join(OUTPUT_DIR, site_id)
+    return send_from_directory(site_root, filename)
+
+
+@preview_bp.route('/preview/raw/<site_id>/<path:filename>')
+def preview_asset_no_folder(site_id, filename):
     site_root = os.path.join(OUTPUT_DIR, site_id)
     return send_from_directory(site_root, filename)

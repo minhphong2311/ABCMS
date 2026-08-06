@@ -327,12 +327,12 @@ Email: phongnguyen@andvina.com
           <div class="browser-dot red"></div>
           <div class="browser-dot yellow"></div>
           <div class="browser-dot green"></div>
-          <div class="browser-address">http://127.0.0.1:5000/preview/{{ site_id }}/{{ menu_param }}/raw</div>
+          <div class="browser-address">http://127.0.0.1:5000/preview/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.do</div>
           <button class="btn btn-sm btn-light border" onclick="reloadPreview()" title="Reload page">
             <i class="fas fa-sync-alt"></i>
           </button>
         </div>
-        <iframe id="previewIframe" class="preview-iframe" src="/preview/{{ site_id }}/{{ menu_param }}/raw"></iframe>
+        <iframe id="previewIframe" class="preview-iframe" src="/preview/raw/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.html"></iframe>
       </div>
     </div>
 

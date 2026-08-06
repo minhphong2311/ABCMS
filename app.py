@@ -19,6 +19,7 @@ from routes.helpers import (
     load_data, save_data,
     get_config, save_config,
     generate_slug_for_text,
+    assign_folders_from_roots,
     parse_folder_slug,
     OUTPUT_DIR
 )
@@ -168,7 +169,15 @@ def site_detail(site_id):
     if 'folders' not in site:
         site['folders'] = []
 
-    modified = False
+    import json
+    menus_before = json.dumps(site.get('menus', []))
+    
+    # Ensure all menus have the correct folder assigned from their root ancestors
+    assign_folders_from_roots(site.get('menus', []))
+
+    menus_after = json.dumps(site.get('menus', []))
+    modified = menus_before != menus_after
+
     for menu in site.get('menus', []):
         f = menu.get('folder', '').strip()
         if f and f not in site['folders']:
