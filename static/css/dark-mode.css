@@ -181,3 +181,13 @@ body.dark-mode .swal2-content,
 body.dark-mode .swal2-html-container {
     color: #ffffff !important;
 }
+
+/* Fix webkit autofill background color in dark mode */
+body.dark-mode input:-webkit-autofill,
+body.dark-mode input:-webkit-autofill:hover, 
+body.dark-mode input:-webkit-autofill:focus, 
+body.dark-mode input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #343a40 inset !important;
+    -webkit-text-fill-color: #f8f9fa !important;
+    caret-color: #f8f9fa !important;
+}
