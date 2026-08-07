@@ -11,24 +11,34 @@ from .helpers import load_data, save_data, parse_folder_slug, delete_menu_files
 delete_bp = Blueprint('delete', __name__)
 
 
-@delete_bp.route('/site/<site_id>/delete-menu/<menu_param>', methods=['POST'])
-def delete_menu(site_id, menu_param):
+@delete_bp.route('/site/<site_id>/delete-menu/<menu_id>', methods=['POST'])
+def delete_menu(site_id, menu_id):
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
     if not site:
         flash('Site not found!', 'danger')
         return redirect(url_for('index'))
 
-    folder, menu_slug = parse_folder_slug(menu_param)
-    site['menus'] = [
-        m for m in site['menus']
-        if not (m.get('folder', '') == folder and m['slug'] == menu_slug)
-    ]
-    save_data(sites)
+    menu = next(
+        (m for m in site['menus'] if str(m.get('id')) == str(menu_id)),
+        None
+    )
+    
+    if menu:
+        # Determine the param for file deletion before removing the menu
+        folder = menu.get('folder', '')
+        slug = menu.get('slug', '')
+        menu_param = f"{folder}--{slug}" if folder else slug
+        
+        site['menus'] = [m for m in site['menus'] if str(m.get('id')) != str(menu_id)]
+        save_data(sites)
 
-    # Delete generated temp files
-    delete_menu_files(site_id, menu_param)
-    flash('Successfully deleted page!', 'success')
+        # Delete generated temp files
+        delete_menu_files(site_id, menu_param)
+        flash('Successfully deleted page!', 'success')
+    else:
+        flash('Menu not found!', 'danger')
+        
     return redirect(url_for('site_detail', site_id=site_id))
 
 

@@ -69,8 +69,8 @@ def add_menu(site_id):
     flash(f'Successfully added page "{menu_name}"!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
 
-@edit_bp.route('/site/<site_id>/edit-menu/<menu_param>', methods=['POST'])
-def edit_menu(site_id, menu_param):
+@edit_bp.route('/site/<site_id>/edit-menu/<menu_id>', methods=['POST'])
+def edit_menu(site_id, menu_id):
     new_name = request.form.get('menu_name', '').strip()
     new_parent_id = request.form.get('parent_id', '').strip()
     new_slug = request.form.get('menu_slug', '').strip().strip('/')
@@ -84,9 +84,8 @@ def edit_menu(site_id, menu_param):
         flash('Site not found!', 'danger')
         return redirect(url_for('index'))
 
-    old_folder, old_slug = parse_folder_slug(menu_param)
     menu = next(
-        (m for m in site['menus'] if m.get('folder', '') == old_folder and m['slug'] == old_slug),
+        (m for m in site['menus'] if m.get('id') == menu_id),
         None
     )
     if not menu:

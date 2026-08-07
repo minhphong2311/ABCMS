@@ -348,7 +348,7 @@ Email: phongnguyen@andvina.com
             </thead>
             <tbody>
               {% for menu in leaf_menus %}
-              <tr class="page-card-wrapper" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
+              <tr class="page-card-wrapper" data-id="{{ menu.id }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
                 <td class="text-center py-3">
                   <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input menu-checkbox" id="check-list-{{ menu.id }}" value="{{ menu.folder or '' }}--{{ menu.slug }}" onchange="syncCheckbox(this); updateBulkActionsBtn()">
@@ -397,9 +397,9 @@ Email: phongnguyen@andvina.com
                     <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
                     
-                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-image="{{ menu.image_path or '' }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
+                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-id="{{ menu.id }}" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-image="{{ menu.image_path or '' }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
                     
-                    <form action="/site/{{ site.id }}/delete-menu/{{ menu.folder or '' }}--{{ menu.slug }}" method="POST" class="d-inline-flex align-items-center" style="margin: 0; padding: 0;" onsubmit="confirmDeleteMenu(event, this)">
+                    <form action="/site/{{ site.id }}/delete-menu/{{ menu.id }}" method="POST" class="d-inline-flex align-items-center" style="margin: 0; padding: 0;" onsubmit="confirmDeleteMenu(event, this)">
                       <button type="submit" class="btn btn-danger btn-sm page-action-btn" title="Delete">
                         <i class="fas fa-trash-alt"></i>
                       </button>
@@ -424,7 +424,7 @@ Email: phongnguyen@andvina.com
       <!-- GRID VIEW -->
       <div class="row" id="grid-view-container" style="display: none;">
         {% if leaf_menus %}{% for menu in leaf_menus %}
-    <div class="col-md-6 col-lg-4 mb-4 page-card-wrapper" id="page-card-{{ menu.folder or '' }}--{{ menu.slug }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
+    <div class="col-md-6 col-lg-4 mb-4 page-card-wrapper" id="page-card-{{ menu.id }}" data-id="{{ menu.id }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-parent-id="{{ menu.parent_id or '' }}">
       <div class="card card-outline {% if menu.generated %}card-success{% else %}card-secondary{% endif %} h-100 d-flex flex-column justify-content-between">
         
         <!-- Card Header -->
@@ -523,6 +523,7 @@ Email: phongnguyen@andvina.com
               </button>
               
               <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit"
+                      data-id="{{ menu.id }}"
                       data-name="{{ menu.name }}"
                       data-folder="{{ menu.folder or '' }}"
                       data-slug="{{ menu.slug }}"
@@ -533,7 +534,7 @@ Email: phongnguyen@andvina.com
                 <i class="fas fa-edit"></i>
               </button>
               
-              <form action="/site/{{ site.id }}/delete-menu/{{ menu.folder or '' }}--{{ menu.slug }}" method="POST" class="d-inline" style="margin: 0;" onsubmit="confirmDeleteMenu(event, this)">
+              <form action="/site/{{ site.id }}/delete-menu/{{ menu.id }}" method="POST" class="d-inline" style="margin: 0;" onsubmit="confirmDeleteMenu(event, this)">
                 <button type="submit" class="btn btn-danger btn-sm page-action-btn" title="Delete">
                   <i class="fas fa-trash-alt"></i>
                 </button>
@@ -1405,6 +1406,7 @@ function deployFiles(siteId, menuSlug, folder, paramKey, btnElement) {
 }
 
 function openEditMenuModal(btnElement) {
+    const id = btnElement.getAttribute('data-id') || '';
     const name = btnElement.getAttribute('data-name') || '';
     const folder = btnElement.getAttribute('data-folder') || '';
     const slug = btnElement.getAttribute('data-slug') || '';
@@ -1413,7 +1415,7 @@ function openEditMenuModal(btnElement) {
     const imagePath = btnElement.getAttribute('data-image') || '';
     
     // Find menu to get parent_id
-    const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
+    const menu = siteMenus.find(m => m.id === id);
     const parentId = menu ? (menu.parent_id || '') : '';
 
     document.getElementById('edit_menu_name').value = name;
@@ -1435,9 +1437,8 @@ function openEditMenuModal(btnElement) {
         imgPreview.src = '';
     }
     
-    // Set form action dynamically with composite key
-    const paramKey = (folder ? folder + '--' : '--') + slug;
-    document.getElementById('editMenuForm').action = `/site/{{ site.id }}/edit-menu/${paramKey}`;
+    // Set form action dynamically with id
+    document.getElementById('editMenuForm').action = `/site/{{ site.id }}/edit-menu/${id}`;
     
     // Show modal
     $('#editMenuModal').modal('show');
@@ -2075,8 +2076,7 @@ function applyFilters() {
         const item = trs[i];
         const folder = item.getAttribute('data-folder');
         const slug = item.getAttribute('data-slug');
-        const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
-        const menuId = menu ? menu.id : null;
+        const menuId = item.getAttribute('data-id');
         
         const titleEl = item.querySelector('.font-weight-bold');
         const titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
