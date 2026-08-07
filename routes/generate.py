@@ -1108,11 +1108,14 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
 # ---------------------------------------------------------------------------
 
 def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, config, menu, site, feedback):
+    def check_cancel_and_update(msg):
+        if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
+            raise Exception("CANCELLED_BY_USER")
+        GENERATE_TASKS[task_id] = {"status": "running", "message": msg}
+
     import shutil
     try:
-        GENERATE_TASKS[task_id] = {"status": "running", "message": "Parsing Figma link..."}
-        if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
-            return
+        check_cancel_and_update("Parsing Figma link...")
 
         folder, menu_slug = parse_folder_slug(menu_param)
         figma_link = menu.get('figma_link', '').strip()
@@ -1130,12 +1133,12 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             if not figma_token:
                 raise Exception("Figma token is missing in settings.")
 
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Fetching Figma design..."}
+            check_cancel_and_update("Fetching Figma design...")
             design_data = fetch_figma_node(file_key, node_id, figma_token)
             if not design_data or 'nodes' not in design_data or node_id not in design_data['nodes']:
                 raise Exception("Could not fetch design from Figma API.")
 
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Downloading assets..."}
+            check_cancel_and_update("Downloading assets...")
             document = design_data['nodes'][node_id]['document']
             used_refs = extract_used_image_refs(document)
             image_map = fetch_figma_images(file_key, figma_token)
@@ -1146,14 +1149,14 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             if icon_map:
                 local_image_map.update(icon_map)
 
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Compiling HTML/CSS..."}
+            check_cancel_and_update("Compiling HTML/CSS...")
             compile_result = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
             if not compile_result:
                 raise Exception("Failed to compile HTML/CSS.")
             html_result, css_result = compile_result
 
             if gemini_api_key:
-                GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying structural templates..."}
+                check_cancel_and_update("Applying structural templates...")
                 html_result, css_result, rename_map = apply_structural_templates(
                     html_result, css_result, gemini_api_key, menu_slug, task_id
                 )
@@ -1178,14 +1181,14 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                                         except Exception as rename_err:
                                             print(f"[{menu_slug}] Failed to rename image {old_name}: {rename_err}")
 
-                GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
+                check_cancel_and_update("Refining visuals with AI...")
                 html_result, css_result = compare_and_fix_visuals(
                     figma_token, figma_link, html_result, css_result,
                     [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id
                 )
 
                 if feedback:
-                    GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying feedback..."}
+                    check_cancel_and_update("Applying feedback...")
                     css_result = apply_dynamic_css_feedback(css_result, feedback)
 
         elif image_path:
@@ -1200,7 +1203,7 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             if not gemini_api_key:
                 raise Exception("Gemini API Key is required for Image-to-HTML generation.")
                 
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Uploading image to AI..."}
+            check_cancel_and_update("Processing uploaded image...")
             from google import genai
             client = genai.Client(api_key=gemini_api_key)
             
@@ -1301,14 +1304,20 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                 updated_menu['generated'] = True
                 save_data(sites)
 
+        if GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
+            return
+            
         GENERATE_TASKS[task_id] = {
             "status": "success",
             "message": f'Successfully generated page "{menu["name"]}"!'
         }
     except Exception as e:
+        if str(e) == "CANCELLED_BY_USER":
+            return
         import traceback
         traceback.print_exc()
-        GENERATE_TASKS[task_id] = {"status": "error", "message": f'Generation error: {str(e)}'}
+        if GENERATE_TASKS.get(task_id, {}).get('status') != 'cancelled':
+            GENERATE_TASKS[task_id] = {"status": "error", "message": f'Generation error: {str(e)}'}
 
 
 # ---------------------------------------------------------------------------
