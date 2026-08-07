@@ -874,7 +874,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
     return html, css, []
 
 
-def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, gemini_api_key, task_id=None):
+def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, gemini_api_key, task_id=None, local_image_path=None):
     import urllib.parse
     import requests
     import asyncio
@@ -910,28 +910,6 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
         print(f"Error loading templates in compare_and_fix_visuals: {e}")
 
     print(f"[{menu_name}] --- Visual Reflection Start ---")
-    try:
-        file_key, node_id = parse_figma_url(figma_link)
-        if not file_key or not node_id:
-            print(f"[{menu_name}] Error parsing figma link: {figma_link}")
-            return html, css
-    except Exception as e:
-        print(f"[{menu_name}] Error parsing figma link: {e}")
-        return html, css
-
-    url = f'https://api.figma.com/v1/images/{file_key}?ids={node_id}&format=png&scale=1'
-    headers = {'X-Figma-Token': token}
-    r = requests.get(url, headers=headers)
-    data = r.json()
-    if 'err' in data and data['err']:
-        print(f"[{menu_name}] Figma Image Error: {data['err']}")
-        return html, css
-
-    img_url = data['images'].get(node_id)
-    if not img_url:
-        print(f"[{menu_name}] No image returned from Figma.")
-        return html, css
-
     base_dir = os.path.dirname(os.path.dirname(__file__))
     scratch_dir = os.path.join(base_dir, 'scratch')
     os.makedirs(scratch_dir, exist_ok=True)
@@ -940,8 +918,34 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     render_img_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.png')
     temp_html_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.html')
 
-    with open(target_img_path, 'wb') as f:
-        f.write(requests.get(img_url).content)
+    if local_image_path:
+        import shutil
+        shutil.copy(local_image_path, target_img_path)
+    else:
+        try:
+            file_key, node_id = parse_figma_url(figma_link)
+            if not file_key or not node_id:
+                print(f"[{menu_name}] Error parsing figma link: {figma_link}")
+                return html, css
+        except Exception as e:
+            print(f"[{menu_name}] Error parsing figma link: {e}")
+            return html, css
+
+        url = f'https://api.figma.com/v1/images/{file_key}?ids={node_id}&format=png&scale=1'
+        headers = {'X-Figma-Token': token}
+        r = requests.get(url, headers=headers)
+        data = r.json()
+        if 'err' in data and data['err']:
+            print(f"[{menu_name}] Figma Image Error: {data['err']}")
+            return html, css
+
+        img_url = data['images'].get(node_id)
+        if not img_url:
+            print(f"[{menu_name}] No image returned from Figma.")
+            return html, css
+
+        with open(target_img_path, 'wb') as f:
+            f.write(requests.get(img_url).content)
 
     try:
         target_pil = PIL.Image.open(target_img_path)
@@ -1273,6 +1277,16 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             thumb_path = os.path.join(target_dir, "thumb.jpg")
             if not os.path.exists(thumb_path):
                 shutil.copy(abs_image_path, thumb_path)
+
+            check_cancel_and_update("Refining visuals with AI...")
+            html_result, css_result = compare_and_fix_visuals(
+                "", "", html_result, css_result,
+                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id, local_image_path=abs_image_path
+            )
+
+            if feedback:
+                check_cancel_and_update("Applying feedback...")
+                css_result = apply_dynamic_css_feedback(css_result, feedback)
         else:
             raise Exception("No Figma link or uploaded image found for this page.")
 
