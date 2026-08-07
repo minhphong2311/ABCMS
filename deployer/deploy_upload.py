@@ -19,11 +19,19 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
         await asyncio.sleep(3.6)
         if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
-        res_org = 'kookmin'
-        root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
-        content_folder_id = f'/_res/{res_org}/{site_id}/img/content_anchor'
+        # Tự động trích xuất res_org từ DOM
+        suffix = f"/{site_id}/img/_anchor"
+        root_selector = f'[id$="{suffix}"]'
         
-        await page.wait_for_selector(f'[id="{root_folder_id}"]', timeout=10000)
+        await page.wait_for_selector(root_selector, timeout=10000)
+        
+        # Lấy giá trị id thực tế (vd: /_res/kookmin/phong01/img/_anchor)
+        root_folder_id = await page.locator(root_selector).get_attribute('id')
+        
+        # Trích xuất phần org name (vd: kookmin)
+        res_org = root_folder_id.split('/_res/')[1].split('/')[0]
+        content_folder_id = f'/_res/{res_org}/{site_id}/img/content_anchor'
+        print(f"  -> Tự động nhận diện res_org: {res_org}")
         
         print("  4.2 Kiểm tra đã có Folder 'content' hay chưa...")
         content_exists = await page.locator(f'[id="{content_folder_id}"]').count() > 0
