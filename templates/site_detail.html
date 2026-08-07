@@ -1157,6 +1157,50 @@ function checkDeployStatus() {
 
 let generatePollingIntervals = {};
 
+function restoreGenerateTasks() {
+    $.ajax({
+        url: '/api/generate_status',
+        type: 'GET',
+        success: function(data) {
+            const siteId = '{{ site.id }}';
+            {% for menu in site.get('menus', []) %}
+                (function() {
+                    const jsMenuSlug = '{{ menu.folder or "" }}--{{ menu.slug }}';
+                    const folder = '{{ menu.folder or "" }}';
+                    const slug = '{{ menu.slug }}';
+                    const actualFolder = folder ? folder : slug;
+                    const taskId = `gen--${siteId}--${actualFolder}--${slug}`;
+                    
+                    if (data[taskId] && data[taskId].status === 'running') {
+                        const btnList = document.getElementById(`generate-list-btn-${jsMenuSlug}`);
+                        const btnGrid = document.getElementById(`generate-grid-btn-${jsMenuSlug}`);
+                        
+                        const updateBtn = (btn) => {
+                            if (!btn) return;
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-danger');
+                            btn.innerHTML = '<i class="fas fa-times-circle"></i>';
+                            btn.title = 'Stop Generation';
+                            btn.onclick = function() { cancelGenerate(taskId, btn, jsMenuSlug, siteId); };
+                            btn.disabled = false;
+                        };
+                        
+                        updateBtn(btnList);
+                        updateBtn(btnGrid);
+                        
+                        if (!generatePollingIntervals[taskId]) {
+                            pollGenerateTask(taskId, jsMenuSlug, btnList || btnGrid, siteId);
+                        }
+                    }
+                })();
+            {% endfor %}
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    restoreGenerateTasks();
+});
 function generateFiles(siteId, menuSlug, btnElement) {
     const originalContent = '<i class="fas fa-cogs"></i>';
     const originalTitle = btnElement.title;
@@ -1238,12 +1282,18 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                 } else {
                     clearInterval(generatePollingIntervals[taskId]);
                     
-                    btnElement.classList.remove('btn-danger');
-                    btnElement.classList.add('btn-primary');
-                    btnElement.onclick = function() { generateFiles(siteId, menuSlug, btnElement); };
-                    btnElement.innerHTML = '<i class="fas fa-cogs"></i>';
-                    btnElement.title = 'Generate';
-                    btnElement.disabled = false;
+                    const revertBtn = (btn) => {
+                        if (!btn) return;
+                        btn.classList.remove('btn-danger');
+                        btn.classList.add('btn-primary');
+                        btn.onclick = function() { generateFiles(siteId, menuSlug, btn); };
+                        btn.innerHTML = '<i class="fas fa-cogs"></i>';
+                        btn.title = 'Generate';
+                        btn.disabled = false;
+                    };
+                    
+                    revertBtn(document.getElementById(`generate-list-btn-${menuSlug}`));
+                    revertBtn(document.getElementById(`generate-grid-btn-${menuSlug}`));
                     
                     if (task.status === 'success') {
                         const badgeContainer = document.getElementById(`status-badge-container-${menuSlug}`);
