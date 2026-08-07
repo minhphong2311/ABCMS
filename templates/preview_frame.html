@@ -15,6 +15,7 @@ Email: phongnguyen@andvina.com
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <!-- Theme style (AdminLTE) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-mode.css') }}">
   <style>
     /* Force completely hidden browser-level scrollbars */
     html,
@@ -374,6 +375,102 @@ Email: phongnguyen@andvina.com
       0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
       40% { transform: scale(1); opacity: 1; }
     }
+
+    /* Dark Mode Overrides */
+    body.dark-mode {
+      background-color: #343a40 !important;
+    }
+    body.dark-mode .main-header.navbar {
+      background-color: #343a40 !important;
+      border-bottom: 1px solid #4b545c;
+    }
+    body.dark-mode .main-header.navbar .text-muted {
+      color: #adb5bd !important;
+    }
+    body.dark-mode .preview-pane {
+      background-color: #454d55;
+    }
+    body.dark-mode .browser-frame {
+      border-color: #4b545c;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    body.dark-mode .browser-toolbar {
+      background: #343a40;
+      border-bottom-color: #4b545c;
+    }
+    body.dark-mode .browser-toolbar .btn-light {
+      background-color: #454d55;
+      border-color: #4b545c !important;
+      color: #ced4da;
+    }
+    body.dark-mode .browser-toolbar .btn-light:hover {
+      background-color: #6c757d;
+      color: #fff;
+    }
+    body.dark-mode .browser-address {
+      background: #454d55;
+      color: #ced4da;
+      border-color: #4b545c;
+    }
+    body.dark-mode .chat-pane {
+      background-color: #343a40;
+      border-left-color: #4b545c;
+    }
+    body.dark-mode .chat-header {
+      background-color: #343a40;
+      border-bottom-color: #4b545c;
+    }
+    body.dark-mode .chat-status-name {
+      color: #fff;
+    }
+    body.dark-mode .chat-header .w-100 {
+      background: #454d55 !important;
+    }
+    body.dark-mode .chat-header .w-100 .text-muted {
+      color: #ced4da !important;
+    }
+    body.dark-mode .chat-header .w-100 [style*="color: #333"] {
+      color: #fff !important;
+    }
+    body.dark-mode .chat-body {
+      background-color: #454d55;
+    }
+    body.dark-mode .chat-message.bot .chat-msg-content {
+      background-color: #343a40;
+      border-color: #4b545c;
+      color: #fff;
+    }
+    body.dark-mode .chat-message.bot em {
+      background-color: #454d55;
+    }
+    body.dark-mode .chat-msg-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    body.dark-mode .chat-edit-box textarea {
+      background: #343a40;
+      color: #fff;
+      border-color: #4b545c;
+    }
+    body.dark-mode .chat-footer {
+      background-color: #343a40;
+      border-top-color: #4b545c;
+    }
+    body.dark-mode .chat-input {
+      background: #454d55;
+      color: #fff;
+      border-color: #4b545c;
+    }
+    body.dark-mode .chat-input:focus {
+      border-color: #007bff;
+    }
+    body.dark-mode .chat-edit-btn.cancel {
+      background: #454d55;
+      color: #ced4da;
+    }
+    body.dark-mode .chat-edit-btn.cancel:hover {
+      background: #6c757d;
+    }
   </style>
 </head>
 <body class="hold-transition layout-top-nav">
@@ -706,5 +803,6 @@ Email: phongnguyen@andvina.com
       }
     });
   </script>
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
 </html>
