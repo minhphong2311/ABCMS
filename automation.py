@@ -58,11 +58,16 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
     await page.goto(target_res_url, wait_until='domcontentloaded')
     await asyncio.sleep(3)
 
-    root_folder_id = await page.evaluate('''() => {
-        const anchors = document.querySelectorAll('li[id*="/img/_anchor"]');
-        return anchors.length > 0 ? anchors[0].id : null;
-    }''')
+    suffix = f"/{site_id}/img/_anchor"
+    root_selector = f'[id$="{suffix}"]'
     
+    try:
+        await page.wait_for_selector(root_selector, timeout=10000)
+        root_folder_id = await page.locator(root_selector).get_attribute('id')
+    except Exception as e:
+        print(f'[{slug}] Root image folder selector error: {e}')
+        root_folder_id = None
+        
     if root_folder_id:
         res_org = root_folder_id.split('/_res/')[1].split('/')[0]
     else:
@@ -71,11 +76,6 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
 
     root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'
     content_folder_id = f'/_res/{res_org}/{site_id}/img/content_anchor'
-
-    try:
-        await page.wait_for_selector(f'[id="{root_folder_id}"]', timeout=8000)
-    except Exception as e:
-        print(f'[{slug}] Root image folder selector error: {e}')
 
     content_exists = await page.locator(f'[id="{content_folder_id}"]').count() > 0
     if not content_exists:
@@ -118,38 +118,25 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
 
     if missing_images:
         print(f'[{slug}] Found {len(missing_images)} missing image(s) to upload: {[x[1] for x in missing_images]}')
-        
-        # Batch upload all missing images
+        # Try batch upload with new selectors, if input supports multiple
         try:
-            await page.evaluate('''() => {
-                const btn = document.querySelector('[data-cmd="uploadFile"]') || 
-                           document.querySelector('button[ng-click*="upload"]') ||
-                           Array.from(document.querySelectorAll('button, a')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드'));
-                if (btn) btn.click();
-            }''')
-            await asyncio.sleep(2)
-
+            await page.click('button[ng-click="img.upload()"]')
+            await asyncio.sleep(1.2)
+            
             missing_paths = [x[0] for x in missing_images]
-            file_inputs = await page.locator('input[type="file"]').element_handles()
-            if file_inputs:
-                for fi in file_inputs:
-                    try:
-                        await fi.set_input_files(missing_paths)
-                        print(f'[{slug}] Set {len(missing_paths)} image file(s) into file input.')
-                        break
-                    except Exception as fe:
-                        print(f'[{slug}] set_input_files error: {fe}')
-                await asyncio.sleep(2)
-
-                await page.evaluate('''() => {
-                    const btn = document.querySelector('[data-cmd="startUpload"]') || 
-                               Array.from(document.querySelectorAll('button')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드') || (b.innerText||'').includes('Tải lên'));
-                    if (btn) btn.click();
-                }''')
-                print(f'[{slug}] Clicked start upload for missing images. Waiting for upload...')
-                await asyncio.sleep(5)
+            file_input = page.locator('input[type="file"][flow-btn]').first
+            
+            # This might fail if the input doesn't support multiple files
+            await file_input.set_input_files(missing_paths)
+            print(f'[{slug}] Set {len(missing_paths)} image file(s) into file input.')
+            await asyncio.sleep(1.2)
+            
+            upload_confirm = page.locator('button:has(.fa-cloud-upload), button:has-text("업로드")').first
+            await upload_confirm.click()
+            print(f'[{slug}] Clicked start upload for missing images. Waiting for upload...')
+            await asyncio.sleep(5)
         except Exception as e:
-            print(f'[{slug}] Batch upload error: {e}')
+            print(f'[{slug}] Batch upload error (might not support multiple): {e}')
 
         # Fallback individual retry if any file is still missing
         for img_path, img_name in missing_images:
@@ -159,30 +146,18 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
             if not img_exists:
                 print(f'[{slug}] Retry uploading single image "{img_name}"...')
                 try:
-                    await page.evaluate('''() => {
-                        const btn = document.querySelector('[data-cmd="uploadFile"]') || 
-                                   document.querySelector('button[ng-click*="upload"]') ||
-                                   Array.from(document.querySelectorAll('button, a')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드'));
-                        if (btn) btn.click();
-                    }''')
-                    await asyncio.sleep(2)
-                    file_inputs = await page.locator('input[type="file"]').element_handles()
-                    if file_inputs:
-                        for fi in file_inputs:
-                            try:
-                                await fi.set_input_files(img_path)
-                                break
-                            except Exception:
-                                pass
-                        await asyncio.sleep(1.5)
-                        await page.evaluate('''() => {
-                            const btn = document.querySelector('[data-cmd="startUpload"]') || 
-                                       Array.from(document.querySelectorAll('button')).find(b => (b.innerText||'').includes('Upload') || (b.innerText||'').includes('업로드') || (b.innerText||'').includes('Tải lên'));
-                            if (btn) btn.click();
-                        }''')
-                        await asyncio.sleep(4)
-                except Exception as ex:
-                    print(f'[{slug}] Single upload error for "{img_name}": {ex}')
+                    await page.click('button[ng-click="img.upload()"]')
+                    await asyncio.sleep(1.2)
+                    
+                    file_input = page.locator('input[type="file"][flow-btn]').first
+                    await file_input.set_input_files(img_path)
+                    await asyncio.sleep(1.2)
+                    
+                    upload_confirm = page.locator('button:has(.fa-cloud-upload), button:has-text("업로드")').first
+                    await upload_confirm.click()
+                    await asyncio.sleep(2.4)
+                except Exception as single_err:
+                    print(f'[{slug}] Error uploading {img_name}: {single_err}')
 
     return res_org
 
