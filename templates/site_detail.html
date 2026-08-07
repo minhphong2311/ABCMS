@@ -1202,6 +1202,12 @@ document.addEventListener('DOMContentLoaded', function() {
     restoreGenerateTasks();
 });
 function generateFiles(siteId, menuSlug, btnElement) {
+    const btnDep = document.getElementById(`deploy-list-form-${menuSlug}`);
+    if (btnDep && btnDep.disabled && btnDep.innerHTML.includes('fa-spinner')) {
+        Swal.fire('Warning', 'Cannot generate while this page is being deployed.', 'warning');
+        return;
+    }
+
     const originalContent = '<i class="fas fa-cogs"></i>';
     const originalTitle = btnElement.title;
     btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -1325,7 +1331,9 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
                     } else if (task.status === 'error' || task.status === 'cancelled') {
                         if (statusInfo) statusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${task.message}</span>`;
                         if (listStatusInfo) listStatusInfo.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ${task.message}</span>`;
-                        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: task.status === 'cancelled' ? 'info' : 'error', title: task.status === 'cancelled' ? 'Cancelled' : 'Error', text: task.message });
+                        if (task.status === 'cancelled') {
+                            Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'info', title: 'Cancelled', text: task.message });
+                        }
                     }
                 }
             }
@@ -1334,6 +1342,12 @@ function pollGenerateTask(taskId, menuSlug, btnElement, siteId) {
 }
 
 function deployFiles(siteId, menuSlug, folder, paramKey, btnElement) {
+    const btnGen = document.getElementById(`generate-list-btn-${paramKey}`);
+    if (btnGen && (btnGen.classList.contains('btn-danger') || btnGen.innerHTML.includes('fa-spinner'))) {
+        Swal.fire('Warning', 'Cannot deploy while this page is being generated.', 'warning');
+        return;
+    }
+
     // UI Loading state
     btnElement.dataset.original = btnElement.innerHTML;
     btnElement.disabled = true;
@@ -1725,6 +1739,23 @@ function executeBulkAction(siteId) {
         return;
     }
     
+    // Check if any selected item is currently busy
+    for (let cb of visibleChecked) {
+        const id = cb.id.replace('check-list-', '').replace('check-grid-', '');
+        const paramKey = id;
+        
+        const btnGen = document.getElementById(`generate-list-btn-${paramKey}`);
+        const btnDep = document.getElementById(`deploy-list-form-${paramKey}`);
+        
+        const isGenBusy = btnGen && (btnGen.classList.contains('btn-danger') || btnGen.innerHTML.includes('fa-spinner'));
+        const isDepBusy = btnDep && btnDep.disabled && btnDep.innerHTML.includes('fa-spinner');
+        
+        if (isGenBusy || isDepBusy) {
+            Swal.fire('Warning', 'One or more selected items are currently busy (Generating or Deploying). Please wait for them to finish before applying bulk actions.', 'warning');
+            return;
+        }
+    }
+    
     if (action === 'generate') {
         bulkGenerateSelected(siteId);
     } else if (action === 'deploy') {
@@ -1837,7 +1868,6 @@ function bulkDeploySelected(siteId) {
                     }
                 });
             });
-            Swal.fire('Started', `Initiated deployment for ${deployList.length} pages. Watch the status on each item.`, 'success');
         }
     });
 }

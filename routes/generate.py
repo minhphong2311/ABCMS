@@ -1293,6 +1293,11 @@ def generate_files(site_id, menu_param):
     original_folder, _ = parse_folder_slug(menu_param)
     deploy_task_id = f"{site_id}--{original_folder}--{menu_slug}"
     from routes.deploy import DEPLOY_TASKS
+    
+    # Check if deploying is running
+    if DEPLOY_TASKS.get(deploy_task_id, {}).get('status') == 'running':
+        return jsonify({'success': False, 'message': 'Cannot generate while page is being deployed!'})
+        
     if deploy_task_id in DEPLOY_TASKS:
         del DEPLOY_TASKS[deploy_task_id]
 

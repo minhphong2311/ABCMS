@@ -69,6 +69,15 @@ def api_deploy():
     if DEPLOY_TASKS.get(task_id, {}).get('status') == 'running':
         return jsonify({'success': False, 'message': 'This page is currently being deployed!'})
 
+    # Check if generating is running
+    folder = original_folder
+    if not folder:
+        folder = menu_slug
+    gen_task_id = f"gen--{site_id}--{folder}--{menu_slug}"
+    from routes.generate import GENERATE_TASKS
+    if GENERATE_TASKS.get(gen_task_id, {}).get('status') == 'running':
+        return jsonify({'success': False, 'message': 'Cannot deploy while page is being generated!'})
+
     # Read generated files
     if folder:
         target_dir = os.path.join(OUTPUT_DIR, site_id, folder)
