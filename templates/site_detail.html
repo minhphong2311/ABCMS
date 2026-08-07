@@ -134,6 +134,11 @@ Email: phongnguyen@andvina.com
     border-color: #4b545c !important;
     color: #6c757d !important;
   }
+
+  /* Custom height for Figma Link textarea */
+  #figma_link, #edit_figma_link {
+    height: 150px;
+  }
 </style>
 <div class="row">
   <!-- Left Pane: Menu Tree -->
@@ -611,7 +616,7 @@ Email: phongnguyen@andvina.com
           <div class="row form-group mb-3">
             <div class="col-md-3 col-form-label"><label for="figma_link">Link Figma Dev Mode</label></div>
             <div class="col-md-9">
-              <textarea class="form-control" id="figma_link" name="figma_link" style="height: 100px;" placeholder="Paste Figma Dev Mode Link containing file-key and node-id..."></textarea>
+              <textarea class="form-control" id="figma_link" name="figma_link" placeholder="Paste Figma Dev Mode Link containing file-key and node-id..." spellcheck="false"></textarea>
             </div>
           </div>
           
@@ -676,7 +681,7 @@ Email: phongnguyen@andvina.com
           <div class="row form-group mb-3">
             <div class="col-md-3 col-form-label"><label for="edit_figma_link">Link Figma Dev Mode</label></div>
             <div class="col-md-9">
-              <textarea class="form-control" id="edit_figma_link" name="figma_link" style="height: 100px;"></textarea>
+              <textarea class="form-control" id="edit_figma_link" name="figma_link" spellcheck="false"></textarea>
             </div>
           </div>
           
