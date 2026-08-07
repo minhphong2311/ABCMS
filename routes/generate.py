@@ -1289,6 +1289,13 @@ def generate_files(site_id, menu_param):
     if GENERATE_TASKS.get(task_id, {}).get('status') == 'running':
         return jsonify({'success': False, 'message': 'Page is currently generating!'})
 
+    # Clear old deploy task to prevent stale "Successfully deployed" status
+    original_folder, _ = parse_folder_slug(menu_param)
+    deploy_task_id = f"{site_id}--{original_folder}--{menu_slug}"
+    from routes.deploy import DEPLOY_TASKS
+    if deploy_task_id in DEPLOY_TASKS:
+        del DEPLOY_TASKS[deploy_task_id]
+
     thread = threading.Thread(
         target=run_generate_async,
         args=(task_id, site_id, menu_param, target_dir, figma_token, config, menu, site, feedback)
