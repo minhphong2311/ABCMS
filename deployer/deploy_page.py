@@ -3,7 +3,7 @@
 
 import asyncio
 
-async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None):
+async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None, res_org='kookmin'):
     print("\n" + "="*50)
     print("6. KIỂM TRA PAGE")
     print("="*50)
@@ -11,7 +11,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
         progress_cb(0, "Page: starting page generation")
 
     # Ready HTML content
-    res_org = 'kookmin'
+    # Ready HTML content
     ready_img_url = f'/_res/{res_org}/{site_id}/img/content/img-ready.png'
     ready_html = f"""<div class="content-box">
 	<div class="con-box no-pd">

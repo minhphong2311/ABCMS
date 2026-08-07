@@ -106,6 +106,9 @@ async def deploy_upload_image(page, site_url, site_id, progress_cb=None, is_canc
             if str(e) == 'Deploy cancelled by user': raise
             raise Exception(f"Kiểm tra lại thất bại: Hình ảnh '{image_name}' chưa xuất hiện trong Folder 'content'.")
 
+        return res_org
+
+
     except Exception as e:
         if str(e) == 'Deploy cancelled by user': raise
         print(f"Lỗi trong quá trình kiểm tra Upload: {e}")
