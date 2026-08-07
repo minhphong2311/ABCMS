@@ -58,15 +58,15 @@ async def upload_page_images_to_cms(page, site_url, site_id, folder, slug):
     await page.goto(target_res_url, wait_until='domcontentloaded')
     await asyncio.sleep(3)
 
-    res_org = await page.evaluate('''() => {
-        const els = Array.from(document.querySelectorAll('script, link'));
-        for (const el of els) {
-            const url = el.src || el.href || '';
-            const m = url.match(/\\/_res\\/([^\\/]+)\\//);
-            if (m && m[1] !== '_common') return m[1];
-        }
-        return 'kookmin';
+    root_folder_id = await page.evaluate('''() => {
+        const anchors = document.querySelectorAll('li[id*="/img/_anchor"]');
+        return anchors.length > 0 ? anchors[0].id : null;
     }''')
+    
+    if root_folder_id:
+        res_org = root_folder_id.split('/_res/')[1].split('/')[0]
+    else:
+        res_org = 'kookmin'
     print(f'[{slug}] Detected res_org: {res_org}')
 
     root_folder_id = f'/_res/{res_org}/{site_id}/img/_anchor'

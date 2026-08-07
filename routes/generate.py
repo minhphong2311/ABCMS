@@ -194,6 +194,14 @@ def export_figma_icons(file_key, document, token, target_dir, menu_slug):
     icon_nodes = []  # list of (node_id, clean_name)
     seen_ids = set()
 
+    def has_text(n):
+        if n.get('type') == 'TEXT':
+            return True
+        for c in n.get('children', []):
+            if has_text(c):
+                return True
+        return False
+
     def find_icon_nodes(node):
         node_id = node.get('id', '')
         name = node.get('name', '')
@@ -203,22 +211,28 @@ def export_figma_icons(file_key, document, token, target_dir, menu_slug):
         h = bb.get('height', 0)
         fills = node.get('fills', [])
         has_image_fill = any(f.get('type') == 'IMAGE' for f in fills)
+        
         if (
             node_id
             and node_id not in seen_ids
             and t not in ('TEXT', 'DOCUMENT', 'CANVAS', 'PAGE')
             and w > 0 and h > 0
-            and w <= 48 and h <= 48
+            and w <= 128 and h <= 128
             and not has_image_fill
+            and not has_text(node)
         ):
-            clean_name = "".join([c if c.isalnum() or c in ['-', '_'] else '_' for c in name])
-            if not clean_name:
-                clean_name = f"icon_{node_id.replace(':', '_')}"
-            if not clean_name.lower().endswith('.png'):
-                clean_name += '.png'
+            clean_name = "".join([c.lower() if c.isalnum() else '-' for c in name])
+            import re
+            clean_name = re.sub(r'-+', '-', clean_name).strip('-')
+            
+            # If name is empty or very generic, fallback to menu_slug
+            if not clean_name or clean_name in ['group', 'frame', 'vector', 'image', 'icon', 'rectangle', 'ellipse', 'star', 'line', 'polygon']:
+                clean_name = menu_slug
+                
             seen_ids.add(node_id)
             icon_nodes.append((node_id, clean_name))
             return
+            
         for child in node.get('children', []):
             find_icon_nodes(child)
 
@@ -232,6 +246,9 @@ def export_figma_icons(file_key, document, token, target_dir, menu_slug):
     headers = {'X-Figma-Token': token}
     images_dir = os.path.join(target_dir, "images", menu_slug)
     os.makedirs(images_dir, exist_ok=True)
+
+    import hashlib
+    content_hash_to_filename = {}
 
     batch_size = 100
     for batch_start in range(0, len(icon_nodes), batch_size):
@@ -248,15 +265,27 @@ def export_figma_icons(file_key, document, token, target_dir, menu_slug):
                 img_url = images_resp.get(node_id)
                 if not img_url:
                     continue
-                local_path = os.path.join(images_dir, clean_name)
                 try:
                     with urllib.request.urlopen(img_url) as resp:
+                        img_bytes = resp.read()
+                        
+                    img_hash = hashlib.md5(img_bytes).hexdigest()
+                    
+                    if img_hash in content_hash_to_filename:
+                        final_name = content_hash_to_filename[img_hash]
+                    else:
+                        existing_count = sum(1 for fn in content_hash_to_filename.values() if fn.startswith(clean_name))
+                        index = existing_count + 1
+                        final_name = f"{clean_name}-{index:02d}.png"
+                        local_path = os.path.join(images_dir, final_name)
                         with open(local_path, 'wb') as f:
-                            f.write(resp.read())
-                    print(f"[Figma] Saved icon: {clean_name}")
-                    icon_map[node_id] = f"./images/{menu_slug}/{clean_name}"
+                            f.write(img_bytes)
+                        content_hash_to_filename[img_hash] = final_name
+                        print(f"[Figma] Saved image: {final_name}")
+                        
+                    icon_map[node_id] = f"./images/{menu_slug}/{final_name}"
                 except Exception as e:
-                    print(f"[Figma] Failed to download icon {clean_name}: {e}")
+                    print(f"[Figma] Failed to process image {clean_name}: {e}")
         except Exception as e:
             print(f"[Figma] Failed to export icons batch: {e}")
 
@@ -763,8 +792,9 @@ def apply_structural_templates(html, css, api_key, menu_name, task_id=None):
         "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng duy nhất (Single-line CSS). Phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau.\n"
         "Ví dụ ĐÚNG: `.class1 { font-size: 20px; color: #333; }`\n"
         "Tuyệt đối KHÔNG ĐƯỢC CÓ XUỐNG DÒNG bên trong dấu ngoặc nhọn {}.\n"
-        "2. QUY ĐỊNH VỀ HÌNH ẢNH (IMAGES & ICONS): BẮT BUỘC sử dụng thẻ `<img>` HTML cho các hình ảnh thông thường (banner, ảnh minh họa, sản phẩm, v.v.). TUYỆT ĐỐI KHÔNG dùng `background` hay `background-image` trong CSS cho hình ảnh thông thường. CHỈ được phép dùng CSS background hoặc pseudo-elements (::before, ::after) cho các icon hoặc các yếu tố trang trí nhỏ bé.\n"
-        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`."
+        "2. QUY ĐỊNH VỀ HÌNH ẢNH (IMAGES & ICONS): BẮT BUỘC sử dụng thẻ `<img>` HTML cho các hình ảnh thông thường (banner, ảnh minh họa, sản phẩm, v.v.). TUYỆT ĐỐI KHÔNG dùng `background-image` cho hình ảnh thông thường. TUY NHIÊN, đối với các icon nhỏ (mũi tên, dấu cộng, v.v.) nằm bên trong các nút bấm (button, thẻ `<a>`, `.btn-more`), TUYỆT ĐỐI KHÔNG ĐƯỢC sử dụng thẻ `<img>`. Bạn BẮT BUỘC phải chuyển đổi chúng thành CSS `background-image` hoặc dùng pseudo-element (`::after`, `::before`).\n"
+        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`.\n"
+        "4. ĐỔI TÊN HÌNH ẢNH: Bạn BẮT BUỘC phải phân tích nội dung của từng ảnh (thông qua vị trí và mục đích trong layout) và đổi tên file ảnh trong thuộc tính `src` (ví dụ từ `test-01.png` thành `quick-link-01.png`) cho có ý nghĩa. TUYỆT ĐỐI KHÔNG sử dụng các từ như `icon`, `image`, `img`, `pic` trong tên file mới. Bắt buộc giữ nguyên đuôi file (.png). Trả về thêm mảng `rename_map` ghi nhận việc đổi tên này."
     )
 
     prompt = f"""Bạn là một chuyên gia Frontend Developer.
@@ -800,7 +830,10 @@ Nhiệm vụ:
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
 {{
   "html": "toàn bộ nội dung HTML mới",
-  "css": "toàn bộ nội dung CSS mới"
+  "css": "toàn bộ nội dung CSS mới",
+  "rename_map": [
+    {{"old_name": "test-01.png", "new_name": "quick-link-01.png"}}
+  ]
 }}"""
 
     try:
@@ -831,13 +864,14 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             
             new_html = result.get('html', html)
             new_css = result.get('css', css)
+            rename_map = result.get('rename_map', [])
             print(f"[{menu_name}] Structural Refinement SUCCESS!")
-            return new_html, new_css
+            return new_html, new_css, rename_map
 
     except Exception as e:
         print(f"[{menu_name}] Structural Refinement Error: {e}")
         
-    return html, css
+    return html, css, []
 
 
 def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, gemini_api_key, task_id=None):
@@ -984,7 +1018,7 @@ Template Rules to follow:
 2. Follow the structure provided in these templates:
    Structure template: {structure_template}
    Table template: {table_template}
-3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
+3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags. However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
 4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{{}}`. Example: `.class {{ color: red; margin: 0; }}`
 5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
 6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
@@ -1107,8 +1141,10 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             image_map = fetch_figma_images(file_key, figma_token)
             local_image_map = download_and_map_figma_images(image_map, target_dir, menu_slug, used_refs)
 
-            # Export icons
-            export_figma_icons(file_key, document, figma_token, target_dir, menu_slug)
+            # Export icons and merge into local_image_map
+            icon_map = export_figma_icons(file_key, document, figma_token, target_dir, menu_slug)
+            if icon_map:
+                local_image_map.update(icon_map)
 
             GENERATE_TASKS[task_id] = {"status": "running", "message": "Compiling HTML/CSS..."}
             compile_result = compile_figma_node_to_html_css(design_data, node_id, local_image_map)
@@ -1118,9 +1154,29 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
             if gemini_api_key:
                 GENERATE_TASKS[task_id] = {"status": "running", "message": "Applying structural templates..."}
-                html_result, css_result = apply_structural_templates(
+                html_result, css_result, rename_map = apply_structural_templates(
                     html_result, css_result, gemini_api_key, menu_slug, task_id
                 )
+                
+                # Physically rename image files if AI requested it
+                if rename_map:
+                    images_dir = os.path.join(target_dir, "images", menu_slug)
+                    if os.path.exists(images_dir):
+                        for mapping in rename_map:
+                            raw_old = mapping.get('old_name')
+                            raw_new = mapping.get('new_name')
+                            if raw_old and raw_new:
+                                old_name = os.path.basename(raw_old)
+                                new_name = os.path.basename(raw_new)
+                                if old_name != new_name:
+                                    old_path = os.path.join(images_dir, old_name)
+                                    new_path = os.path.join(images_dir, new_name)
+                                    if os.path.exists(old_path) and not os.path.exists(new_path):
+                                        try:
+                                            os.rename(old_path, new_path)
+                                            print(f"[{menu_slug}] Renamed image {old_name} -> {new_name}")
+                                        except Exception as rename_err:
+                                            print(f"[{menu_slug}] Failed to rename image {old_name}: {rename_err}")
 
                 GENERATE_TASKS[task_id] = {"status": "running", "message": "Refining visuals with AI..."}
                 html_result, css_result = compare_and_fix_visuals(
