@@ -933,10 +933,13 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
         return html, css
 
     base_dir = os.path.dirname(os.path.dirname(__file__))
-    output_dir = os.path.join(base_dir, 'output')
-    os.makedirs(output_dir, exist_ok=True)
+    scratch_dir = os.path.join(base_dir, 'scratch')
+    os.makedirs(scratch_dir, exist_ok=True)
 
-    target_img_path = os.path.join(output_dir, f'temp_target_{menu_name}.png')
+    target_img_path = os.path.join(scratch_dir, f'temp_target_{menu_name}.png')
+    render_img_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.png')
+    temp_html_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.html')
+
     with open(target_img_path, 'wb') as f:
         f.write(requests.get(img_url).content)
 
@@ -953,7 +956,6 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
         if task_id and task_id in GENERATE_TASKS:
             GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/{MAX_ITERATIONS})..."
 
-        temp_html_path = os.path.join(output_dir, f'temp_render_{menu_name}.html')
         css_guide_tags = "".join([f'\n    <link rel="stylesheet" href="{link}">' for link in css_links])
         full_html = f"""<!DOCTYPE html>
 <html lang="vi">
@@ -1099,6 +1101,14 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
         except Exception as e:
             print(f"[{menu_name}] Gemini Vision Error: {e}")
             break
+
+    # CLEANUP TEMP FILES
+    for p in [target_img_path, render_img_path, temp_html_path]:
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
 
     return html, css
 
