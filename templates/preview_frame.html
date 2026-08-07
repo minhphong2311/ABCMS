@@ -198,6 +198,19 @@ Email: phongnguyen@andvina.com
     }
     
     .chat-message {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .chat-message.user {
+      align-items: flex-end;
+    }
+    .chat-message.bot {
+      align-items: flex-start;
+    }
+    .chat-msg-content {
       max-width: 85%;
       padding: 12px 16px;
       border-radius: 12px;
@@ -205,17 +218,15 @@ Email: phongnguyen@andvina.com
       line-height: 1.5;
       word-break: break-word;
     }
-    .chat-message.bot {
+    .chat-message.bot .chat-msg-content {
       background-color: #ffffff;
-      align-self: flex-start;
       border: 1px solid #e2e8f0;
       box-shadow: 0 2px 5px rgba(0,0,0,0.02);
       border-top-left-radius: 0;
     }
-    .chat-message.user {
+    .chat-message.user .chat-msg-content {
       background-color: #007bff;
       color: #ffffff;
-      align-self: flex-end;
       border-top-right-radius: 0;
     }
     .chat-message.bot em {
@@ -225,6 +236,72 @@ Email: phongnguyen@andvina.com
       border-radius: 4px;
       font-family: monospace;
     }
+    
+    /* Chat Message Actions (Copy/Edit) */
+    .chat-msg-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+    .chat-message:hover .chat-msg-actions {
+      opacity: 1;
+      visibility: visible;
+    }
+    .chat-msg-btn {
+      border: none;
+      font-size: 13px;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      color: #6c757d;
+      transition: background 0.2s, color 0.2s;
+    }
+    .chat-msg-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #333;
+    }
+    
+    .chat-edit-box {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .chat-edit-box textarea {
+      width: 100%;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 60px;
+      font-family: inherit;
+      color: #333;
+      background: #fff;
+      outline: none;
+    }
+    .chat-edit-box textarea:focus {
+      border-color: #80bdff;
+    }
+    .chat-edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .chat-edit-actions button {
+      border-radius: 20px;
+      padding: 4px 16px;
+      font-weight: 500;
+    }
+
     .chat-footer {
       padding: 16px;
       border-top: 1px solid #dee2e6;
@@ -371,9 +448,11 @@ Email: phongnguyen@andvina.com
       <!-- Chat Messages Body -->
       <div class="chat-body" id="chatBody">
         <div class="chat-message bot">
-          Hello! I am the Design Critic Agent. I can help you compare and refine the UI of page <strong>{{ menu_name }}</strong> to precisely match the Figma design.
-          <br><br>
-          Please enter your UI adjustment requests (e.g. change font size, realign images, or update margin) in the box below!
+          <div class="chat-msg-content">
+            Hello! I am the Design Critic Agent. I can help you compare and refine the UI of page <strong>{{ menu_name }}</strong> to precisely match the Figma design.
+            <br><br>
+            Please enter your UI adjustment requests (e.g. change font size, realign images, or update margin) in the box below!
+          </div>
         </div>
       </div>
 
@@ -430,16 +509,110 @@ Email: phongnguyen@andvina.com
       return div.innerHTML;
     }
 
+    function copyMessageText(btn) {
+      const msgDiv = btn.closest('.chat-message');
+      const rawText = msgDiv.getAttribute('data-raw');
+      navigator.clipboard.writeText(rawText).then(() => {
+        const icon = btn.querySelector('i');
+        const oldClass = icon.className;
+        icon.className = 'fas fa-check text-success';
+        setTimeout(() => { icon.className = oldClass; }, 2000);
+      });
+    }
+
+    function editMessageText(btn) {
+      const msgDiv = btn.closest('.chat-message');
+      msgDiv.querySelector('.chat-msg-content').style.display = 'none';
+      msgDiv.querySelector('.chat-msg-actions').style.display = 'none';
+      
+      const editBox = msgDiv.querySelector('.chat-edit-box');
+      editBox.style.display = 'flex';
+      
+      const textarea = editBox.querySelector('textarea');
+      textarea.value = msgDiv.getAttribute('data-raw');
+      textarea.focus();
+      // Auto expand slightly
+      textarea.style.height = 'auto';
+      textarea.style.height = (textarea.scrollHeight) + 'px';
+    }
+
+    function cancelEditMessage(btn) {
+      const msgDiv = btn.closest('.chat-message');
+      msgDiv.querySelector('.chat-edit-box').style.display = 'none';
+      msgDiv.querySelector('.chat-msg-content').style.display = 'block';
+      msgDiv.querySelector('.chat-msg-actions').style.display = 'flex';
+    }
+
+    function submitEditMessage(btn) {
+      const msgDiv = btn.closest('.chat-message');
+      const newText = msgDiv.querySelector('textarea').value.trim();
+      if (!newText) return;
+
+      // Delete this message and all subsequent messages
+      let current = msgDiv.nextElementSibling;
+      while (current) {
+         let next = current.nextElementSibling;
+         current.remove();
+         current = next;
+      }
+      msgDiv.remove();
+
+      // Re-build localStorage history based on remaining UI elements
+      let history = [];
+      document.querySelectorAll('#chatBody .chat-message').forEach(el => {
+         if (el.id !== 'typingIndicator' && el.hasAttribute('data-raw')) {
+             history.push({
+                 text: el.getAttribute('data-raw'),
+                 sender: el.classList.contains('user') ? 'user' : 'bot'
+             });
+         }
+      });
+      localStorage.setItem(chatStorageKey, JSON.stringify(history));
+
+      // Put the new text into main input and trigger send
+      const chatInput = document.getElementById('chatInput');
+      chatInput.value = newText;
+      document.getElementById('chatForm').dispatchEvent(new Event('submit', {cancelable: true}));
+    }
+
     function appendMessage(text, sender, skipSave = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `chat-message ${sender}`;
-      // For user messages: escape HTML so tags show as plain text
-      // For bot messages: allow HTML for icons/formatting
+      // Store raw text for copy/edit
+      msgDiv.setAttribute('data-raw', text);
+
+      let contentHtml = '';
       if (sender === 'user') {
-        msgDiv.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+        contentHtml = escapeHtml(text).replace(/\n/g, '<br>');
       } else {
-        msgDiv.innerHTML = text;
+        contentHtml = text;
       }
+      
+      let actionsHtml = `<div class="chat-msg-actions">
+          <button type="button" class="chat-msg-btn" onclick="copyMessageText(this)" title="Copy"><i class="far fa-copy"></i></button>`;
+      if (sender === 'user') {
+          actionsHtml += `<button type="button" class="chat-msg-btn" onclick="editMessageText(this)" title="Edit"><i class="fas fa-pencil-alt"></i></button>`;
+      }
+      actionsHtml += `</div>`;
+
+      let editBoxHtml = '';
+      if (sender === 'user') {
+          editBoxHtml = `
+            <div class="chat-edit-box">
+               <textarea class="form-control mb-2"></textarea>
+               <div class="chat-edit-actions">
+                  <button type="button" class="btn btn-sm btn-light" onclick="cancelEditMessage(this)">Cancel</button>
+                  <button type="button" class="btn btn-sm btn-primary" onclick="submitEditMessage(this)">Save</button>
+               </div>
+            </div>
+          `;
+      }
+
+      msgDiv.innerHTML = `
+        <div class="chat-msg-content">${contentHtml}</div>
+        ${actionsHtml}
+        ${editBoxHtml}
+      `;
       chatBody.appendChild(msgDiv);
       chatBody.scrollTop = chatBody.scrollHeight;
 
@@ -457,10 +630,12 @@ Email: phongnguyen@andvina.com
       indicator.className = 'chat-message bot';
       indicator.id = 'typingIndicator';
       indicator.innerHTML = `
-        <div class="typing-indicator">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
+        <div class="chat-msg-content">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
         </div>
       `;
       chatBody.appendChild(indicator);
