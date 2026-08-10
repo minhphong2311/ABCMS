@@ -309,13 +309,17 @@ def api_chat():
                 ".\nTUYỆT ĐỐI TUÂN THỦ khoảng cách (margin, padding) đã định nghĩa trong guide. Không thêm margin/padding dư thừa làm sai lệch giao diện gốc (ví dụ: nếu guide dùng padding-bottom, đừng thêm margin-bottom).\n"
                 "2. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng riêng biệt và phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau. (VD:\n.class1 {{ font-size: 20px; color: #333; }}\n.class2 {{ margin-bottom: 15px; }}\n)\n"
                 "Tuyệt đối không gộp toàn bộ file thành 1 dòng duy nhất, và tuyệt đối KHÔNG xuống dòng bên trong dấu ngoặc nhọn {{}}.\n"
-                f"3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_slug}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon."
+                f"3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_slug}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon.\n"
+                "4. RESPONSIVE DESIGN LÀ BẮT BUỘC: Mọi giao diện sinh ra phải hỗ trợ Responsive (co giãn tốt trên Mobile, Tablet, PC).\n"
+                "5. ĐƯỜNG NỐI SƠ ĐỒ TỔ CHỨC: Đối với sơ đồ cây/tổ chức (có đường nối ngang/dọc), BẮT BUỘC dùng CSS pseudo-elements (::before, ::after) để vẽ đường kẻ. Không dùng <div> trống làm đường kẻ."
             )
         else:
             css_guide_instruction = (
                 "\n\nĐẶC BIỆT LƯU Ý FORMAT CSS:\nBẮT BUỘC FORMAT CSS: Mỗi rule CSS phải nằm trên 1 dòng riêng biệt và có XUỐNG DÒNG (\\n) giữa các rule. (VD:\n.class1 {{ font-size: 20px; }}\n.class2 {{ margin: 0; }}\n)\n"
                 "Tuyệt đối không gộp toàn bộ file thành 1 dòng, và tuyệt đối KHÔNG xuống dòng bên trong ngoặc nhọn {{}}.\n"
-                "3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> định dạng PNG cho tất cả icon."
+                "3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> định dạng PNG cho tất cả icon.\n"
+                "4. RESPONSIVE DESIGN LÀ BẮT BUỘC: Mọi giao diện sinh ra phải hỗ trợ Responsive.\n"
+                "5. ĐƯỜNG NỐI SƠ ĐỒ TỔ CHỨC: Đối với sơ đồ cây/tổ chức, BẮT BUỘC dùng CSS pseudo-elements (::before, ::after) để vẽ đường kẻ."
             )
 
         prompt = f"""Bạn là một chuyên gia Frontend Developer.
