@@ -702,6 +702,35 @@ Email: phongnguyen@andvina.com
       document.body.style.overflow = '';
     }
 
+    // Rollback Function
+    function rollbackCode(btn) {
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = 'fas fa-spinner fa-spin mr-1';
+      btn.disabled = true;
+
+      $.ajax({
+        url: '/api/rollback',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          site_id: '{{ site_id }}',
+          menu_param: '{{ menu_param }}'
+        }),
+        success: function(data) {
+          if (data.success) {
+            btn.outerHTML = `<span class="text-success" style="font-size: 13px;"><i class="fas fa-check"></i> ${data.message}</span>`;
+            setTimeout(() => { reloadPreview(); }, 800);
+          } else {
+            btn.outerHTML = `<span class="text-danger" style="font-size: 13px;"><i class="fas fa-times"></i> ${data.message}</span>`;
+          }
+        },
+        error: function(xhr) {
+          const errData = xhr.responseJSON || {};
+          btn.outerHTML = `<span class="text-danger" style="font-size: 13px;"><i class="fas fa-times"></i> Lỗi: ${errData.message || 'Không thể kết nối API'}</span>`;
+        }
+      });
+    }
+
     const chatStorageKey = 'abcms_chat_{{ site_id }}_{{ menu_param }}';
     
     let currentChatImagesBase64 = [];
@@ -979,11 +1008,12 @@ Email: phongnguyen@andvina.com
         success: function(data) {
           removeTypingIndicator();
           if (data.success) {
-            appendMessage(
-              `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}` +
-              (data.css_updated ? `<br><small class="text-muted mt-1 d-block"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>` : ''),
-              'bot'
-            );
+            let replyHtml = `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}`;
+            if (data.css_updated) {
+               replyHtml += `<br><small class="text-muted mt-1 d-block"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>`;
+               replyHtml += `<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-secondary" onclick="rollbackCode(this)"><i class="fas fa-undo mr-1"></i>Hoàn tác (Undo)</button></div>`;
+            }
+            appendMessage(replyHtml, 'bot');
             if (data.css_updated) {
               setTimeout(() => { reloadPreview(); }, 800);
             }

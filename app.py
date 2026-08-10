@@ -456,11 +456,16 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                     f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
                     f'</head>\n<body>\n    {new_html}\n</body>\n</html>'
                 )
+            if os.path.exists(html_path):
+                import shutil
+                shutil.copyfile(html_path, html_path + '.bak')
             with open(html_path, 'w', encoding='utf-8') as f:
                 f.write(new_html)
             updated = True
 
         if new_css and os.path.exists(css_path):
+            import shutil
+            shutil.copyfile(css_path, css_path + '.bak')
             with open(css_path, 'w', encoding='utf-8') as f:
                 f.write(new_css)
             updated = True
@@ -477,6 +482,44 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             'success': False,
             'reply': f'❌ Lỗi kết nối AI: {str(e)}'
         }), 500
+
+@app.route('/api/rollback', methods=['POST'])
+def api_rollback():
+    data = request.json or {}
+    site_id = data.get('site_id', '').strip()
+    menu_param = data.get('menu_param', '').strip()
+
+    if not site_id or not menu_param:
+        return jsonify({'success': False, 'message': 'Thiếu tham số site_id hoặc menu_param.'}), 400
+
+    folder, menu_slug = parse_folder_slug(menu_param)
+    site_dir = os.path.join(OUTPUT_DIR, site_id)
+    if folder:
+        target_dir = os.path.join(site_dir, folder, menu_slug)
+    else:
+        target_dir = os.path.join(site_dir, menu_slug)
+
+    html_path = os.path.join(target_dir, f"{menu_slug}.html")
+    css_path = os.path.join(target_dir, f"{menu_slug}.css")
+    html_bak = html_path + '.bak'
+    css_bak = css_path + '.bak'
+
+    restored_html = False
+    restored_css = False
+    import shutil
+
+    if os.path.exists(html_bak):
+        shutil.copyfile(html_bak, html_path)
+        restored_html = True
+
+    if os.path.exists(css_bak):
+        shutil.copyfile(css_bak, css_path)
+        restored_css = True
+
+    if restored_html or restored_css:
+        return jsonify({'success': True, 'message': 'Đã hoàn tác (Rollback) thành công!'})
+    else:
+        return jsonify({'success': False, 'message': 'Không tìm thấy bản sao lưu nào để hoàn tác.'})
 
 
 # ---------------------------------------------------------------------------
