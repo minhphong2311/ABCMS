@@ -810,7 +810,7 @@ Nội dung CSS thô hiện tại:
 {css[:10000]}
 ```
 {css_guide_instruction}
-{f"\n\nGỢI Ý TỪ NGƯỜI DÙNG (CRITICAL INSTRUCTION): {ai_hint}\nBạn BẮT BUỘC phải tuân thủ nghiêm ngặt gợi ý này khi cấu trúc lại HTML/CSS." if ai_hint else ""}
+{f"\n\nGỢI Ý TỪ NGƯỜI DÙNG (CRITICAL INSTRUCTION): {ai_hint}\nBạn BẮT BUỘC phải tuân thủ nghiêm ngặt gợi ý này. NẾU người dùng yêu cầu tạo các component động (như Swiper, Slider, Carousel...), bạn ĐƯỢC PHÉP chèn trực tiếp các thẻ `<script src='cdn...'>`, `<link>` và mã Javascript khởi tạo vào cuối chuỗi `html`." if ai_hint else ""}
 
 TÀI LIỆU THAM KHẢO VỀ CẤU TRÚC VÀ SUB-TEMPLATE:
 Mẫu cấu trúc giao diện chung (structure-template.html):
@@ -1275,7 +1275,7 @@ CRITICAL STRUCTURE RULES:
 {structure_template}
 4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
 5. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
-{f"\n6. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint when generating the layout, picking libraries, and creating components." if ai_hint else ""}
+{f"\n6. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint. IF the hint requires dynamic components (like Swiper, sliders, progress bars), you ARE FULLY ALLOWED to append `<script src='...'>`, `<link>` CDN tags, and inline Javascript initialization code at the very end of the `html` string." if ai_hint else ""}
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
