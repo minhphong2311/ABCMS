@@ -768,7 +768,7 @@ Email: phongnguyen@andvina.com
       if (sender === 'user') {
         contentHtml = escapeHtml(text).replace(/\n/g, '<br>');
         if (imageBase64) {
-           contentHtml += `<br><img src="${imageBase64}" style="max-height: 150px; border-radius: 8px; margin-top: 8px;">`;
+           contentHtml += `<br><img src="${imageBase64}" style="max-height: 150px; max-width: 100%; object-fit: contain; border-radius: 8px; margin-top: 8px;">`;
         }
       } else {
         contentHtml = text;
