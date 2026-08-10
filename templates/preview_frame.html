@@ -749,7 +749,7 @@ Email: phongnguyen@andvina.com
             // Show status notification
             const statusSpan = btn.closest('.text-right').querySelector('.version-status');
             if (statusSpan) {
-                statusSpan.innerHTML = '<i class="fas fa-check"></i> ' + (isShowingNewCode ? 'Restored Latest' : 'Restored Previous');
+                statusSpan.innerHTML = '<i class="fas fa-check"></i> ' + (isShowingNewCode ? 'Redo successful' : 'Undo successful');
                 statusSpan.style.display = 'inline';
                 setTimeout(() => { statusSpan.style.display = 'none'; }, 3000);
             }
@@ -1052,8 +1052,8 @@ Email: phongnguyen@andvina.com
                replyHtml += `<div class="mt-2 text-right">
                  <span class="version-status text-success mr-2" style="font-size: 12px; display: none;"></span>
                  <div class="btn-group">
-                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('prev', this)" title="Previous Version"><i class="fas fa-chevron-left mr-1"></i> Prev</button>
-                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('next', this)" title="Latest Version">Next <i class="fas fa-chevron-right ml-1"></i></button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('prev', this)" title="Undo AI changes"><i class="fas fa-undo mr-1"></i> Undo</button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('next', this)" title="Redo AI changes">Redo <i class="fas fa-redo ml-1"></i></button>
                  </div>
                </div>`;
             }
