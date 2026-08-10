@@ -442,6 +442,25 @@ Email: phongnguyen@andvina.com
     .chat-bubble-img:hover {
       filter: brightness(0.9);
     }
+    
+    /* Reloading & Undo Actions */
+    .chat-reload-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .chat-undo-link {
+      font-size: 13px;
+      color: #6c757d;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .chat-undo-link:hover {
+      color: #495057;
+    }
 
     /* Dark Mode Overrides */
     body.dark-mode {
@@ -1009,9 +1028,9 @@ Email: phongnguyen@andvina.com
           if (data.success) {
             let replyHtml = `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}`;
             if (data.css_updated) {
-               replyHtml += `<div class="mt-2" style="display: flex; align-items: center; gap: 10px;">
+               replyHtml += `<div class="chat-reload-box">
                  <small class="text-muted"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>
-                 <a href="#" style="font-size: 13px; color: #6c757d; text-decoration: underline;" onclick="event.preventDefault(); rollbackCode(this);">Undo</a>
+                 <a href="#" class="chat-undo-link" onclick="event.preventDefault(); rollbackCode(this);"><i class="fas fa-undo mr-1"></i> Undo</a>
                </div>`;
             }
             appendMessage(replyHtml, 'bot');
