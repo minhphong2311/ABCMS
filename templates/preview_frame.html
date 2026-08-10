@@ -723,8 +723,9 @@ Email: phongnguyen@andvina.com
 
     // Rollback Function
     function rollbackCode(btn) {
+      const originalHtml = btn.innerHTML;
       btn.style.pointerEvents = 'none';
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Undo';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
       $.ajax({
         url: '/api/rollback',
@@ -736,7 +737,8 @@ Email: phongnguyen@andvina.com
         }),
         success: function(data) {
           if (data.success) {
-            btn.outerHTML = `<span class="text-success" style="font-size: 13px;"><i class="fas fa-check"></i> ${data.message}</span>`;
+            btn.innerHTML = originalHtml;
+            btn.style.pointerEvents = 'auto';
             setTimeout(() => { reloadPreview(); }, 800);
           } else {
             btn.outerHTML = `<span class="text-danger" style="font-size: 13px;"><i class="fas fa-times"></i> ${data.message}</span>`;
@@ -1028,9 +1030,8 @@ Email: phongnguyen@andvina.com
           if (data.success) {
             let replyHtml = `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}`;
             if (data.css_updated) {
-               replyHtml += `<div class="chat-reload-box">
-                 <small class="text-muted"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>
-                 <a href="#" class="chat-undo-link" onclick="event.preventDefault(); rollbackCode(this);"><i class="fas fa-undo mr-1"></i> Undo</a>
+               replyHtml += `<div class="mt-2 text-right">
+                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="rollbackCode(this)" title="Toggle Versions"><i class="fas fa-exchange-alt mr-1"></i> &lt; &gt; Cũ/Mới</button>
                </div>`;
             }
             appendMessage(replyHtml, 'bot');
