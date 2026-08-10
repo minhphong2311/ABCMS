@@ -359,21 +359,33 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
 
-        if image_base64:
-            import base64
-            from google.genai import types
+        import base64
+        from google.genai import types
+        contents = []
+
+        if isinstance(images_base64, list) and len(images_base64) > 0:
+            for img_str in images_base64:
+                img_str = img_str.strip()
+                if not img_str: continue
+                if ',' in img_str:
+                    header, encoded = img_str.split(",", 1)
+                    mime_type = header.split(";")[0].split(":")[1]
+                else:
+                    encoded = img_str
+                    mime_type = "image/png"
+                img_data = base64.b64decode(encoded)
+                contents.append(types.Part.from_bytes(data=img_data, mime_type=mime_type))
+        elif image_base64:
             if ',' in image_base64:
                 header, encoded = image_base64.split(",", 1)
                 mime_type = header.split(";")[0].split(":")[1]
             else:
                 encoded = image_base64
                 mime_type = "image/png"
-            
             img_data = base64.b64decode(encoded)
-            image_part = types.Part.from_bytes(data=img_data, mime_type=mime_type)
-            contents = [image_part, prompt]
-        else:
-            contents = prompt
+            contents.append(types.Part.from_bytes(data=img_data, mime_type=mime_type))
+            
+        contents.append(prompt)
 
         config = types.GenerateContentConfig(
             response_mime_type="application/json",

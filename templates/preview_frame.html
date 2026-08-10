@@ -581,11 +581,7 @@ Email: phongnguyen@andvina.com
       <!-- Chat Footer / Input -->
       <div class="chat-footer">
         <form id="chatForm" onsubmit="sendMessage(event)">
-          <div id="chatImagePreviewContainer" class="mb-2" style="display: none; position: relative; width: 100px;">
-              <img id="chatImagePreview" src="" alt="Pasted Image" class="img-thumbnail" style="max-height: 100px;">
-              <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -5px; right: -5px; border-radius: 50%; padding: 0 5px;" onclick="removeChatImage()" title="Remove Image">
-                  <i class="fas fa-times" style="font-size: 10px;"></i>
-              </button>
+          <div id="chatImagePreviewContainer" class="mb-2" style="display: none; flex-wrap: wrap; gap: 8px;">
           </div>
           <div class="chat-input-group">
             <button type="button" class="chat-attach-btn" onclick="document.getElementById('chatImageInput').click()" title="Attach image">
@@ -635,50 +631,72 @@ Email: phongnguyen@andvina.com
 
     const chatStorageKey = 'abcms_chat_{{ site_id }}_{{ menu_param }}';
     
-    let currentChatImageBase64 = null;
+    let currentChatImagesBase64 = [];
+
+    function renderImagePreviews() {
+      const container = document.getElementById('chatImagePreviewContainer');
+      container.innerHTML = '';
+      if (currentChatImagesBase64.length === 0) {
+        container.style.display = 'none';
+        if (!chatInput.value.trim()) {
+           chatInput.setAttribute('required', 'required');
+        }
+        return;
+      }
+      container.style.display = 'flex';
+      currentChatImagesBase64.forEach((imgBase64, index) => {
+        const wrap = document.createElement('div');
+        wrap.style.position = 'relative';
+        wrap.style.width = '100px';
+        wrap.innerHTML = `
+          <img src="${imgBase64}" class="img-thumbnail" style="max-height: 100px; object-fit: contain; width: 100%;">
+          <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -5px; right: -5px; border-radius: 50%; padding: 0 5px;" onclick="removeChatImage(${index})" title="Remove Image">
+              <i class="fas fa-times" style="font-size: 10px;"></i>
+          </button>
+        `;
+        container.appendChild(wrap);
+      });
+      chatInput.removeAttribute('required');
+    }
 
     function handleChatImageSelect(input) {
-      if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          currentChatImageBase64 = e.target.result;
-          document.getElementById('chatImagePreview').src = currentChatImageBase64;
-          document.getElementById('chatImagePreviewContainer').style.display = 'block';
-          chatInput.removeAttribute('required');
-        }
-        reader.readAsDataURL(input.files[0]);
+      if (input.files && input.files.length > 0) {
+        Array.from(input.files).forEach(file => {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            currentChatImagesBase64.push(e.target.result);
+            renderImagePreviews();
+          }
+          reader.readAsDataURL(file);
+        });
+        // reset input so same file can be selected again
+        input.value = '';
       }
     }
 
-    function removeChatImage() {
-      currentChatImageBase64 = null;
-      document.getElementById('chatImagePreview').src = '';
-      document.getElementById('chatImagePreviewContainer').style.display = 'none';
-      document.getElementById('chatImageInput').value = '';
-      if (!chatInput.value.trim()) {
-         chatInput.setAttribute('required', 'required');
-      }
+    function removeChatImage(index) {
+      currentChatImagesBase64.splice(index, 1);
+      renderImagePreviews();
     }
 
     chatInput.addEventListener('paste', function(e) {
       if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-        const file = e.clipboardData.files[0];
-        if (file.type.indexOf('image/') !== -1) {
-          e.preventDefault();
-          var reader = new FileReader();
-          reader.onload = function(event) {
-            currentChatImageBase64 = event.target.result;
-            document.getElementById('chatImagePreview').src = currentChatImageBase64;
-            document.getElementById('chatImagePreviewContainer').style.display = 'block';
-            chatInput.removeAttribute('required');
+        Array.from(e.clipboardData.files).forEach(file => {
+          if (file.type.indexOf('image/') !== -1) {
+            e.preventDefault();
+            var reader = new FileReader();
+            reader.onload = function(event) {
+              currentChatImagesBase64.push(event.target.result);
+              renderImagePreviews();
+            }
+            reader.readAsDataURL(file);
           }
-          reader.readAsDataURL(file);
-        }
+        });
       }
     });
 
     chatInput.addEventListener('input', function() {
-      if (!this.value.trim() && !currentChatImageBase64) {
+      if (!this.value.trim() && currentChatImagesBase64.length === 0) {
          this.setAttribute('required', 'required');
       } else {
          this.removeAttribute('required');
@@ -728,8 +746,9 @@ Email: phongnguyen@andvina.com
     function submitEditMessage(btn) {
       const msgDiv = btn.closest('.chat-message');
       const newText = msgDiv.querySelector('textarea').value.trim();
-      const imgData = msgDiv.getAttribute('data-img');
-      if (!newText && !imgData) return;
+      const imgsDataAttr = msgDiv.getAttribute('data-imgs');
+      
+      if (!newText && !imgsDataAttr) return;
 
       // Delete this message and all subsequent messages
       let current = msgDiv.nextElementSibling;
@@ -748,19 +767,19 @@ Email: phongnguyen@andvina.com
                  text: el.getAttribute('data-raw'),
                  sender: el.classList.contains('user') ? 'user' : 'bot'
              };
-             if (el.hasAttribute('data-img')) {
-                 msgObj.image = el.getAttribute('data-img');
+             if (el.hasAttribute('data-imgs')) {
+                 msgObj.images = JSON.parse(el.getAttribute('data-imgs'));
              }
              history.push(msgObj);
          }
       });
       localStorage.setItem(chatStorageKey, JSON.stringify(history));
 
-      if (imgData) {
-          currentChatImageBase64 = imgData;
-          document.getElementById('chatImagePreview').src = imgData;
-          document.getElementById('chatImagePreviewContainer').style.display = 'block';
-          document.getElementById('chatInput').removeAttribute('required');
+      if (imgsDataAttr) {
+          try {
+              currentChatImagesBase64 = JSON.parse(imgsDataAttr);
+              renderImagePreviews();
+          } catch(e) {}
       }
 
       // Put the new text into main input and trigger send
@@ -768,18 +787,24 @@ Email: phongnguyen@andvina.com
       document.getElementById('chatForm').dispatchEvent(new Event('submit', {cancelable: true}));
     }
 
-    function appendMessage(text, sender, skipSave = false, imageBase64 = null) {
+    function appendMessage(text, sender, skipSave = false, imagesArray = []) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `chat-message ${sender}`;
       // Store raw text for copy/edit
       msgDiv.setAttribute('data-raw', text);
-      if (imageBase64) msgDiv.setAttribute('data-img', imageBase64);
+      if (imagesArray && imagesArray.length > 0) {
+          msgDiv.setAttribute('data-imgs', JSON.stringify(imagesArray));
+      }
 
       let contentHtml = '';
       if (sender === 'user') {
         contentHtml = escapeHtml(text).replace(/\n/g, '<br>');
-        if (imageBase64) {
-           contentHtml += `<br><img src="${imageBase64}" style="max-height: 150px; max-width: 100%; object-fit: contain; border-radius: 8px; margin-top: 8px;">`;
+        if (imagesArray && imagesArray.length > 0) {
+           contentHtml += '<br><div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">';
+           imagesArray.forEach(img => {
+              contentHtml += `<img src="${img}" style="max-height: 150px; max-width: 100%; object-fit: contain; border-radius: 8px;">`;
+           });
+           contentHtml += '</div>';
         }
       } else {
         contentHtml = text;
@@ -815,7 +840,7 @@ Email: phongnguyen@andvina.com
 
       if (!skipSave) {
         let history = JSON.parse(localStorage.getItem(chatStorageKey)) || [];
-        history.push({text: text, sender: sender, image: imageBase64});
+        history.push({text: text, sender: sender, images: imagesArray});
         localStorage.setItem(chatStorageKey, JSON.stringify(history));
       }
 
@@ -849,14 +874,15 @@ Email: phongnguyen@andvina.com
     function sendMessage(e) {
       e.preventDefault();
       const text = chatInput.value.trim();
-      const imgData = currentChatImageBase64;
-      if (!text && !imgData) return;
+      const imgsData = [...currentChatImagesBase64];
+      if (!text && imgsData.length === 0) return;
 
-      appendMessage(text, 'user', false, imgData); // user messages auto-escape HTML
+      appendMessage(text, 'user', false, imgsData); // user messages auto-escape HTML
       
       chatInput.value = '';
       chatInput.style.height = '38px';
-      removeChatImage();
+      currentChatImagesBase64 = [];
+      renderImagePreviews();
 
       showTypingIndicator();
 
@@ -866,7 +892,7 @@ Email: phongnguyen@andvina.com
         contentType: 'application/json',
         data: JSON.stringify({
           message: text,  // send raw text to AI
-          image: imgData,
+          images: imgsData,
           site_id: '{{ site_id }}',
           menu_param: '{{ menu_param }}'
         }),
@@ -902,7 +928,10 @@ Email: phongnguyen@andvina.com
       if (history.length > 0) {
         chatBody.innerHTML = ''; // clear default welcome message
         history.forEach(msg => {
-          appendMessage(msg.text, msg.sender, true, msg.image);
+          // support backward compatibility (msg.image) and new format (msg.images)
+          let imgs = msg.images || [];
+          if (msg.image && imgs.length === 0) imgs = [msg.image];
+          appendMessage(msg.text, msg.sender, true, imgs);
         });
       }
     });
