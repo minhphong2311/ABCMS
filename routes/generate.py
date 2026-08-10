@@ -1258,7 +1258,13 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             except Exception: pass
             
             prompt = f"""You are an expert Frontend Developer. 
-Your task is to convert this screenshot into responsive HTML and CSS.
+Your task is to convert this screenshot into pixel-perfect, responsive HTML and CSS.
+
+To ensure extreme accuracy, you MUST follow this Chain-of-Thought pipeline before writing any code:
+1. Vision analysis: Describe the overall visual theme, colors, and design style.
+2. Layout analysis: Break down the structural layout (e.g., headers, 3-column grids, complex flowcharts, nested boxes).
+3. OCR / read text: Extract ALL text exactly as it appears in the image, ensuring you don't miss small details.
+4. Component identification: Identify all specific UI components like buttons, connecting arrows, lines, and boxes.
 
 CRITICAL STRUCTURE RULES:
 1. Wrap the entire page content in `<div class="content-box">`. 
@@ -1270,6 +1276,10 @@ CRITICAL STRUCTURE RULES:
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
+  "vision_analysis": "...",
+  "layout_analysis": "...",
+  "ocr_text": "...",
+  "components": ["...", "..."],
   "html": "full HTML content inside body",
   "css": "full CSS content, one rule per line"
 }}
