@@ -359,7 +359,7 @@ Nhiệm vụ:
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
 {{
-  "explanation": "Giải thích ngắn gọn bằng tiếng Việt những gì đã thay đổi",
+  "explanation": "Giải thích RẤT NGẮN GỌN (1-2 câu) những gì đã thay đổi. BẮT BUỘC sử dụng ĐÚNG NGÔN NGỮ mà người dùng đã dùng để chat.",
   "html": "toàn bộ nội dung HTML mới (hoặc chuỗi rỗng nếu không thay đổi HTML)",
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
