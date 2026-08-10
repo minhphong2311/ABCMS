@@ -1031,7 +1031,11 @@ Template Rules to follow:
 7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
 8. CRITICAL RESPONSIVE RULE: Ensure layout is 100% responsive for Desktop, Tablet, and Mobile. Include media queries in CSS. Never leave fixed pixel widths.
 
-CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL 7 checklist steps pixel-by-pixel. If there is ANY difference in layout, fonts, margins, or responsiveness, you MUST return "NEEDS_FIX" and provide the corrected HTML and CSS.
+CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL 7 checklist steps pixel-by-pixel. 
+SPECIAL ATTENTION FOR DIAGRAMS/CHARTS: If the Figma design contains connecting lines, grid boxes, flowcharts, or complex box structures:
+1. You MUST use CSS (e.g., ::before/::after, borders, or absolute positioning) to accurately recreate the connecting lines, arrows, and diagram structures.
+2. The background colors of the boxes MUST match EXACTLY.
+3. If there is ANY difference in layout, fonts, margins, responsiveness, lines, or colors, you MUST return "NEEDS_FIX" and provide the corrected HTML and CSS.
 
 Current HTML:
 {html}
