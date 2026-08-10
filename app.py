@@ -516,17 +516,25 @@ def api_rollback():
     import shutil
 
     if os.path.exists(html_bak):
+        temp_path = html_path + '.temp'
+        shutil.copyfile(html_path, temp_path)
         shutil.copyfile(html_bak, html_path)
+        shutil.copyfile(temp_path, html_bak)
+        os.remove(temp_path)
         restored_html = True
 
     if os.path.exists(css_bak):
+        temp_path = css_path + '.temp'
+        shutil.copyfile(css_path, temp_path)
         shutil.copyfile(css_bak, css_path)
+        shutil.copyfile(temp_path, css_bak)
+        os.remove(temp_path)
         restored_css = True
 
     if restored_html or restored_css:
-        return jsonify({'success': True, 'message': 'Đã hoàn tác (Rollback) thành công!'})
+        return jsonify({'success': True, 'message': 'Undo successful!'})
     else:
-        return jsonify({'success': False, 'message': 'Không tìm thấy bản sao lưu nào để hoàn tác.'})
+        return jsonify({'success': False, 'message': 'No backup found to undo.'})
 
 
 # ---------------------------------------------------------------------------
