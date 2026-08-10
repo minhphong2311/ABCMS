@@ -622,17 +622,17 @@ Email: phongnguyen@andvina.com
           </div>
           
           <div class="row form-group mb-3">
-            <div class="col-md-3 col-form-label"><label for="ai_hint">AI Hint / Gợi ý</label></div>
-            <div class="col-md-9">
-              <textarea class="form-control" id="ai_hint" name="ai_hint" placeholder="Ví dụ: Dùng slider Swiper, màu chủ đạo là đỏ..." spellcheck="false"></textarea>
-            </div>
-          </div>
-          
-          <div class="row form-group mb-0">
             <div class="col-md-3 col-form-label"><label for="image_file">Or Upload Image</label></div>
             <div class="col-md-9">
               <input type="file" class="form-control-file mt-2" id="image_file" name="image_file" accept="image/*">
               <small class="form-text text-muted">Prioritize Figma if both exist</small>
+            </div>
+          </div>
+          
+          <div class="row form-group mb-0">
+            <div class="col-md-3 col-form-label"><label for="ai_hint">AI Hint</label></div>
+            <div class="col-md-9">
+              <textarea class="form-control mt-2" id="ai_hint" name="ai_hint" placeholder="Ví dụ: Dùng slider Swiper, màu chủ đạo là đỏ..." spellcheck="false"></textarea>
             </div>
           </div>
         </div>
@@ -694,13 +694,6 @@ Email: phongnguyen@andvina.com
           </div>
           
           <div class="row form-group mb-3">
-            <div class="col-md-3 col-form-label"><label for="edit_ai_hint">AI Hint / Gợi ý</label></div>
-            <div class="col-md-9">
-              <textarea class="form-control" id="edit_ai_hint" name="ai_hint" spellcheck="false"></textarea>
-            </div>
-          </div>
-          
-          <div class="row form-group mb-0">
             <div class="col-md-3 col-form-label"><label for="edit_image_file">Or Upload Image</label></div>
             <div class="col-md-9">
               <input type="file" class="form-control-file mt-2" id="edit_image_file" name="image_file" accept="image/*" onchange="document.getElementById('remove_image').value='0';">
@@ -714,6 +707,13 @@ Email: phongnguyen@andvina.com
                       </button>
                   </div>
               </div>
+            </div>
+          </div>
+          
+          <div class="row form-group mb-0">
+            <div class="col-md-3 col-form-label"><label for="edit_ai_hint">AI Hint</label></div>
+            <div class="col-md-9">
+              <textarea class="form-control mt-2" id="edit_ai_hint" name="ai_hint" spellcheck="false"></textarea>
             </div>
           </div>
         </div>
