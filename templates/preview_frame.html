@@ -728,7 +728,8 @@ Email: phongnguyen@andvina.com
     function submitEditMessage(btn) {
       const msgDiv = btn.closest('.chat-message');
       const newText = msgDiv.querySelector('textarea').value.trim();
-      if (!newText) return;
+      const imgData = msgDiv.getAttribute('data-img');
+      if (!newText && !imgData) return;
 
       // Delete this message and all subsequent messages
       let current = msgDiv.nextElementSibling;
@@ -743,17 +744,27 @@ Email: phongnguyen@andvina.com
       let history = [];
       document.querySelectorAll('#chatBody .chat-message').forEach(el => {
          if (el.id !== 'typingIndicator' && el.hasAttribute('data-raw')) {
-             history.push({
+             let msgObj = {
                  text: el.getAttribute('data-raw'),
                  sender: el.classList.contains('user') ? 'user' : 'bot'
-             });
+             };
+             if (el.hasAttribute('data-img')) {
+                 msgObj.image = el.getAttribute('data-img');
+             }
+             history.push(msgObj);
          }
       });
       localStorage.setItem(chatStorageKey, JSON.stringify(history));
 
+      if (imgData) {
+          currentChatImageBase64 = imgData;
+          document.getElementById('chatImagePreview').src = imgData;
+          document.getElementById('chatImagePreviewContainer').style.display = 'block';
+          document.getElementById('chatInput').removeAttribute('required');
+      }
+
       // Put the new text into main input and trigger send
-      const chatInput = document.getElementById('chatInput');
-      chatInput.value = newText;
+      document.getElementById('chatInput').value = newText;
       document.getElementById('chatForm').dispatchEvent(new Event('submit', {cancelable: true}));
     }
 
