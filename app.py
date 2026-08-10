@@ -374,7 +374,14 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         else:
             contents = prompt
 
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=contents)
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json"
+        )
+        response = client.models.generate_content(
+            model='gemini-3.5-flash', 
+            contents=contents,
+            config=config
+        )
         text = response.text.strip()
 
         import json as _json
