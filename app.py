@@ -377,11 +377,30 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         config = types.GenerateContentConfig(
             response_mime_type="application/json"
         )
-        response = client.models.generate_content(
-            model='gemini-3.5-flash', 
-            contents=contents,
-            config=config
-        )
+        
+        import time
+        import re
+        max_retries = 3
+        response = None
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-3.5-flash', 
+                    contents=contents,
+                    config=config
+                )
+                break
+            except Exception as e:
+                err_str = str(e)
+                if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str and attempt < max_retries - 1:
+                    match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
+                    wait_time = float(match.group(1)) + 1 if match else 20.0
+                    print(f"[Chat AI] Rate limit hit. Waiting {wait_time}s before retry...")
+                    if wait_time > 65:
+                        raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
+                    time.sleep(wait_time)
+                else:
+                    raise
         text = response.text.strip()
 
         import json as _json
