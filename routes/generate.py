@@ -1324,17 +1324,18 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
 
         base_style_src = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'layout', 'style.css')
         if os.path.exists(base_style_src):
-            shutil.copy(base_style_src, os.path.join(target_dir, "style.css"))
             site_root_dir = os.path.join(OUTPUT_DIR, site_id)
             os.makedirs(site_root_dir, exist_ok=True)
             shutil.copy(base_style_src, os.path.join(site_root_dir, "style.css"))
+
+        style_href = "../style.css" if folder else "style.css"
 
         final_html = (
             f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
             f'    <meta charset="UTF-8">\n'
             f'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
             f'    <title>{menu.get("name", menu_slug)}</title>\n'
-            f'    <link rel="stylesheet" href="style.css">\n'
+            f'    <link rel="stylesheet" href="{style_href}">\n'
             f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
             f'</head>\n<body>\n    {html_result}\n</body>\n</html>'
         )

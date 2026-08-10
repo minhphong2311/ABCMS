@@ -428,13 +428,14 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 
         if new_html and os.path.exists(html_path):
             if '<html' not in new_html.lower() and '<!doctype html>' not in new_html.lower():
+                style_href = "../style.css" if folder else "style.css"
                 # Tự động bọc lại cấu trúc chuẩn nếu AI trả về thiếu
                 new_html = (
                     f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
                     f'    <meta charset="UTF-8">\n'
                     f'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
                     f'    <title>{menu_slug}</title>\n'
-                    f'    <link rel="stylesheet" href="style.css">\n'
+                    f'    <link rel="stylesheet" href="{style_href}">\n'
                     f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
                     f'</head>\n<body>\n    {new_html}\n</body>\n</html>'
                 )
