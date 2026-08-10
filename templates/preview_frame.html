@@ -654,22 +654,20 @@ Email: phongnguyen@andvina.com
         
         <div class="mt-2 w-100 ref-design-box">
             <div class="ref-design-title"><i class="fas fa-layer-group mr-1"></i> Reference Design:</div>
-            {% if menu_item %}
-              {% set found_image = False %}
-              {% for f in ['png', 'jpg', 'jpeg', 'gif', 'webp'] %}
-                {% set filename = (menu_item.slug ~ '.' ~ f) %}
-                {% if os.path.exists(os.path.join(app.root_path, 'uploads', site_id, filename)) and not found_image %}
-                  <div class="mt-2 bg-white p-1 text-center ref-design-img-container">
-                      <a href="javascript:void(0)" onclick="openImageViewer('/uploads/{{ site_id }}/{{ filename }}')">
+            {% if figma_link %}
+                <a href="{{ figma_link }}" target="_blank" class="text-primary d-block mb-1 text-truncate" title="{{ figma_link }}"><i class="fab fa-figma mr-1"></i> Figma Design</a>
+            {% endif %}
+            {% if image_path %}
+                {% set filename = image_path.split('/')[-1] if '/' in image_path else image_path.split('\\')[-1] %}
+                <div class="mt-2 bg-white p-1 text-center ref-design-img-container">
+                    <a href="javascript:void(0)" onclick="openImageViewer('/uploads/{{ site_id }}/{{ filename }}')">
                         <img src="/uploads/{{ site_id }}/{{ filename }}" alt="Uploaded Design Source" class="ref-design-img">
-                      </a>
-                  </div>
-                  {% set found_image = True %}
-                {% endif %}
-              {% endfor %}
-              {% if not found_image %}
+                    </a>
+                </div>
+            {% endif %}
+            {% if not figma_link and not image_path %}
                 <span class="text-muted d-block ref-design-empty">No Figma or Image provided.</span>
-              {% endif %}
+            {% endif %}
         </div>
       </div>
       
