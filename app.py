@@ -247,7 +247,8 @@ def api_chat():
     user_message = data.get('message', '').strip()
     site_id = data.get('site_id', '').strip()
     menu_param = data.get('menu_param', '').strip()
-    image_base64 = data.get('image', '').strip()
+    image_base64 = data.get('image') or ''
+    image_base64 = image_base64.strip()
 
     if not user_message and not image_base64:
         return jsonify({'success': False, 'reply': 'Please enter a request or attach an image.'}), 400
@@ -359,6 +360,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 
         if image_base64:
             import base64
+            from google.genai import types
             if ',' in image_base64:
                 header, encoded = image_base64.split(",", 1)
                 mime_type = header.split(";")[0].split(":")[1]
@@ -367,7 +369,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                 mime_type = "image/png"
             
             img_data = base64.b64decode(encoded)
-            image_part = _genai.types.Part.from_bytes(data=img_data, mime_type=mime_type)
+            image_part = types.Part.from_bytes(data=img_data, mime_type=mime_type)
             contents = [image_part, prompt]
         else:
             contents = prompt
