@@ -746,6 +746,15 @@ Email: phongnguyen@andvina.com
             btn.style.pointerEvents = 'auto';
             isShowingNewCode = (direction === 'next');
             
+            // Update disabled state for buttons
+            const btnGroup = btn.closest('.btn-group');
+            if (btnGroup) {
+                const btnUndo = btnGroup.querySelector('.btn-undo-version');
+                const btnRedo = btnGroup.querySelector('.btn-redo-version');
+                if (btnUndo) btnUndo.disabled = !isShowingNewCode;
+                if (btnRedo) btnRedo.disabled = isShowingNewCode;
+            }
+            
             // Show status notification
             const statusSpan = btn.closest('.text-right').querySelector('.version-status');
             if (statusSpan) {
@@ -1052,8 +1061,8 @@ Email: phongnguyen@andvina.com
                replyHtml += `<div class="mt-2 text-right">
                  <span class="version-status text-success mr-2" style="font-size: 12px; display: none;"></span>
                  <div class="btn-group">
-                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('prev', this)" title="Undo AI changes"><i class="fas fa-undo mr-1"></i> Undo</button>
-                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('next', this)" title="Redo AI changes">Redo <i class="fas fa-redo ml-1"></i></button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary btn-undo-version" onclick="toggleVersion('prev', this)" title="Undo AI changes"><i class="fas fa-undo mr-1"></i> Undo</button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary btn-redo-version" onclick="toggleVersion('next', this)" title="Redo AI changes" disabled>Redo <i class="fas fa-redo ml-1"></i></button>
                  </div>
                </div>`;
             }
