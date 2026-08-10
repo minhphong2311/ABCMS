@@ -247,9 +247,10 @@ def api_chat():
     user_message = data.get('message', '').strip()
     site_id = data.get('site_id', '').strip()
     menu_param = data.get('menu_param', '').strip()
+    image_base64 = data.get('image', '').strip()
 
-    if not user_message:
-        return jsonify({'success': False, 'reply': 'Please enter a request.'}), 400
+    if not user_message and not image_base64:
+        return jsonify({'success': False, 'reply': 'Please enter a request or attach an image.'}), 400
 
     folder, menu_slug = parse_folder_slug(menu_param)
     if folder:
@@ -356,7 +357,22 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
 }}"""
 
-        response = client.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+        if image_base64:
+            import base64
+            if ',' in image_base64:
+                header, encoded = image_base64.split(",", 1)
+                mime_type = header.split(";")[0].split(":")[1]
+            else:
+                encoded = image_base64
+                mime_type = "image/png"
+            
+            img_data = base64.b64decode(encoded)
+            image_part = _genai.types.Part.from_bytes(data=img_data, mime_type=mime_type)
+            contents = [image_part, prompt]
+        else:
+            contents = prompt
+
+        response = client.models.generate_content(model='gemini-3.5-flash', contents=contents)
         text = response.text.strip()
 
         import json as _json
