@@ -721,8 +721,13 @@ Email: phongnguyen@andvina.com
       document.body.style.overflow = '';
     }
 
-    // Rollback Function
-    function rollbackCode(btn) {
+    // Version Toggle Logic
+    let isShowingNewCode = true;
+
+    function toggleVersion(direction, btn) {
+      if (direction === 'prev' && !isShowingNewCode) return;
+      if (direction === 'next' && isShowingNewCode) return;
+
       const originalHtml = btn.innerHTML;
       btn.style.pointerEvents = 'none';
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -739,14 +744,27 @@ Email: phongnguyen@andvina.com
           if (data.success) {
             btn.innerHTML = originalHtml;
             btn.style.pointerEvents = 'auto';
+            isShowingNewCode = (direction === 'next');
+            
+            // Show status notification
+            const statusSpan = btn.closest('.text-right').querySelector('.version-status');
+            if (statusSpan) {
+                statusSpan.innerHTML = '<i class="fas fa-check"></i> ' + (isShowingNewCode ? 'Restored Latest' : 'Restored Previous');
+                statusSpan.style.display = 'inline';
+                setTimeout(() => { statusSpan.style.display = 'none'; }, 3000);
+            }
             setTimeout(() => { reloadPreview(); }, 800);
           } else {
-            btn.outerHTML = `<span class="text-danger" style="font-size: 13px;"><i class="fas fa-times"></i> ${data.message}</span>`;
+            alert("Error: " + data.message);
+            btn.innerHTML = originalHtml;
+            btn.style.pointerEvents = 'auto';
           }
         },
         error: function(xhr) {
           const errData = xhr.responseJSON || {};
-          btn.outerHTML = `<span class="text-danger" style="font-size: 13px;"><i class="fas fa-times"></i> Lỗi: ${errData.message || 'Không thể kết nối API'}</span>`;
+          alert("Error: " + (errData.message || 'API connection failed'));
+          btn.innerHTML = originalHtml;
+          btn.style.pointerEvents = 'auto';
         }
       });
     }
@@ -1030,8 +1048,13 @@ Email: phongnguyen@andvina.com
           if (data.success) {
             let replyHtml = `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}`;
             if (data.css_updated) {
+               isShowingNewCode = true; // reset state on new AI update
                replyHtml += `<div class="mt-2 text-right">
-                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="rollbackCode(this)" title="Toggle Versions"><i class="fas fa-exchange-alt mr-1"></i> &lt; &gt; Cũ/Mới</button>
+                 <span class="version-status text-success mr-2" style="font-size: 12px; display: none;"></span>
+                 <div class="btn-group">
+                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('prev', this)" title="Previous Version"><i class="fas fa-chevron-left mr-1"></i> Prev</button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleVersion('next', this)" title="Latest Version">Next <i class="fas fa-chevron-right ml-1"></i></button>
+                 </div>
                </div>`;
             }
             appendMessage(replyHtml, 'bot');
