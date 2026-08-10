@@ -895,7 +895,7 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
         base = os.path.dirname(os.path.dirname(__file__))
         structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
         table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
-        checklist_path = os.path.join(base, 'assets', 'ai_prompts', 'quality-checklist.md')
+        checklist_path = os.path.join(base, 'assets', 'ai_prompts', 'quality_checklist.txt')
         
         if os.path.exists(structure_path):
             with open(structure_path, 'r', encoding='utf-8') as f:
