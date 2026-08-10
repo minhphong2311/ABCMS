@@ -462,6 +462,42 @@ Email: phongnguyen@andvina.com
       color: #495057;
     }
 
+    /* Refactored CSS Classes */
+    .navbar-brand-spacing { margin-right: 1.5rem; }
+    .brand-text-gradient {
+      background: linear-gradient(135deg, #00aeef, #8cc63f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1.65rem;
+      line-height: 1.2;
+    }
+    
+    .chat-header-extended {
+      flex-direction: column;
+      align-items: flex-start;
+      padding-bottom: 10px;
+    }
+    .chat-header-extended-inner { display: flex; align-items: center; width: 100%; }
+    .ref-design-box {
+      font-size: 13px; color: #444; background: #f1f3f5; padding: 10px; border-radius: 8px;
+    }
+    .ref-design-title { font-weight: 600; margin-bottom: 4px; color: #333; }
+    .ref-design-img-container { border: 1px solid #dee2e6; border-radius: 6px; }
+    .ref-design-img { max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; }
+    .ref-design-empty { font-size: 12px; }
+
+    .chat-img-preview-container { display: none; flex-wrap: wrap; gap: 8px; }
+    .chat-img-upload-input { display: none; }
+    .chat-img-wrap { width: 100px; }
+    .chat-img-thumbnail { max-height: 100px; object-fit: contain; width: 100%; }
+    .chat-img-remove-btn { top: -5px; right: -5px; border-radius: 50%; padding: 0 5px; }
+    .chat-img-remove-icon { font-size: 10px; }
+
+    .version-status-text { font-size: 12px; display: none; }
+    .btn-version-toggle { font-size: 11px; padding: 2px 6px; }
+    .icon-version-toggle { font-size: 10px; }
+    .chat-img-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end; }
+
     /* Dark Mode Overrides */
     body.dark-mode {
       background-color: #343a40 !important;
@@ -571,8 +607,8 @@ Email: phongnguyen@andvina.com
   <!-- Navbar -->
   <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
     <div class="container-fluid">
-      <a href="/" class="navbar-brand d-flex align-items-center py-0" style="margin-right: 1.5rem;">
-        <span class="brand-text font-weight-bold" style="background: linear-gradient(135deg, #00aeef, #8cc63f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.65rem; line-height: 1.2;">ABCMS</span>
+      <a href="/" class="navbar-brand d-flex align-items-center py-0 navbar-brand-spacing">
+        <span class="brand-text font-weight-bold brand-text-gradient">ABCMS</span>
       </a>
 
       <div class="d-flex align-items-center">
@@ -605,8 +641,8 @@ Email: phongnguyen@andvina.com
 
     <!-- Right: Chat Box -->
     <div class="chat-pane">
-      <div class="chat-header" style="flex-direction: column; align-items: flex-start; padding-bottom: 10px;">
-        <div style="display: flex; align-items: center; width: 100%;">
+      <div class="chat-header chat-header-extended">
+        <div class="chat-header-extended-inner">
           <div class="chat-avatar">
             <i class="fas fa-robot"></i>
           </div>
@@ -616,22 +652,24 @@ Email: phongnguyen@andvina.com
           </div>
         </div>
         
-        <div class="mt-2 w-100" style="font-size: 13px; color: #444; background: #f1f3f5; padding: 10px; border-radius: 8px;">
-            <div style="font-weight: 600; margin-bottom: 4px; color: #333;"><i class="fas fa-layer-group mr-1"></i> Reference Design:</div>
-            {% if figma_link %}
-                <a href="{{ figma_link }}" target="_blank" class="text-primary d-block mb-1 text-truncate" title="{{ figma_link }}"><i class="fab fa-figma mr-1"></i> Figma Design</a>
-            {% endif %}
-            {% if image_path %}
-                {% set filename = image_path.split('/')[-1] if '/' in image_path else image_path.split('\\')[-1] %}
-                <div class="mt-2 bg-white p-1 text-center" style="border: 1px solid #dee2e6; border-radius: 6px;">
-                    <a href="/uploads/{{ site_id }}/{{ filename }}" target="_blank" title="Click to view original size" class="d-block">
-                        <img src="/uploads/{{ site_id }}/{{ filename }}" alt="Uploaded Design Source" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px;">
-                    </a>
-                </div>
-            {% endif %}
-            {% if not figma_link and not image_path %}
-                <span class="text-muted d-block" style="font-size: 12px;">No Figma or Image provided.</span>
-            {% endif %}
+        <div class="mt-2 w-100 ref-design-box">
+            <div class="ref-design-title"><i class="fas fa-layer-group mr-1"></i> Reference Design:</div>
+            {% if menu_item %}
+              {% set found_image = False %}
+              {% for f in ['png', 'jpg', 'jpeg', 'gif', 'webp'] %}
+                {% set filename = (menu_item.slug ~ '.' ~ f) %}
+                {% if os.path.exists(os.path.join(app.root_path, 'uploads', site_id, filename)) and not found_image %}
+                  <div class="mt-2 bg-white p-1 text-center ref-design-img-container">
+                      <a href="javascript:void(0)" onclick="openImageViewer('/uploads/{{ site_id }}/{{ filename }}')">
+                        <img src="/uploads/{{ site_id }}/{{ filename }}" alt="Uploaded Design Source" class="ref-design-img">
+                      </a>
+                  </div>
+                  {% set found_image = True %}
+                {% endif %}
+              {% endfor %}
+              {% if not found_image %}
+                <span class="text-muted d-block ref-design-empty">No Figma or Image provided.</span>
+              {% endif %}
         </div>
       </div>
       
@@ -649,13 +687,15 @@ Email: phongnguyen@andvina.com
       <!-- Chat Footer / Input -->
       <div class="chat-footer">
         <form id="chatForm" onsubmit="sendMessage(event)">
-          <div id="chatImagePreviewContainer" class="mb-2" style="display: none; flex-wrap: wrap; gap: 8px;">
+          <!-- Image Previews Container -->
+          <div id="chatImagePreviewContainer" class="mb-2 chat-img-preview-container">
+            <!-- Thumbnails will be injected here -->
           </div>
-          <div class="chat-input-group">
-            <button type="button" class="chat-attach-btn" onclick="document.getElementById('chatImageInput').click()" title="Attach image">
-              <i class="fas fa-paperclip"></i>
-            </button>
-            <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="handleChatImageSelect(this)">
+          <div class="chat-input-wrapper">
+            <label class="mb-0 mr-2" style="cursor:pointer;" title="Attach Image">
+              <i class="fas fa-image text-secondary" style="font-size:1.2rem;"></i>
+              <input type="file" id="chatImageInput" accept="image/*" class="chat-img-upload-input" onchange="handleChatImageSelect(this)">
+            </label>
             <textarea id="chatInput" class="chat-input" placeholder="Enter edit request or paste image..." rows="1" required></textarea>
             <button type="submit" class="chat-send-btn">
               <i class="fas fa-paper-plane"></i>
@@ -795,12 +835,11 @@ Email: phongnguyen@andvina.com
       container.style.display = 'flex';
       currentChatImagesBase64.forEach((imgBase64, index) => {
         const wrap = document.createElement('div');
-        wrap.style.position = 'relative';
-        wrap.style.width = '100px';
+        wrap.className = 'position-relative chat-img-wrap';
         wrap.innerHTML = `
-          <img src="${imgBase64}" class="img-thumbnail" style="max-height: 100px; object-fit: contain; width: 100%;">
-          <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -5px; right: -5px; border-radius: 50%; padding: 0 5px;" onclick="removeChatImage(${index})" title="Remove Image">
-              <i class="fas fa-times" style="font-size: 10px;"></i>
+          <img src="${imgBase64}" class="img-thumbnail chat-img-thumbnail">
+          <button type="button" class="btn btn-danger btn-sm position-absolute chat-img-remove-btn" onclick="removeChatImage(${index})" title="Remove Image">
+              <i class="fas fa-times chat-img-remove-icon"></i>
           </button>
         `;
         container.appendChild(wrap);
@@ -950,7 +989,7 @@ Email: phongnguyen@andvina.com
       if (sender === 'user') {
         contentHtml = escapeHtml(text).replace(/\n/g, '<br>');
         if (imagesArray && imagesArray.length > 0) {
-           imagesHtml = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end;">';
+           imagesHtml = '<div class="chat-img-grid">';
            imagesArray.forEach(img => {
               imagesHtml += `<img src="${img}" class="chat-bubble-img" onclick="openImageViewer(this.src)">`;
            });
@@ -1059,10 +1098,10 @@ Email: phongnguyen@andvina.com
             if (data.css_updated) {
                isShowingNewCode = true; // reset state on new AI update
                replyHtml += `<div class="mt-2 text-right">
-                 <span class="version-status text-success mr-2" style="font-size: 12px; display: none;"></span>
+                 <span class="version-status text-success mr-2 version-status-text"></span>
                  <div class="btn-group">
-                   <button type="button" class="btn btn-sm btn-outline-secondary btn-undo-version" style="font-size: 11px; padding: 2px 6px;" onclick="toggleVersion('prev', this)" title="Undo AI changes"><i class="fas fa-undo mr-1" style="font-size: 10px;"></i> Undo</button>
-                   <button type="button" class="btn btn-sm btn-outline-secondary btn-redo-version" style="font-size: 11px; padding: 2px 6px;" onclick="toggleVersion('next', this)" title="Redo AI changes" disabled>Redo <i class="fas fa-redo ml-1" style="font-size: 10px;"></i></button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary btn-undo-version btn-version-toggle" onclick="toggleVersion('prev', this)" title="Undo AI changes"><i class="fas fa-undo mr-1 icon-version-toggle"></i> Undo</button>
+                   <button type="button" class="btn btn-sm btn-outline-secondary btn-redo-version btn-version-toggle" onclick="toggleVersion('next', this)" title="Redo AI changes" disabled>Redo <i class="fas fa-redo ml-1 icon-version-toggle"></i></button>
                  </div>
                </div>`;
             }
