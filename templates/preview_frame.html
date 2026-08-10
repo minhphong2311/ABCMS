@@ -704,9 +704,8 @@ Email: phongnguyen@andvina.com
 
     // Rollback Function
     function rollbackCode(btn) {
-      const icon = btn.querySelector('i');
-      if (icon) icon.className = 'fas fa-spinner fa-spin mr-1';
-      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Undo';
 
       $.ajax({
         url: '/api/rollback',
@@ -1010,8 +1009,10 @@ Email: phongnguyen@andvina.com
           if (data.success) {
             let replyHtml = `<i class="fas fa-check-circle text-success mr-1"></i> ${data.reply}`;
             if (data.css_updated) {
-               replyHtml += `<br><small class="text-muted mt-1 d-block"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>`;
-               replyHtml += `<div class="mt-2"><button type="button" class="btn btn-outline-secondary" style="font-size: 12px; padding: 2px 8px;" onclick="rollbackCode(this)">Undo</button></div>`;
+               replyHtml += `<div class="mt-2" style="display: flex; align-items: center; gap: 10px;">
+                 <small class="text-muted"><i class="fas fa-sync-alt mr-1"></i>Reloading interface...</small>
+                 <a href="#" style="font-size: 13px; color: #6c757d; text-decoration: underline;" onclick="event.preventDefault(); rollbackCode(this);">Undo</a>
+               </div>`;
             }
             appendMessage(replyHtml, 'bot');
             if (data.css_updated) {
