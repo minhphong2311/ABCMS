@@ -1033,7 +1033,7 @@ Template Rules to follow:
 
 CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL 7 checklist steps pixel-by-pixel. 
 SPECIAL ATTENTION FOR DIAGRAMS/CHARTS: If the Figma design contains connecting lines, grid boxes, flowcharts, or complex box structures:
-1. You MUST use CSS (e.g., ::before/::after, borders, or absolute positioning) to accurately recreate the connecting lines, arrows, and diagram structures.
+1. For connecting lines and arrows between boxes, you ONLY need to use CSS pseudo-elements (::before and ::after) on the boxes to draw them. Do not overcomplicate it with unnecessary HTML tags.
 2. The background colors of the boxes MUST match EXACTLY.
 3. If there is ANY difference in layout, fonts, margins, responsiveness, lines, or colors, you MUST return "NEEDS_FIX" and provide the corrected HTML and CSS.
 
