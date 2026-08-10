@@ -1093,15 +1093,23 @@ function checkDeployStatus() {
                 let listStatusInfo = document.getElementById(`build-status-info-list-${paramKey}`);
                 
                 if (info.status === 'running') {
-                    if (btn && !btn.disabled) {
+                    if (btn && btn.title !== 'Stop Deploy') {
                         btn.dataset.original = btn.innerHTML;
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        btn.disabled = false;
+                        btn.classList.remove('btn-info');
+                        btn.classList.add('btn-danger');
+                        btn.innerHTML = '<i class="fas fa-times-circle"></i>';
+                        btn.title = 'Stop Deploy';
+                        btn.onclick = function(e) { e.preventDefault(); cancelDeploy(taskId, btn, paramKey, '{{ site.id }}'); };
                     }
-                    if (listBtn && !listBtn.disabled) {
+                    if (listBtn && listBtn.title !== 'Stop Deploy') {
                         listBtn.dataset.original = listBtn.innerHTML;
-                        listBtn.disabled = true;
-                        listBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        listBtn.disabled = false;
+                        listBtn.classList.remove('btn-info');
+                        listBtn.classList.add('btn-danger');
+                        listBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
+                        listBtn.title = 'Stop Deploy';
+                        listBtn.onclick = function(e) { e.preventDefault(); cancelDeploy(taskId, listBtn, paramKey, '{{ site.id }}'); };
                     }
                     if (statusInfo) {
                         statusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Deploying in background...</span>';
@@ -1109,54 +1117,87 @@ function checkDeployStatus() {
                     if (listStatusInfo) {
                         listStatusInfo.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin mr-1"></i> Deploying in background...</span>';
                     }
-                } else if (info.status === 'success') {
+                } else if (info.status === 'cancelling') {
                     if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = btn.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        btn.title = 'Stopping...';
                     }
                     if (listBtn) {
-                        listBtn.disabled = false;
-                        listBtn.innerHTML = listBtn.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
+                        listBtn.disabled = true;
+                        listBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        listBtn.title = 'Stopping...';
                     }
                     if (statusInfo) {
-                        statusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
+                        statusInfo.innerHTML = '<span class="text-warning"><i class="fas fa-circle-notch fa-spin mr-1"></i> Cancelling deploy...</span>';
                     }
                     if (listStatusInfo) {
-                        listStatusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
+                        listStatusInfo.innerHTML = '<span class="text-warning"><i class="fas fa-circle-notch fa-spin mr-1"></i> Cancelling deploy...</span>';
                     }
-                    if (knownTasks[taskId] === 'running') {
-                        // Only alert if we saw it running before
-                        Swal.fire({
-                            toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
-                            background: '#343a40', color: '#fff',
-                            icon: 'success', title: 'Deploy successful!', text: `Page ${slug} has been updated.`
-                        });
-                    }
-                } else if (info.status === 'error') {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = btn.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
-                    }
-                    if (listBtn) {
-                        listBtn.disabled = false;
-                        listBtn.innerHTML = listBtn.dataset.original || '<i class="fas fa-cloud-upload-alt"></i>';
-                    }
-                    if (statusInfo) {
-                        statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
-                    }
-                    if (listStatusInfo) {
-                        listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
-                    }
-                    if (knownTasks[taskId] === 'running') {
-                        Swal.fire({
-                            icon: 'error', title: 'Error Deploy', text: info.message,
-                            background: '#343a40', color: '#fff'
-                        });
+                } else if (info.status === 'success' || info.status === 'error' || info.status === 'cancelled') {
+                    const revertDeployBtn = (b) => {
+                        if (!b) return;
+                        b.classList.remove('btn-danger');
+                        b.classList.add('btn-info');
+                        b.innerHTML = '<i class="fas fa-cloud-upload-alt"></i>';
+                        b.title = 'Deploy';
+                        b.disabled = false;
+                        b.onclick = function(e) { e.preventDefault(); deployFiles('{{ site.id }}', slug, folder, paramKey, b); };
+                    };
+                    
+                    revertDeployBtn(btn);
+                    revertDeployBtn(listBtn);
+                    
+                    if (info.status === 'success') {
+                        if (statusInfo) statusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
+                        if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Successfully deployed to CMS!</span>';
+                        if (knownTasks[taskId] === 'running' || knownTasks[taskId] === 'cancelling') {
+                            // Only alert if we saw it running before
+                            Swal.fire({
+                                toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
+                                background: '#343a40', color: '#fff',
+                                icon: 'success', title: 'Deploy successful!', text: `Page ${slug} has been updated.`
+                            });
+                        }
+                    } else if (info.status === 'error') {
+                        if (statusInfo) statusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
+                        if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error Deploy: ' + info.message + '</span>';
+                        if (knownTasks[taskId] === 'running' || knownTasks[taskId] === 'cancelling') {
+                            Swal.fire({
+                                icon: 'error', title: 'Error Deploy', text: info.message,
+                                background: '#343a40', color: '#fff'
+                            });
+                        }
+                    } else if (info.status === 'cancelled') {
+                        if (statusInfo) statusInfo.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle mr-1"></i>' + info.message + '</span>';
+                        if (listStatusInfo) listStatusInfo.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle mr-1"></i>' + info.message + '</span>';
+                        if (knownTasks[taskId] === 'running' || knownTasks[taskId] === 'cancelling') {
+                            Swal.fire({
+                                toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
+                                background: '#343a40', color: '#fff',
+                                icon: 'info', title: 'Deploy Cancelled', text: info.message
+                            });
+                        }
                     }
                 }
                 
                 knownTasks[taskId] = info.status;
             }
+        }
+    });
+}
+
+function cancelDeploy(taskId, btnElement, paramKey, siteId) {
+    btnElement.disabled = true;
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btnElement.title = 'Stopping...';
+    $.ajax({
+        url: '/api/deploy_cancel',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ task_id: taskId }),
+        success: function() {
+            // Polling will handle the status update to cancelled
         }
     });
 }

@@ -11,19 +11,26 @@ import threading
 
 from flask import Blueprint, request, jsonify
 from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
-from automation import run_deploy
-from deployer.deploy import run_full_deploy
+from automation import deploy_to_cms_task
+from deployer.deploy import full_deploy_task_async
+import asyncio
 
 deploy_bp = Blueprint('deploy', __name__)
 
 # Task state dictionary (task_id -> status dict)
 DEPLOY_TASKS = {}
+DEPLOY_INTERNAL = {}
 
 
 def run_deploy_async(task_id, site_url, site_id, username, password, folder, slug, layout, html_content, css_content, js_content):
     DEPLOY_TASKS[task_id] = {"status": "running"}
-    try:
-        result = run_deploy(
+    DEPLOY_INTERNAL[task_id] = {}
+    
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    task = loop.create_task(
+        deploy_to_cms_task(
             site_url=site_url,
             site_id=site_id,
             username=username,
@@ -35,12 +42,24 @@ def run_deploy_async(task_id, site_url, site_id, username, password, folder, slu
             css_content=css_content,
             js_content=js_content
         )
+    )
+    
+    DEPLOY_INTERNAL[task_id]['loop'] = loop
+    DEPLOY_INTERNAL[task_id]['task'] = task
+    
+    try:
+        result = loop.run_until_complete(task)
         DEPLOY_TASKS[task_id] = {
             "status": "success" if result.get('success') else "error",
             "message": result.get('message', '')
         }
+    except asyncio.CancelledError:
+        DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": "Deploy cancelled by user"}
     except Exception as e:
         DEPLOY_TASKS[task_id] = {"status": "error", "message": str(e)}
+    finally:
+        loop.close()
+        DEPLOY_INTERNAL.pop(task_id, None)
 
 
 @deploy_bp.route('/api/deploy', methods=['POST'])
@@ -136,6 +155,7 @@ def api_deploy_status():
 
 def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, password, menus):
     DEPLOY_TASKS[task_id] = {"status": "running", "progress": 0, "message": "Starting deployment..."}
+    DEPLOY_INTERNAL[task_id] = {}
     
     def progress_callback(percent, msg):
         if task_id in DEPLOY_TASKS:
@@ -145,8 +165,11 @@ def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, pass
     def is_cancelled():
         return DEPLOY_TASKS.get(task_id, {}).get("status") == "cancelling"
 
-    try:
-        result = run_full_deploy(
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    task = loop.create_task(
+        full_deploy_task_async(
             site_url=site_url,
             site_id=site_id,
             site_name=site_name,
@@ -156,7 +179,13 @@ def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, pass
             progress_cb=progress_callback,
             is_cancelled=is_cancelled
         )
-        
+    )
+    
+    DEPLOY_INTERNAL[task_id]['loop'] = loop
+    DEPLOY_INTERNAL[task_id]['task'] = task
+
+    try:
+        result = loop.run_until_complete(task)
         if is_cancelled():
             last_msg = DEPLOY_TASKS.get(task_id, {}).get("message", "Unknown stage")
             DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": f"Deployment stopped at [{last_msg}]"}
@@ -165,8 +194,14 @@ def run_deploy_menus_async(task_id, site_url, site_id, site_name, username, pass
                 "status": "success" if result.get('success') else "error",
                 "message": result.get('message', '')
             }
+    except asyncio.CancelledError:
+        last_msg = DEPLOY_TASKS.get(task_id, {}).get("message", "Unknown stage")
+        DEPLOY_TASKS[task_id] = {"status": "cancelled", "message": f"Deployment stopped at [{last_msg}]"}
     except Exception as e:
         DEPLOY_TASKS[task_id] = {"status": "error", "message": str(e)}
+    finally:
+        loop.close()
+        DEPLOY_INTERNAL.pop(task_id, None)
 
 @deploy_bp.route('/api/deploy_menus', methods=['POST'])
 def api_deploy_menus():
@@ -230,8 +265,16 @@ def api_deploy_cancel():
     if not task_id:
         return jsonify({'success': False, 'message': 'task_id required'})
     
-    if task_id in DEPLOY_TASKS and DEPLOY_TASKS[task_id]['status'] == 'running':
-        DEPLOY_TASKS[task_id]['status'] = 'cancelling'
+    task_info = DEPLOY_TASKS.get(task_id)
+    if task_info and task_info.get('status') == 'running':
+        task_info['status'] = 'cancelling'
+        
+        internal = DEPLOY_INTERNAL.get(task_id, {})
+        loop = internal.get('loop')
+        task = internal.get('task')
+        if loop and task and not task.done():
+            loop.call_soon_threadsafe(task.cancel)
+            
         return jsonify({'success': True, 'message': 'Cancellation requested'})
     
     return jsonify({'success': False, 'message': 'Task not running'})
