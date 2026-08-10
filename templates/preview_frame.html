@@ -689,11 +689,11 @@ Email: phongnguyen@andvina.com
           <div id="chatImagePreviewContainer" class="mb-2 chat-img-preview-container">
             <!-- Thumbnails will be injected here -->
           </div>
-          <div class="chat-input-wrapper">
-            <label class="mb-0 mr-2" style="cursor:pointer;" title="Attach Image">
-              <i class="fas fa-image text-secondary" style="font-size:1.2rem;"></i>
-              <input type="file" id="chatImageInput" accept="image/*" class="chat-img-upload-input" onchange="handleChatImageSelect(this)">
-            </label>
+          <div class="chat-input-group">
+            <button type="button" class="chat-attach-btn" onclick="document.getElementById('chatImageInput').click()" title="Attach image">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" id="chatImageInput" accept="image/*" class="chat-img-upload-input" onchange="handleChatImageSelect(this)">
             <textarea id="chatInput" class="chat-input" placeholder="Enter edit request or paste image..." rows="1" required></textarea>
             <button type="submit" class="chat-send-btn">
               <i class="fas fa-paper-plane"></i>
