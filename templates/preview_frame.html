@@ -431,8 +431,8 @@ Email: phongnguyen@andvina.com
     
     /* ChatGPT-style Image in Chat Bubble */
     .chat-bubble-img {
-      max-height: 150px;
-      max-width: 100%;
+      height: 150px;
+      width: 150px;
       object-fit: cover;
       border-radius: 12px;
       border: 1px solid #e5e5e5;
@@ -870,14 +870,15 @@ Email: phongnguyen@andvina.com
       }
 
       let contentHtml = '';
+      let imagesHtml = '';
       if (sender === 'user') {
         contentHtml = escapeHtml(text).replace(/\n/g, '<br>');
         if (imagesArray && imagesArray.length > 0) {
-           contentHtml += '<br><div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">';
+           imagesHtml = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end;">';
            imagesArray.forEach(img => {
-              contentHtml += `<img src="${img}" class="chat-bubble-img" onclick="openImageViewer(this.src)">`;
+              imagesHtml += `<img src="${img}" class="chat-bubble-img" onclick="openImageViewer(this.src)">`;
            });
-           contentHtml += '</div>';
+           imagesHtml += '</div>';
         }
       } else {
         contentHtml = text;
@@ -903,8 +904,14 @@ Email: phongnguyen@andvina.com
           `;
       }
 
+      let innerContent = '';
+      if (contentHtml.trim() !== '') {
+          innerContent = `<div class="chat-msg-content">${contentHtml}</div>`;
+      }
+
       msgDiv.innerHTML = `
-        <div class="chat-msg-content">${contentHtml}</div>
+        ${imagesHtml}
+        ${innerContent}
         ${actionsHtml}
         ${editBoxHtml}
       `;
