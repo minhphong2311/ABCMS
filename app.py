@@ -495,9 +495,9 @@ def api_rollback():
     folder, menu_slug = parse_folder_slug(menu_param)
     site_dir = os.path.join(OUTPUT_DIR, site_id)
     if folder:
-        target_dir = os.path.join(site_dir, folder, menu_slug)
+        target_dir = os.path.join(site_dir, folder)
     else:
-        target_dir = os.path.join(site_dir, menu_slug)
+        target_dir = site_dir
 
     html_path = os.path.join(target_dir, f"{menu_slug}.html")
     css_path = os.path.join(target_dir, f"{menu_slug}.css")
