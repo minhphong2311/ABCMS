@@ -1039,7 +1039,16 @@ Current HTML:
 Current CSS:
 {css}
 
-Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
+Return your response exactly in this markdown format:
+STATUS: PERFECT (or NEEDS_FIX)
+
+```html
+(put html here if NEEDS_FIX)
+```
+
+```css
+(put css here if NEEDS_FIX)
+```
 """
 
         try:
@@ -1047,7 +1056,7 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
                 print(f"[{menu_name}] Using DEMO_KEY. Mocking AI response...")
                 import time
                 time.sleep(3)
-                text = '{"status": "SUCCESS", "html": "<div class=\\"content-box\\"><div class=\\"con-box\\"><h4 class=\\"h4-tit01\\">Demo Title</h4><p class=\\"con-p\\">Mock response.</p></div></div>", "css": ".content-box { padding: 20px; }"}'
+                text = 'STATUS: NEEDS_FIX\n\n```html\n<div class="content-box"><div class="con-box"><h4 class="h4-tit01">Demo Title</h4><p class="con-p">Mock response.</p></div></div>\n```\n\n```css\n.content-box { padding: 20px; }\n```'
             else:
                 with compare_and_fix_visuals.api_lock:
                     models_to_try = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-flash-latest', 'gemini-3.5-flash']
@@ -1077,17 +1086,12 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
                             GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/3) Failed. Fallback to semantic rules."
                             import time
                             time.sleep(2)
-                        break
+                        continue
 
             if text:
-                if '```json' in text:
-                    text = text.split('```json')[1].split('```')[0].strip()
-                elif text.startswith('```'):
-                    text = text.split('```')[1].split('```')[0].strip()
+                status = "PERFECT" if "STATUS: PERFECT" in text.upper() else "NEEDS_FIX"
 
-                result = json.loads(text)
-
-                if result.get('status') == 'PERFECT':
+                if status == 'PERFECT':
                     if iteration < 2:
                         print(f"[{menu_name}] AI claimed PERFECT on iteration {iteration}. Forcing double-check...")
                         if task_id and task_id in GENERATE_TASKS:
@@ -1098,13 +1102,20 @@ Return JSON with "status", "html" and "css" (or only "status" if PERFECT).
                         print(f"[{menu_name}] Visual match is PERFECT at iteration {iteration}!")
                         break
 
-                html = result.get('html', html)
-                css = result.get('css', css)
+                import re
+                html_match = re.search(r'```html\n(.*?)\n```', text, re.DOTALL | re.IGNORECASE)
+                if html_match:
+                    html = html_match.group(1).strip()
+                    
+                css_match = re.search(r'```css\n(.*?)\n```', text, re.DOTALL | re.IGNORECASE)
+                if css_match:
+                    css = css_match.group(1).strip()
+
                 print(f"[{menu_name}] Visual correction applied (Iteration {iteration}).")
 
         except Exception as e:
             print(f"[{menu_name}] Gemini Vision Error: {e}")
-            break
+            continue
 
     # CLEANUP TEMP FILES
     for p in [target_img_path, render_img_path, temp_html_path]:
