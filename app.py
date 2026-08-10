@@ -350,6 +350,7 @@ Nhiệm vụ:
 2. TUYỆT ĐỐI KHÔNG SỬ DỤNG INLINE STYLE TRONG HTML (`style="..."`). TẤT CẢ CÁC STYLE MỚI PHẢI ĐƯỢC VIẾT VÀO NỘI DUNG CSS ĐƯỢC TRẢ VỀ.
 3. Thực hiện thay đổi chính xác theo yêu cầu.
 4. Trả về TOÀN BỘ nội dung HTML và CSS sau khi đã thay đổi.
+5. LƯU Ý CÚ PHÁP: Hãy cố gắng sử dụng nháy đơn (') cho các thuộc tính HTML (ví dụ <div class='my-class'>) và tự động escape các ký tự nháy kép để đảm bảo chuỗi JSON không bị lỗi (JSON Decode Error).
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
 {{
@@ -375,7 +376,16 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             contents = prompt
 
         config = types.GenerateContentConfig(
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            response_schema={
+                "type": "OBJECT",
+                "properties": {
+                    "explanation": {"type": "STRING"},
+                    "html": {"type": "STRING"},
+                    "css": {"type": "STRING"}
+                },
+                "required": ["explanation", "html", "css"]
+            }
         )
         
         import time
