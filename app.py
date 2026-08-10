@@ -444,8 +444,8 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         updated = False
 
         if new_html and os.path.exists(html_path):
+            style_href = "../style.css" if folder else "style.css"
             if '<html' not in new_html.lower() and '<!doctype html>' not in new_html.lower():
-                style_href = "../style.css" if folder else "style.css"
                 # Tự động bọc lại cấu trúc chuẩn nếu AI trả về thiếu
                 new_html = (
                     f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
@@ -456,6 +456,13 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                     f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
                     f'</head>\n<body>\n    {new_html}\n</body>\n</html>'
                 )
+            else:
+                css_links = f'\n    <link rel="stylesheet" href="{style_href}">\n    <link rel="stylesheet" href="{menu_slug}.css">\n'
+                if style_href not in new_html and f'{menu_slug}.css' not in new_html:
+                    if '</head>' in new_html:
+                        new_html = new_html.replace('</head>', css_links + '</head>')
+                    elif '</HEAD>' in new_html:
+                        new_html = new_html.replace('</HEAD>', css_links + '</HEAD>')
             if os.path.exists(html_path):
                 import shutil
                 shutil.copyfile(html_path, html_path + '.bak')
