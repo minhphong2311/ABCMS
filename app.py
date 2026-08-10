@@ -349,7 +349,7 @@ Nhiệm vụ:
 1. Phân tích yêu cầu (có thể là thay đổi thẻ HTML (đổi tag, class, nội dung), thay đổi CSS (màu sắc, kích thước, khoảng cách), hoặc cả hai. Áp dụng các mẫu template nếu phù hợp.
 2. TUYỆT ĐỐI KHÔNG SỬ DỤNG INLINE STYLE TRONG HTML (`style="..."`). TẤT CẢ CÁC STYLE MỚI PHẢI ĐƯỢC VIẾT VÀO NỘI DUNG CSS ĐƯỢC TRẢ VỀ.
 3. Thực hiện thay đổi chính xác theo yêu cầu.
-4. Trả về TOÀN BỘ nội dung HTML và CSS sau khi đã thay đổi.
+4. Trả về TOÀN BỘ nội dung HTML (BẮT BUỘC giữ nguyên cấu trúc <!DOCTYPE html>, <head>, <link> nếu file gốc có) và CSS sau khi đã thay đổi.
 5. LƯU Ý CÚ PHÁP: Hãy cố gắng sử dụng nháy đơn (') cho các thuộc tính HTML (ví dụ <div class='my-class'>) và tự động escape các ký tự nháy kép để đảm bảo chuỗi JSON không bị lỗi (JSON Decode Error).
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
@@ -427,6 +427,17 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         updated = False
 
         if new_html and os.path.exists(html_path):
+            if '<html' not in new_html.lower() and '<!doctype html>' not in new_html.lower():
+                # Tự động bọc lại cấu trúc chuẩn nếu AI trả về thiếu
+                new_html = (
+                    f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
+                    f'    <meta charset="UTF-8">\n'
+                    f'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+                    f'    <title>{menu_slug}</title>\n'
+                    f'    <link rel="stylesheet" href="style.css">\n'
+                    f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
+                    f'</head>\n<body>\n    {new_html}\n</body>\n</html>'
+                )
             with open(html_path, 'w', encoding='utf-8') as f:
                 f.write(new_html)
             updated = True
