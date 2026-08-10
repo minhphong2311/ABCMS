@@ -247,10 +247,11 @@ def api_chat():
     user_message = data.get('message', '').strip()
     site_id = data.get('site_id', '').strip()
     menu_param = data.get('menu_param', '').strip()
+    images_base64 = data.get('images', [])
     image_base64 = data.get('image') or ''
     image_base64 = image_base64.strip()
 
-    if not user_message and not image_base64:
+    if not user_message and not image_base64 and not images_base64:
         return jsonify({'success': False, 'reply': 'Please enter a request or attach an image.'}), 400
 
     folder, menu_slug = parse_folder_slug(menu_param)
