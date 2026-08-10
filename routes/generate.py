@@ -766,7 +766,7 @@ Do not wrap it in markdown block if it causes extra characters, but if you do, I
         return css_content
 
 
-def apply_structural_templates(html, css, api_key, menu_name, task_id=None):
+def apply_structural_templates(html, css, api_key, menu_name, task_id=None, ai_hint=""):
     print(f"[{menu_name}] --- Structural Refinement Start ---")
     import os
     import json
@@ -810,6 +810,7 @@ Nội dung CSS thô hiện tại:
 {css[:10000]}
 ```
 {css_guide_instruction}
+{f"\n\nGỢI Ý TỪ NGƯỜI DÙNG (CRITICAL INSTRUCTION): {ai_hint}\nBạn BẮT BUỘC phải tuân thủ nghiêm ngặt gợi ý này khi cấu trúc lại HTML/CSS." if ai_hint else ""}
 
 TÀI LIỆU THAM KHẢO VỀ CẤU TRÚC VÀ SUB-TEMPLATE:
 Mẫu cấu trúc giao diện chung (structure-template.html):
@@ -1149,6 +1150,7 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
         folder, menu_slug = parse_folder_slug(menu_param)
         figma_link = menu.get('figma_link', '').strip()
         image_path = menu.get('image_path', '').strip()
+        ai_hint = menu.get('ai_hint', '').strip()
         
         html_result = ""
         css_result = ""
@@ -1187,7 +1189,7 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             if gemini_api_key:
                 check_cancel_and_update("Applying structural templates...")
                 html_result, css_result, rename_map = apply_structural_templates(
-                    html_result, css_result, gemini_api_key, menu_slug, task_id
+                    html_result, css_result, gemini_api_key, menu_slug, task_id, ai_hint
                 )
                 
                 # Physically rename image files if AI requested it
@@ -1273,6 +1275,7 @@ CRITICAL STRUCTURE RULES:
 {structure_template}
 4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
 5. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
+{f"\n6. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint when generating the layout, picking libraries, and creating components." if ai_hint else ""}
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{

@@ -35,6 +35,7 @@ def add_menu(site_id):
     parent_id = request.form.get('parent_id', '').strip()
     menu_slug = request.form.get('menu_slug', '').strip().strip('/')
     figma_link = request.form.get('figma_link', '').strip()
+    ai_hint = request.form.get('ai_hint', '').strip()
     layout = request.form.get('layout', 'sub-template').strip()
     image_file = request.files.get('image_file')
 
@@ -50,6 +51,7 @@ def add_menu(site_id):
         'slug': menu_slug,
         'folder': "",
         'figma_link': figma_link,
+        'ai_hint': ai_hint,
         'layout': layout,
         'parent_id': parent_id if parent_id else None,
         'generated': False,
@@ -75,6 +77,7 @@ def edit_menu(site_id, menu_id):
     new_parent_id = request.form.get('parent_id', '').strip()
     new_slug = request.form.get('menu_slug', '').strip().strip('/')
     new_figma = request.form.get('figma_link', '').strip()
+    new_ai_hint = request.form.get('ai_hint', '').strip()
     new_layout = request.form.get('layout', 'sub-template').strip()
     image_file = request.files.get('image_file')
 
@@ -96,6 +99,7 @@ def edit_menu(site_id, menu_id):
     menu['slug'] = new_slug
     menu['folder'] = ""
     menu['figma_link'] = new_figma
+    menu['ai_hint'] = new_ai_hint
     menu['layout'] = new_layout
     menu['parent_id'] = new_parent_id if new_parent_id else None
 

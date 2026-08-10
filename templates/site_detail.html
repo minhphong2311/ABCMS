@@ -621,6 +621,13 @@ Email: phongnguyen@andvina.com
             </div>
           </div>
           
+          <div class="row form-group mb-3">
+            <div class="col-md-3 col-form-label"><label for="ai_hint">AI Hint / Gợi ý</label></div>
+            <div class="col-md-9">
+              <textarea class="form-control" id="ai_hint" name="ai_hint" placeholder="Ví dụ: Dùng slider Swiper, màu chủ đạo là đỏ..." spellcheck="false"></textarea>
+            </div>
+          </div>
+          
           <div class="row form-group mb-0">
             <div class="col-md-3 col-form-label"><label for="image_file">Or Upload Image</label></div>
             <div class="col-md-9">
@@ -683,6 +690,13 @@ Email: phongnguyen@andvina.com
             <div class="col-md-3 col-form-label"><label for="edit_figma_link">Link Figma Dev Mode</label></div>
             <div class="col-md-9">
               <textarea class="form-control" id="edit_figma_link" name="figma_link" spellcheck="false"></textarea>
+            </div>
+          </div>
+          
+          <div class="row form-group mb-3">
+            <div class="col-md-3 col-form-label"><label for="edit_ai_hint">AI Hint / Gợi ý</label></div>
+            <div class="col-md-9">
+              <textarea class="form-control" id="edit_ai_hint" name="ai_hint" spellcheck="false"></textarea>
             </div>
           </div>
           
@@ -1455,14 +1469,16 @@ function openEditMenuModal(btnElement) {
     const layout = btnElement.getAttribute('data-layout') || '';
     const imagePath = btnElement.getAttribute('data-image') || '';
     
-    // Find menu to get parent_id
+    // Find menu to get parent_id and ai_hint
     const menu = siteMenus.find(m => m.id === id);
     const parentId = menu ? (menu.parent_id || '') : '';
+    const aiHint = menu ? (menu.ai_hint || '') : '';
 
     document.getElementById('edit_menu_name').value = name;
     document.getElementById('edit_folder').value = parentId;
     document.getElementById('edit_menu_slug').value = slug;
     document.getElementById('edit_figma_link').value = figmaLink;
+    document.getElementById('edit_ai_hint').value = aiHint;
     document.getElementById('edit_layout').value = layout;
     
     const statusDiv = document.getElementById('edit_image_status');
