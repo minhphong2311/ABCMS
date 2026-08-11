@@ -181,7 +181,7 @@ Email: phongnguyen@andvina.com
           
           <div class="row form-group mb-3">
             <div class="col-md-2 col-form-label"><label for="url">Cms Url <span class="text-danger ml-1">*</span></label></div>
-            <div class="col-md-10"><input type="url" class="form-control" id="url" name="url" required placeholder="Example: https://demo.jiniworks.com/_fox"></div>
+            <div class="col-md-10"><input type="url" class="form-control" id="url" name="url" required placeholder="Example: https://demo.jiniworks.com/_fox" onchange="cleanCmsUrl(this)"></div>
           </div>
           
           <div class="row form-group mb-3">
@@ -239,7 +239,7 @@ Email: phongnguyen@andvina.com
           
           <div class="row form-group mb-3">
             <div class="col-md-2 col-form-label"><label for="edit_url">Cms Url <span class="text-danger ml-1">*</span></label></div>
-            <div class="col-md-10"><input type="url" class="form-control" id="edit_url" name="url" required></div>
+            <div class="col-md-10"><input type="url" class="form-control" id="edit_url" name="url" required onchange="cleanCmsUrl(this)"></div>
           </div>
           
           <div class="row form-group mb-3">
@@ -638,6 +638,19 @@ function confirmDeleteSite(event, formElement) {
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
+// Format URL when user pastes or leaves the field
+function cleanCmsUrl(input) {
+    let url = input.value.trim();
+    if (!url) return;
+    
+    // Try to extract only protocol, domain, and the first path segment (context path)
+    // This removes deep links like /login.do, /site/something, fragments #, and queries ?
+    let match = url.match(/^(https?:\/\/[^\/]+(?:\/[^\/\.?#]+)?)/);
+    if (match) {
+        input.value = match[1];
+    }
+}
+
 let currentSiteId = null;
 let currentMenus = [];
 let sortables = [];
