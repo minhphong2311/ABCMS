@@ -351,17 +351,20 @@ Mẫu bảng (table-template.html):
 ```
 
 Nhiệm vụ:
-1. Phân tích yêu cầu (có thể là thay đổi thẻ HTML (đổi tag, class, nội dung), thay đổi CSS (màu sắc, kích thước, khoảng cách), hoặc cả hai. Áp dụng các mẫu template nếu phù hợp.
-2. TUYỆT ĐỐI KHÔNG SỬ DỤNG INLINE STYLE TRONG HTML (`style="..."`). TẤT CẢ CÁC STYLE MỚI PHẢI ĐƯỢC VIẾT VÀO NỘI DUNG CSS ĐƯỢC TRẢ VỀ.
-3. Thực hiện thay đổi chính xác theo yêu cầu.
-4. Trả về TOÀN BỘ nội dung HTML (BẮT BUỘC giữ nguyên cấu trúc <!DOCTYPE html>, <head>, <link> nếu file gốc có) và CSS sau khi đã thay đổi.
-5. LƯU Ý CÚ PHÁP: Hãy cố gắng sử dụng nháy đơn (') cho các thuộc tính HTML (ví dụ <div class='my-class'>) và tự động escape các ký tự nháy kép để đảm bảo chuỗi JSON không bị lỗi (JSON Decode Error).
+1. NẾU KHÔNG HIỂU HOẶC THIẾU THÔNG TIN: Nếu yêu cầu không rõ ràng, hoặc bạn không tìm thấy thành phần cần sửa trong HTML gốc, hãy đặt `"needs_clarification": true` và điền câu hỏi vào trường `"question"` để hỏi lại người dùng. Bỏ trống html và css.
+2. NẾU ĐÃ RÕ YÊU CẦU:
+   a. "thinking": Phân tích logic (VD: "Người dùng muốn header width 100%. HTML gốc có class '.header-box'. Vậy tôi cần update class đó..."). QUAN SÁT KỸ HÌNH ẢNH GỐC để đảm bảo tỷ lệ đúng.
+   b. TUYỆT ĐỐI KHÔNG SỬ DỤNG INLINE STYLE.
+   c. Cung cấp TOÀN BỘ nội dung HTML (giữ nguyên cấu trúc <!DOCTYPE html> nếu có) và CSS mới. LƯU Ý CÚ PHÁP nháy đơn.
 
-Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
+Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc markdown):
 {{
-  "explanation": "Giải thích RẤT NGẮN GỌN (1-2 câu) những gì đã thay đổi. BẮT BUỘC sử dụng ĐÚNG NGÔN NGỮ mà người dùng đã dùng để chat.",
-  "html": "toàn bộ nội dung HTML mới (hoặc chuỗi rỗng nếu không thay đổi HTML)",
-  "css": "toàn bộ nội dung CSS mới (hoặc chuỗi rỗng nếu không thay đổi CSS)"
+  "needs_clarification": false,
+  "question": "",
+  "thinking": "Phân tích logic từng bước",
+  "explanation": "Giải thích RẤT NGẮN GỌN thay đổi",
+  "html": "toàn bộ nội dung HTML mới",
+  "css": "toàn bộ nội dung CSS mới"
 }}"""
 
         import base64
@@ -397,11 +400,14 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             response_schema={
                 "type": "OBJECT",
                 "properties": {
+                    "needs_clarification": {"type": "BOOLEAN"},
+                    "question": {"type": "STRING"},
+                    "thinking": {"type": "STRING"},
                     "explanation": {"type": "STRING"},
                     "html": {"type": "STRING"},
                     "css": {"type": "STRING"}
                 },
-                "required": ["explanation", "html", "css"]
+                "required": ["needs_clarification", "question", "thinking", "explanation", "html", "css"]
             }
         )
         
@@ -412,7 +418,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         for attempt in range(max_retries):
             try:
                 response = client.models.generate_content(
-                    model='gemini-3.5-flash', 
+                    model='gemini-3.6-flash', 
                     contents=contents,
                     config=config
                 )
@@ -437,6 +443,15 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             text = text.split('```')[1].split('```')[0].strip()
 
         result = _json.loads(text)
+        
+        needs_clarification = result.get('needs_clarification', False)
+        if needs_clarification:
+            return jsonify({
+                'success': True,
+                'reply': result.get('question', 'Xin lỗi, tôi chưa rõ ý bạn. Bạn có thể giải thích thêm hoặc chỉ rõ tên class/thẻ HTML cần sửa không?'),
+                'css_updated': False
+            })
+
         new_html = result.get('html', '').strip()
         new_css = result.get('css', '').strip()
         explanation = result.get('explanation', 'Đã cập nhật.')

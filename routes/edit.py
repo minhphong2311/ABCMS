@@ -132,9 +132,12 @@ def edit_menu(site_id, menu_id):
         images_to_remove = []
 
     # Filter out removed paths and delete them from disk
+    remove_basenames = set(p.replace('\\', '/').split('/')[-1] for p in images_to_remove)
     new_existing_paths = []
+    
     for path in existing_paths:
-        if path in images_to_remove or path.split('/')[-1] in images_to_remove or path.split('\\')[-1] in images_to_remove:
+        basename = path.replace('\\', '/').split('/')[-1]
+        if path in images_to_remove or basename in remove_basenames:
             try:
                 abs_path = path
                 if not os.path.isabs(abs_path):

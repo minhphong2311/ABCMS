@@ -841,7 +841,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         from google import genai as _genai
         client = _genai.Client(api_key=api_key)
         
-        models_to_try = ['gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
+        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
         text = None
         for model in models_to_try:
             try:
@@ -1064,7 +1064,7 @@ STATUS: PERFECT (or NEEDS_FIX)
                 text = 'STATUS: NEEDS_FIX\n\n```html\n<div class="content-box"><div class="con-box"><h4 class="h4-tit01">Demo Title</h4><p class="con-p">Mock response.</p></div></div>\n```\n\n```css\n.content-box { padding: 20px; }\n```'
             else:
                 with compare_and_fix_visuals.api_lock:
-                    models_to_try = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-flash-latest', 'gemini-3.5-flash']
+                    models_to_try = ['gemini-3.6-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-flash-latest', 'gemini-3.5-flash']
                     text = None
                     last_error = None
                     for model in models_to_try:
@@ -1299,7 +1299,7 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
 """
             contents = gemini_files + [prompt]
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-3.6-flash',
                 contents=contents
             )
             

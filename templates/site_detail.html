@@ -608,7 +608,7 @@ Email: phongnguyen@andvina.com
               <input type="text" class="form-control" id="menu_name" name="menu_name" required placeholder="Example: About Us">
             </div>
             
-            <div class="col-md-2 col-form-label"><label for="menu_slug">Slug <small>(no .do)</small> <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-2 col-form-label"><label for="menu_slug">Slug <span class="text-danger ml-1">*</span></label></div>
             <div class="col-md-4">
               <input type="text" class="form-control" id="menu_slug" name="menu_slug" required placeholder="Example: gioi-thieu">
             </div>
@@ -622,14 +622,27 @@ Email: phongnguyen@andvina.com
           </div>
           
           <div class="row form-group mb-3">
-            <div class="col-md-3 col-form-label"><label for="image_file">Or Upload Image</label></div>
+            <div class="col-md-3 col-form-label"><label>Or Upload Image</label></div>
             <div class="col-md-9">
-              <input type="file" class="form-control-file mt-2" id="image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'add_image_status')">
-              <small class="form-text text-muted">You can upload multiple images. Prioritize Figma if both exist</small>
-              <div id="add_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px;">
+              <div class="custom-upload-box">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <div>
+                      <p>Drag & drop images here, or click to browse</p>
+                      <small class="form-text text-muted mt-1">You can upload multiple images. Ctrl+V supported.</small>
+                  </div>
+                  <input type="file" id="image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'add_image_status')">
+              </div>
+              <div id="add_image_status" class="preview-wrapper d-none">
                   <!-- Previews will be injected here -->
               </div>
-              <button type="button" class="btn btn-outline-danger btn-sm mt-2" id="btn_remove_add_image" style="display: none;" onclick="removeAddImages()">Clear Images</button>
+              <button type="button" class="btn btn-outline-danger btn-sm mt-2 d-none" id="btn_remove_add_image" onclick="removeAddImages()">Clear Images</button>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"></div>
+            <div class="col-md-9">
+              <span class="text-muted priority-note"><i class="fas fa-info-circle mr-1"></i>Note: The AI will prioritize the Figma link over uploaded images for code generation if both are provided.</span>
             </div>
           </div>
           
@@ -684,7 +697,7 @@ Email: phongnguyen@andvina.com
               <input type="text" class="form-control" id="edit_menu_name" name="menu_name" required>
             </div>
             
-            <div class="col-md-2 col-form-label"><label for="edit_menu_slug">Slug <small>(no .do)</small> <span class="text-danger ml-1">*</span></label></div>
+            <div class="col-md-2 col-form-label"><label for="edit_menu_slug">Slug <span class="text-danger ml-1">*</span></label></div>
             <div class="col-md-4">
               <input type="text" class="form-control" id="edit_menu_slug" name="menu_slug" required>
             </div>
@@ -696,21 +709,34 @@ Email: phongnguyen@andvina.com
               <textarea class="form-control" id="edit_figma_link" name="figma_link" spellcheck="false"></textarea>
             </div>
           </div>
-          
+
           <div class="row form-group mb-3">
-            <div class="col-md-3 col-form-label"><label for="edit_image_file">Or Upload Image</label></div>
+            <div class="col-md-3 col-form-label"><label>Or Upload Image</label></div>
             <div class="col-md-9">
-              <input type="file" class="form-control-file mt-2" id="edit_image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'edit_new_image_status');">
-              <small class="form-text text-muted">You can upload multiple images. Prioritize Figma if both exist</small>
+              <div class="custom-upload-box">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <div>
+                      <p>Drag & drop images here, or click to browse</p>
+                      <small class="form-text text-muted mt-1">You can upload multiple images. Ctrl+V supported.</small>
+                  </div>
+                  <input type="file" id="edit_image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'edit_new_image_status');">
+              </div>
               <input type="hidden" id="images_to_remove" name="images_to_remove" value="[]">
               
-              <div id="edit_existing_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px;">
+              <div id="edit_existing_image_status" class="preview-wrapper d-none">
                   <!-- Previews will be injected here -->
               </div>
               
-              <div id="edit_new_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+              <div id="edit_new_image_status" class="preview-wrapper preview-wrapper-new d-none">
                   <!-- New Previews will be injected here -->
               </div>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"></div>
+            <div class="col-md-9">
+              <span class="text-muted priority-note"><i class="fas fa-info-circle mr-1"></i>Note: The AI will prioritize the Figma link over uploaded images for code generation if both are provided.</span>
             </div>
           </div>
           
@@ -823,6 +849,87 @@ Email: phongnguyen@andvina.com
 .tree-node.bg-info, .tree-leaf.bg-info {
     color: #fff !important;
 }
+
+/* Priority Note */
+.priority-note {
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Upload Area Styles */
+.custom-upload-box {
+    border: 2px dashed #adb5bd;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.custom-upload-box:hover {
+    border-color: #007bff;
+    background: #e9ecef;
+}
+body.dark-mode .custom-upload-box {
+    background: #343a40;
+    border-color: #6c757d;
+}
+body.dark-mode .custom-upload-box:hover {
+    background: #495057;
+    border-color: #17a2b8;
+}
+.custom-upload-box input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.custom-upload-box i {
+    font-size: 2rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+.custom-upload-box p {
+    margin: 0;
+    font-weight: 500;
+    color: #495057;
+}
+body.dark-mode .custom-upload-box p {
+    color: #ced4da;
+}
+
+/* Image Preview Styles */
+.preview-wrapper {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.preview-wrapper-new {
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+}
+.preview-img-thumb {
+    max-height: 150px;
+    min-height: 50px;
+    min-width: 50px;
+}
+.btn-remove-preview {
+    top: -10px; 
+    right: -10px; 
+    border-radius: 50%; 
+    padding: 0.1rem 0.3rem; 
+    line-height: 1; 
+    z-index: 2;
+}
+
 .tree-node.bg-info .text-muted, .tree-leaf.bg-info .text-muted, .tree-leaf.bg-info .text-secondary {
     color: #f8f9fa !important;
 }
@@ -1492,7 +1599,8 @@ function openEditMenuModal(btnElement) {
     imagesToRemoveInput.value = "[]";
     existingStatusDiv.innerHTML = ''; // clear
     newStatusDiv.innerHTML = '';
-    newStatusDiv.style.display = 'none';
+    newStatusDiv.classList.remove('d-flex');
+    newStatusDiv.classList.add('d-none');
     document.getElementById('edit_image_files').value = '';
 
     if (imagePaths) {
@@ -1503,17 +1611,19 @@ function openEditMenuModal(btnElement) {
             const safePath = path.replace(/\\/g, '\\\\');
             const imgHTML = `
                 <div class="position-relative d-inline-block existing-image-container">
-                    <img src="/uploads/{{ site.id }}/${filename}" alt="Uploaded Image" class="img-thumbnail" style="max-height: 150px;">
-                    <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -10px; right: -10px; border-radius: 50%; padding: 0.1rem 0.3rem; line-height: 1;" onclick="removeExistingImage('${safePath}', this)" title="Remove Image">
+                    <img src="/uploads/{{ site.id }}/${filename}" alt="Uploaded Image" class="img-thumbnail preview-img-thumb">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute btn-remove-preview" onclick="removeExistingImage('${safePath}', this)" title="Remove Image">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             `;
             existingStatusDiv.insertAdjacentHTML('beforeend', imgHTML);
         });
-        existingStatusDiv.style.display = 'flex';
+        existingStatusDiv.classList.remove('d-none');
+        existingStatusDiv.classList.add('d-flex');
     } else {
-        existingStatusDiv.style.display = 'none';
+        existingStatusDiv.classList.remove('d-flex');
+        existingStatusDiv.classList.add('d-none');
     }
     
     // Set form action dynamically with id
@@ -1526,7 +1636,8 @@ function openEditMenuModal(btnElement) {
 function removeExistingImage(path, btnElement) {
     const container = btnElement.closest('.existing-image-container');
     if(container) {
-        container.style.display = 'none';
+        container.classList.remove('d-inline-block');
+        container.classList.add('d-none');
     }
     
     const hiddenInput = document.getElementById('images_to_remove');
@@ -1549,24 +1660,52 @@ function previewImages(input, statusId) {
     const btnRemove = isAdd ? document.getElementById('btn_remove_add_image') : null;
     
     if (input.files && input.files.length > 0) {
-        Array.from(input.files).forEach(file => {
+        Array.from(input.files).forEach((file, index) => {
+            const container = document.createElement('div');
+            container.className = 'position-relative d-inline-block new-image-container';
+            container.innerHTML = `
+                <img alt="Preview" class="img-thumbnail preview-img-thumb">
+                <button type="button" class="btn btn-danger btn-sm position-absolute btn-remove-preview" onclick="removeNewImage('${input.id}', ${index}, '${statusId}')" title="Remove Image">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            statusDiv.appendChild(container);
+            
+            const img = container.querySelector('img');
             var reader = new FileReader();
             reader.onload = function(e) {
-                const imgHTML = `
-                    <div class="position-relative d-inline-block">
-                        <img src="${e.target.result}" alt="Preview" class="img-thumbnail" style="max-height: 150px;">
-                    </div>
-                `;
-                statusDiv.insertAdjacentHTML('beforeend', imgHTML);
+                img.src = e.target.result;
             }
             reader.readAsDataURL(file);
         });
-        statusDiv.style.display = 'flex';
-        if(btnRemove) btnRemove.style.display = 'inline-block';
+        statusDiv.classList.remove('d-none');
+        statusDiv.classList.add('d-flex');
+        if(btnRemove) {
+            btnRemove.classList.remove('d-none');
+            btnRemove.classList.add('d-inline-block');
+        }
     } else {
-        statusDiv.style.display = 'none';
-        if(btnRemove) btnRemove.style.display = 'none';
+        statusDiv.classList.remove('d-flex');
+        statusDiv.classList.add('d-none');
+        if(btnRemove) {
+            btnRemove.classList.remove('d-inline-block');
+            btnRemove.classList.add('d-none');
+        }
     }
+}
+
+function removeNewImage(inputId, fileIndex, statusId) {
+    const input = document.getElementById(inputId);
+    if (!input.files || input.files.length === 0) return;
+    
+    const dt = new DataTransfer();
+    for (let i = 0; i < input.files.length; i++) {
+        if (i !== fileIndex) {
+            dt.items.add(input.files[i]);
+        }
+    }
+    input.files = dt.files;
+    previewImages(input, statusId);
 }
 
 function removeAddImages() {
@@ -2311,6 +2450,55 @@ function changePageSize() {
     currentPage = 1;
     applyFilters();
 }
+
+// Hỗ trợ paste (Ctrl+V) hình ảnh từ clipboard
+document.addEventListener('paste', function(e) {
+    const addModal = document.getElementById('addMenuModal');
+    const editModal = document.getElementById('editMenuModal');
+    
+    let targetInput = null;
+    let targetStatusId = null;
+    
+    // Kiểm tra xem modal nào đang được mở
+    if (addModal && addModal.classList.contains('show')) {
+        targetInput = document.getElementById('image_files');
+        targetStatusId = 'add_image_status';
+    } else if (editModal && editModal.classList.contains('show')) {
+        targetInput = document.getElementById('edit_image_files');
+        targetStatusId = 'edit_new_image_status';
+    }
+    
+    if (!targetInput) return;
+    
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    let files = [];
+    
+    for (let index in items) {
+        let item = items[index];
+        if (item.kind === 'file' && item.type.indexOf('image/') !== -1) {
+            files.push(item.getAsFile());
+        }
+    }
+    
+    if (files.length > 0) {
+        e.preventDefault();
+        
+        const dataTransfer = new DataTransfer();
+        // Giữ lại file cũ nếu người dùng paste nhiều lần (tuỳ chọn), 
+        // ở đây ta sẽ gộp chung file cũ và mới để tiện lợi hơn
+        if (targetInput.files && targetInput.files.length > 0) {
+            for (let i = 0; i < targetInput.files.length; i++) {
+                dataTransfer.items.add(targetInput.files[i]);
+            }
+        }
+        for (let file of files) {
+            dataTransfer.items.add(file);
+        }
+        
+        targetInput.files = dataTransfer.files;
+        previewImages(targetInput, targetStatusId);
+    }
+});
 </script>
 
 
