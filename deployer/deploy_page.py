@@ -3,7 +3,7 @@
 
 import asyncio
 
-async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None, res_org='kookmin'):
+async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items, current_item, is_cancelled=None, res_org='kookmin', created_menu_cds=None):
     print("\n" + "="*50)
     print("6. KIỂM TRA PAGE")
     print("="*50)
@@ -24,6 +24,9 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
     # Only create pages for leaf menus
     parent_ids = {m.get('parent_id') for m in menus if m.get('parent_id')}
     leaf_menus = [m for m in menus if m.get('id') not in parent_ids]
+    
+    leaf_menus.sort(key=lambda m: m.get('folder', '').strip() or m.get('slug', '').strip())
+    has_loaded_page_manager = False
 
     for i, m in enumerate(leaf_menus):
         if is_cancelled and is_cancelled():
@@ -54,67 +57,79 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     progress_cb(min(100, int(((i + fraction) / max(1, len(leaf_menus))) * 100)), msg)
             
             report(f"Page: processing {slug}", 0.1)
-            print(f"\n  6.1 Mở Folder '{folder}' (Page Manager)...")
-            
-            target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
-            for retry_load in range(3):
-                await page.goto("about:blank")
-                await asyncio.sleep(0.6)
-                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-                await page.goto(target_url_page, wait_until="domcontentloaded")
-                await asyncio.sleep(2.4)
-                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+            if not has_loaded_page_manager:
+                print(f"\n  6.1 Tải Page Manager lần đầu tiên...")
                 
-                ui_loaded = await page.evaluate('''() => !!document.querySelector('div[js-tree="folderTree.config"]')''')
-                if ui_loaded:
-                    break
-                print(f"[{slug}] UI blank or stuck, retrying page reload... ({retry_load+1}/3)")
-            
-
-            
-            # Ensure Table view is selected
-            try:
-                await page.evaluate('''() => {
-                    const btnGroup = document.querySelector('.pull-right .btn-group');
-                    if (btnGroup) {
-                        const labels = btnGroup.querySelectorAll('label');
-                        if (labels.length > 2) {
-                            labels[2].click();
-                        } else if (labels.length > 1) {
-                            labels[1].click();
+                target_url_page = f'{site_url}/index.do?siteId={site_id}#!/page'
+                for retry_load in range(3):
+                    await page.goto("about:blank")
+                    await asyncio.sleep(0.6)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                    await page.goto(target_url_page, wait_until="domcontentloaded")
+                    await asyncio.sleep(2.4)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                    
+                    ui_loaded = await page.evaluate('''() => !!document.querySelector('div[js-tree="folderTree.config"]')''')
+                    if ui_loaded:
+                        break
+                    print(f"[{slug}] UI blank or stuck, retrying page reload... ({retry_load+1}/3)")
+                
+                # Ensure Table view is selected
+                try:
+                    await page.evaluate('''() => {
+                        const btnGroup = document.querySelector('.pull-right .btn-group');
+                        if (btnGroup) {
+                            const labels = btnGroup.querySelectorAll('label');
+                            if (labels.length > 2) {
+                                labels[2].click();
+                            } else if (labels.length > 1) {
+                                labels[1].click();
+                            }
                         }
-                    }
-                }''')
-                await asyncio.sleep(1.2)
-                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-            except Exception as e:
-                if str(e) == 'Deploy cancelled by user': raise
-                if str(e) == 'Deploy cancelled by user': raise
-                pass
-            
-            # 1. Expand jsTree folders on main screen
-            print(f"[{slug}] Expanding tree...")
-            try:
-                # Wait up to 10 seconds for tree nodes to be attached in DOM
-                await page.wait_for_selector('div[js-tree="folderTree.config"] li.jstree-node', state="attached", timeout=10000)
-                # Wait for Angular jstree plugin to bind and initialize
-                await page.evaluate('''async () => {
-                    const el = document.querySelector('div[js-tree="folderTree.config"]');
-                    for (let i = 0; i < 20; i++) {
-                        if (window.angular && window.angular.element(el).jstree && window.angular.element(el).jstree(true)) {
-                            window.angular.element(el).jstree(true).open_all();
-                            return;
+                    }''')
+                    await asyncio.sleep(1.2)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                except Exception as e:
+                    if str(e) == 'Deploy cancelled by user': raise
+                    pass
+                
+                # 1. Expand jsTree folders on main screen
+                print(f"[{slug}] Expanding tree...")
+                try:
+                    # Wait up to 10 seconds for tree nodes to be attached in DOM
+                    await page.wait_for_selector('div[js-tree="folderTree.config"] li.jstree-node', state="attached", timeout=10000)
+                    # Wait for Angular jstree plugin to bind and initialize
+                    await page.evaluate('''async () => {
+                        const el = document.querySelector('div[js-tree="folderTree.config"]');
+                        for (let i = 0; i < 20; i++) {
+                            if (window.angular && window.angular.element(el).jstree && window.angular.element(el).jstree(true)) {
+                                window.angular.element(el).jstree(true).open_all();
+                                return;
+                            }
+                            await new Promise(r => setTimeout(r, 500));
                         }
-                        await new Promise(r => setTimeout(r, 500));
-                    }
-                    throw new Error("jstree instance not ready after 10s");
-                }''')
+                        throw new Error("jstree instance not ready after 10s");
+                    }''')
+                    await asyncio.sleep(1.2)
+                    if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+                except Exception as e:
+                    if str(e) == 'Deploy cancelled by user': raise
+                    print(f"[{slug}] Warning: Tree expansion failed: {e}")
+                
+                has_loaded_page_manager = True
+            else:
+                print(f"\n  6.1 Tiếp tục triển khai (Không reload, đang ở Folder {folder})...")
                 await asyncio.sleep(1.2)
-                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-            except Exception as e:
-                if str(e) == 'Deploy cancelled by user': raise
-                if str(e) == 'Deploy cancelled by user': raise
-                print(f"[{slug}] Warning: Tree expansion failed: {e}")
+                # Verify we are in list view
+                is_list_view = await page.evaluate('''() => {
+                    const btn = document.querySelector('button[x-ng-click="pg.addPage()"]');
+                    const tree = document.querySelector('div[js-tree="folderTree.config"]');
+                    return !!(btn && tree);
+                }''')
+                if not is_list_view:
+                    print(f"[{slug}] UI not in list view, forcing reload next iteration...")
+                    has_loaded_page_manager = False
+                    raise Exception("Lost list view, forcing retry")
             
             # 2. Select folder on main screen
             folder_anchor_id = f'/{site_id}/{folder}_anchor' if folder else f'/{site_id}_anchor'
@@ -214,35 +229,41 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     }}
                     
                     const pathNames = args[6];
+                    const cmsMenuId = args[7];
                     const modalAnchors = Array.from(document.querySelectorAll('.modal-dialog div[js-tree="menuTree.config"] .jstree-anchor'));
-                    const matchedAnchors = modalAnchors.filter(a => a.innerText.trim() === menuName);
                     
                     let modalItem = null;
-                    if (pathNames && pathNames.length > 0) {{
-                        modalItem = matchedAnchors.find(a => {{
-                            let currPath = [];
-                            let li = a.closest('li');
-                            while (li) {{
-                                const anchor = li.querySelector(':scope > .jstree-anchor');
-                                if (anchor) currPath.unshift(anchor.innerText.trim());
-                                const parentUl = li.parentElement;
-                                if (!parentUl || !parentUl.classList.contains('jstree-children')) break;
-                                li = parentUl.closest('li.jstree-node');
-                            }}
-                            if (currPath.length !== pathNames.length) return false;
-                            for (let i=0; i<currPath.length; i++) {{
-                                if (currPath[i] !== pathNames[i]) return false;
-                            }}
-                            return true;
-                        }});
+                    if (cmsMenuId) {{
+                        modalItem = modalAnchors.find(a => a.innerText.includes(String(cmsMenuId)));
                     }}
-                    if (!modalItem && matchedAnchors.length > 0) {{
-                        modalItem = matchedAnchors[matchedAnchors.length - 1];
-                    }}
-                    const menuId = args[5];
+                    
                     if (!modalItem) {{
-                        modalItem = modalAnchors.find(a => (menuId && a.innerText.includes(String(menuId))) || a.innerText.trim() === menuName);
+                        const matchedAnchors = modalAnchors.filter(a => a.innerText.includes(menuName));
+                        
+                        if (pathNames && pathNames.length > 0) {{
+                            modalItem = matchedAnchors.find(a => {{
+                                let currPath = [];
+                                let li = a.closest('li');
+                                while (li) {{
+                                    const anchor = li.querySelector(':scope > .jstree-anchor');
+                                    if (anchor) currPath.unshift(anchor.innerText.split(' - ')[0].trim());
+                                    const parentUl = li.parentElement;
+                                    if (!parentUl || !parentUl.classList.contains('jstree-children')) break;
+                                    li = parentUl.closest('li.jstree-node');
+                                }}
+                                if (currPath.length < pathNames.length) return false;
+                                const offset = currPath.length - pathNames.length;
+                                for (let i = 0; i < pathNames.length; i++) {{
+                                    if (currPath[offset + i] !== pathNames[i]) return false;
+                                }}
+                                return true;
+                            }});
+                        }}
+                        if (!modalItem && matchedAnchors.length > 0) {{
+                            modalItem = matchedAnchors[matchedAnchors.length - 1];
+                        }}
                     }}
+                    
                     if (modalItem) {{
                         modalItem.click();
                     }}
@@ -278,7 +299,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     }};
                     selectTpl('headTemplate', 'common.jsp');
                     setTimeout(() => {{ selectTpl('layoutTemplate', layoutName + '.jsp'); }}, 1000);
-                }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', '')), path_names])
+                }}''', [slug, menu_name, site_id, layout, folder, str(m.get('id', '')), path_names, created_menu_cds.get(m.get('id')) if created_menu_cds else None])
                 await asyncio.sleep(1.5)
                 if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
@@ -338,6 +359,17 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                     print(f"  Mở editor từ danh sách trang...")
                     await page.evaluate(f'''async (slug) => {{
                         try {{
+                            // Close any open modals first!
+                            const closeBtns = Array.from(document.querySelectorAll('.modal-dialog button, .modal-dialog a'));
+                            const cBtn = closeBtns.find(b => b.innerText && (b.innerText.includes('닫기') || b.innerText.includes('Close')));
+                            if (cBtn) cBtn.click();
+                            await new Promise(r => setTimeout(r, 1000));
+                            
+                            // Close any SweetAlerts
+                            const swalBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm');
+                            if (swalBtn) swalBtn.click();
+                            await new Promise(r => setTimeout(r, 1000));
+                            
                             const searchInput = document.querySelector('input[ng-model*="search"], input[placeholder*="검색"]');
                             if (searchInput) {{
                                 searchInput.value = slug;
@@ -350,7 +382,8 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             const rows = Array.from(document.querySelectorAll('table tbody tr'));
                             for (let tr of rows) {{
                                 if (tr.innerText.includes(slug)) {{
-                                    const btn = tr.querySelector('.zmdi-brush, button[ng-click*="edit"], a[ng-click*="edit"]');
+                                    // ONLY click the HTML editor button, not the page info edit button
+                                    const btn = tr.querySelector('.zmdi-brush, button[ng-click*="goEditor"], a[ng-click*="goEditor"], button[ng-click*="content"], a[title*="편집"]');
                                     if (btn) {{ btn.click(); return; }}
                                 }}
                             }}
@@ -444,7 +477,7 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                         await asyncio.sleep(1.2)
                         if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
-                        # Save Editor
+                          # Save Editor
                         report(f"Page: saving {slug}", 0.9)
                         print(f"  [{slug}] Saving Editor...")
                         try:
@@ -460,54 +493,73 @@ async def deploy_pages(page, site_url, site_id, menus, progress_cb, total_items,
                             print(f"  [{slug}] Save action result: {saved}")
                         except Exception as e:
                             if str(e) == 'Deploy cancelled by user': raise
-                            if str(e) == 'Deploy cancelled by user': raise
                             print(f"  [{slug}] Error saving editor: {e}")
                         
-                        await asyncio.sleep(2.4)
-                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-
-                        # Handle SweetAlert (Success or confirm popup)
-                        await page.evaluate('''() => {
-                            const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
-                            if (confirmBtn) confirmBtn.click();
-                        }''')
-                        await asyncio.sleep(1.8)
+                        # Wait for SweetAlert (Success or confirm popup) because CMS might be slow
+                        print(f"  [{slug}] Waiting for Save success message...")
+                        try:
+                            await page.wait_for_selector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm', state="visible", timeout=10000)
+                            await page.evaluate('''() => {
+                                const confirmBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
+                                if (confirmBtn) confirmBtn.click();
+                            }''')
+                        except Exception as e:
+                            if str(e) == 'Deploy cancelled by user': raise
+                            pass # Might not have a sweet alert
+                        
+                        await asyncio.sleep(1.0)
                         if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
                         
-                        # Click Back / Close button to exit Edit Page
-                        print("  Nhấn Back/Đóng để thoát Edit Page...")
-                        await page.evaluate('''() => {
-                            const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
-                                (b.innerText || '').includes('이전으로') || 
-                                (b.innerText || '').includes('목록으로') || 
-                                (b.innerText || '').includes('닫기') ||
-                                (b.innerText || '').includes('목록') ||
-                                (b.innerText || '').includes('List')
-                            );
-                            if (closeBtn) closeBtn.click();
-                        }''')
-                        await asyncio.sleep(2.4)
-                        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
-
                 if not html_verified:
                     raise Exception(f"Kiểm tra thất bại sau {max_attempts} lần thử: Page '{slug}' chưa có nội dung HTML trong View Code.")
+                
+                # Click Back / Close button to exit Edit Page
+                print("  Nhấn Back/Đóng để thoát Edit Page...")
+                await page.evaluate('''() => {
+                    const swalBtn = document.querySelector('.sweet-alert button.confirm, .sweet-alert .confirm, button.confirm');
+                    if (swalBtn) swalBtn.click();
+                }''')
+                await asyncio.sleep(0.6)
+                await page.evaluate('''() => {
+                    try {
+                        let found = false;
+                        Array.from(document.querySelectorAll('*')).some(el => {
+                            const s = window.angular && window.angular.element(el).scope();
+                            if (s && s.editor && typeof s.editor.goBack === 'function') {
+                                s.editor.goBack();
+                                found = true;
+                                return true;
+                            }
+                        });
+                        if (found) return;
+                    } catch(e) {}
+                    
+                    const closeBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
+                        (b.innerText || '').includes('이전으로') || 
+                        (b.innerText || '').includes('목록으로') || 
+                        (b.innerText || '').includes('닫기') ||
+                        (b.innerText || '').includes('목록') ||
+                        (b.innerText || '').includes('List')
+                    );
+                    if (closeBtn) closeBtn.click();
+                }''')
+                await asyncio.sleep(2.4)
+                if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
 
             except Exception as e:
                 if str(e) == 'Deploy cancelled by user': raise
-                if str(e) == 'Deploy cancelled by user': raise
                 print(f"  [Lỗi xử lý HTML page {slug}]: {e}")
+                has_loaded_page_manager = False
             
-            # Go back to page manager for next page
-            await page.goto(target_url_page, wait_until='domcontentloaded')
-            await asyncio.sleep(1.8)
-            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+            # Ensure we give the UI time if we just clicked Back
+            await asyncio.sleep(0.6)
             print(f"  6.8 Lặp lại cho đến khi kiểm tra hết tất cả Page trong Folder (Hoàn thành page {i+1}/{len(leaf_menus)}).")
 
             
         except Exception as e:
             if str(e) == 'Deploy cancelled by user': raise
-            if str(e) == 'Deploy cancelled by user': raise
             print(f"  [Lỗi page {slug}]: {e}")
+            has_loaded_page_manager = False
 
     print("  ✓ Hoàn thành kiểm tra tất cả các Page.")
     if progress_cb:

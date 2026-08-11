@@ -144,7 +144,7 @@ async def full_deploy_task_async(site_url, site_id, site_name, username, passwor
             if is_cancelled and is_cancelled(): raise Exception("Deploy cancelled by user")
             
             # --- 4. TẠO PAGE VÀ INJECT HTML ---
-            await deploy_pages(page, site_url, site_id, menus, get_scaled_cb(progress_cb, 85, 100), total_items, current_item, is_cancelled, res_org)
+            await deploy_pages(page, site_url, site_id, menus, get_scaled_cb(progress_cb, 85, 100), total_items, current_item, is_cancelled, res_org, created_menu_cds)
 
             if progress_cb:
                 progress_cb(100, "Page: completed")
