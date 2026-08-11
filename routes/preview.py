@@ -18,7 +18,7 @@ def render_preview_index(site_id, folder, menu_slug):
     site = next((s for s in sites if s['id'] == site_id), None)
     menu_name = menu_slug
     figma_link = ''
-    image_path = ''
+    image_paths = []
     
     if site:
         menu = next(
@@ -29,7 +29,9 @@ def render_preview_index(site_id, folder, menu_slug):
         if menu:
             menu_name = menu['name']
             figma_link = menu.get('figma_link', '')
-            image_path = menu.get('image_path', '')
+            image_paths = menu.get('image_paths', [])
+            if not image_paths and menu.get('image_path'):
+                image_paths = [menu.get('image_path')]
             
     return render_template(
         'preview_frame.html',
@@ -40,7 +42,7 @@ def render_preview_index(site_id, folder, menu_slug):
         menu_name=menu_name,
         site_name=site['name'] if site else site_id,
         figma_link=figma_link,
-        image_path=image_path
+        image_paths=image_paths
     )
 
 

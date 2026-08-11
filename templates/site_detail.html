@@ -390,14 +390,14 @@ Email: phongnguyen@andvina.com
                 </td>
                 <td class="text-right py-2" style="vertical-align: middle;">
                   <div class="d-flex align-items-center justify-content-end h-100">
-                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link and not menu.image_path %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
+                    <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1" id="generate-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" {% if not menu.figma_link and not (menu.image_paths or menu.image_path) %}disabled{% endif %} title="Generate"><i class="fas fa-cogs"></i></button>
                     <a href="/preview/{{ site.id }}/{% if menu.folder %}{{ menu.folder }}/{% endif %}{{ menu.slug }}.do" class="btn btn-success btn-sm page-action-btn mr-1" id="preview-list-btn-{{ menu.folder or '' }}--{{ menu.slug }}" onclick="this.href='/preview/{{ site.id }}/{% if menu.folder %}{{ menu.folder }}/{% endif %}{{ menu.slug }}.do?t=' + Date.now()" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};" title="Preview"><i class="fas fa-eye"></i></a>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="preview-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Preview"><i class="fas fa-eye"></i></button>
                     
                     <button type="button" class="btn btn-info btn-sm page-action-btn mr-1" title="Deploy" onclick="deployFiles('{{ site.id }}', '{{ menu.slug }}', '{{ menu.folder or '' }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)" id="deploy-list-form-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}inline-flex{% else %}none{% endif %};"><i class="fas fa-cloud-upload-alt"></i></button>
                     <button class="btn btn-secondary btn-sm page-action-btn mr-1" disabled id="deploy-list-disabled-{{ menu.folder or '' }}--{{ menu.slug }}" style="display: {% if menu.generated %}none{% else %}inline-flex{% endif %};" title="Deploy"><i class="fas fa-cloud-upload-alt"></i></button>
                     
-                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-id="{{ menu.id }}" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-image="{{ menu.image_path or '' }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
+                    <button type="button" class="btn btn-warning btn-sm text-white page-action-btn mr-1" title="Edit" data-id="{{ menu.id }}" data-name="{{ menu.name }}" data-folder="{{ menu.folder or '' }}" data-slug="{{ menu.slug }}" data-figma="{{ menu.figma_link }}" data-images="{{ (menu.image_paths if menu.image_paths else ([menu.image_path] if menu.image_path else [])) | join(',') }}" data-layout="{{ menu.layout }}" onclick="openEditMenuModal(this)"><i class="fas fa-edit"></i></button>
                     
                     <form action="/site/{{ site.id }}/delete-menu/{{ menu.id }}" method="POST" class="d-inline-flex align-items-center" style="margin: 0; padding: 0;" onsubmit="confirmDeleteMenu(event, this)">
                       <button type="submit" class="btn btn-danger btn-sm page-action-btn" title="Delete">
@@ -490,7 +490,7 @@ Email: phongnguyen@andvina.com
               <button type="button" class="btn btn-primary btn-sm page-action-btn mr-1"
                       id="generate-grid-btn-{{ menu.folder or '' }}--{{ menu.slug }}"
                       onclick="generateFiles('{{ site.id }}', '{{ menu.folder or '' }}--{{ menu.slug }}', this)"
-                      {% if not menu.figma_link and not menu.image_path %}disabled title="Please enter Figma Link or upload Image to generate"{% endif %} title="Generate">
+                      {% if not menu.figma_link and not (menu.image_paths or menu.image_path) %}disabled title="Please enter Figma Link or upload Image to generate"{% endif %} title="Generate">
                 <i class="fas fa-cogs"></i>
               </button>
               
@@ -528,7 +528,7 @@ Email: phongnguyen@andvina.com
                       data-folder="{{ menu.folder or '' }}"
                       data-slug="{{ menu.slug }}"
                       data-figma="{{ menu.figma_link }}"
-                      data-image="{{ menu.image_path or '' }}"
+                      data-images="{{ (menu.image_paths if menu.image_paths else ([menu.image_path] if menu.image_path else [])) | join(',') }}"
                       data-layout="{{ menu.layout }}"
                       onclick="openEditMenuModal(this)">
                 <i class="fas fa-edit"></i>
@@ -624,16 +624,12 @@ Email: phongnguyen@andvina.com
           <div class="row form-group mb-3">
             <div class="col-md-3 col-form-label"><label for="image_file">Or Upload Image</label></div>
             <div class="col-md-9">
-              <input type="file" class="form-control-file mt-2" id="image_file" name="image_file" accept="image/*" onchange="previewImage(this, 'add_image_preview', 'add_image_status')">
-              <small class="form-text text-muted">Prioritize Figma if both exist</small>
-              <div id="add_image_status" class="mt-3" style="display: none;">
-                  <div class="position-relative d-inline-block">
-                      <img id="add_image_preview" src="" alt="Uploaded Image" class="img-thumbnail" style="max-height: 150px;">
-                      <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -10px; right: -10px; border-radius: 50%;" onclick="removeAddImage()" title="Remove Image">
-                          <i class="fas fa-times"></i>
-                      </button>
-                  </div>
+              <input type="file" class="form-control-file mt-2" id="image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'add_image_status')">
+              <small class="form-text text-muted">You can upload multiple images. Prioritize Figma if both exist</small>
+              <div id="add_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px;">
+                  <!-- Previews will be injected here -->
               </div>
+              <button type="button" class="btn btn-outline-danger btn-sm mt-2" id="btn_remove_add_image" style="display: none;" onclick="removeAddImages()">Clear Images</button>
             </div>
           </div>
           
@@ -704,16 +700,16 @@ Email: phongnguyen@andvina.com
           <div class="row form-group mb-3">
             <div class="col-md-3 col-form-label"><label for="edit_image_file">Or Upload Image</label></div>
             <div class="col-md-9">
-              <input type="file" class="form-control-file mt-2" id="edit_image_file" name="image_file" accept="image/*" onchange="document.getElementById('remove_image').value='0'; previewImage(this, 'edit_image_preview', 'edit_image_status');">
-              <small class="form-text text-muted">Prioritize Figma if both exist</small>
-              <input type="hidden" id="remove_image" name="remove_image" value="0">
-              <div id="edit_image_status" class="mt-3" style="display: none;">
-                  <div class="position-relative d-inline-block">
-                      <img id="edit_image_preview" src="" alt="Uploaded Image" class="img-thumbnail" style="max-height: 150px;">
-                      <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -10px; right: -10px; border-radius: 50%;" onclick="removeUploadedImage()" title="Remove Image">
-                          <i class="fas fa-times"></i>
-                      </button>
-                  </div>
+              <input type="file" class="form-control-file mt-2" id="edit_image_files" name="image_files" accept="image/*" multiple onchange="previewImages(this, 'edit_new_image_status');">
+              <small class="form-text text-muted">You can upload multiple images. Prioritize Figma if both exist</small>
+              <input type="hidden" id="images_to_remove" name="images_to_remove" value="[]">
+              
+              <div id="edit_existing_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px;">
+                  <!-- Previews will be injected here -->
+              </div>
+              
+              <div id="edit_new_image_status" class="mt-3 d-flex flex-wrap gap-2" style="display: none; gap: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                  <!-- New Previews will be injected here -->
               </div>
             </div>
           </div>
@@ -1475,7 +1471,7 @@ function openEditMenuModal(btnElement) {
     const slug = btnElement.getAttribute('data-slug') || '';
     const figmaLink = btnElement.getAttribute('data-figma') || '';
     const layout = btnElement.getAttribute('data-layout') || '';
-    const imagePath = btnElement.getAttribute('data-image') || '';
+    const imagePaths = btnElement.getAttribute('data-images') || '';
     
     // Find menu to get parent_id and ai_hint
     const menu = siteMenus.find(m => m.id === id);
@@ -1489,17 +1485,35 @@ function openEditMenuModal(btnElement) {
     document.getElementById('edit_ai_hint').value = aiHint;
     document.getElementById('edit_layout').value = layout;
     
-    const statusDiv = document.getElementById('edit_image_status');
-    const imgPreview = document.getElementById('edit_image_preview');
-    document.getElementById('remove_image').value = "0";
+    const existingStatusDiv = document.getElementById('edit_existing_image_status');
+    const newStatusDiv = document.getElementById('edit_new_image_status');
+    const imagesToRemoveInput = document.getElementById('images_to_remove');
+    
+    imagesToRemoveInput.value = "[]";
+    existingStatusDiv.innerHTML = ''; // clear
+    newStatusDiv.innerHTML = '';
+    newStatusDiv.style.display = 'none';
+    document.getElementById('edit_image_files').value = '';
 
-    if (imagePath) {
-        const filename = imagePath.split(/[\\/]/).pop();
-        imgPreview.src = `/uploads/{{ site.id }}/${filename}`;
-        statusDiv.style.display = 'block';
+    if (imagePaths) {
+        const paths = imagePaths.split(',');
+        paths.forEach(path => {
+            if(!path) return;
+            const filename = path.split(/[\\/]/).pop();
+            const safePath = path.replace(/\\/g, '\\\\');
+            const imgHTML = `
+                <div class="position-relative d-inline-block existing-image-container">
+                    <img src="/uploads/{{ site.id }}/${filename}" alt="Uploaded Image" class="img-thumbnail" style="max-height: 150px;">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -10px; right: -10px; border-radius: 50%; padding: 0.1rem 0.3rem; line-height: 1;" onclick="removeExistingImage('${safePath}', this)" title="Remove Image">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            existingStatusDiv.insertAdjacentHTML('beforeend', imgHTML);
+        });
+        existingStatusDiv.style.display = 'flex';
     } else {
-        statusDiv.style.display = 'none';
-        imgPreview.src = '';
+        existingStatusDiv.style.display = 'none';
     }
     
     // Set form action dynamically with id
@@ -1509,26 +1523,57 @@ function openEditMenuModal(btnElement) {
     $('#editMenuModal').modal('show');
 }
 
-function previewImage(input, previewId, statusId) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById(previewId).src = e.target.result;
-            document.getElementById(statusId).style.display = 'block';
-        }
-        reader.readAsDataURL(input.files[0]);
+function removeExistingImage(path, btnElement) {
+    const container = btnElement.closest('.existing-image-container');
+    if(container) {
+        container.style.display = 'none';
+    }
+    
+    const hiddenInput = document.getElementById('images_to_remove');
+    let removed = [];
+    try {
+        removed = JSON.parse(hiddenInput.value);
+    } catch(e) {}
+    
+    if(!removed.includes(path)) {
+        removed.push(path);
+    }
+    hiddenInput.value = JSON.stringify(removed);
+}
+
+function previewImages(input, statusId) {
+    const statusDiv = document.getElementById(statusId);
+    statusDiv.innerHTML = '';
+    
+    const isAdd = statusId === 'add_image_status';
+    const btnRemove = isAdd ? document.getElementById('btn_remove_add_image') : null;
+    
+    if (input.files && input.files.length > 0) {
+        Array.from(input.files).forEach(file => {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                const imgHTML = `
+                    <div class="position-relative d-inline-block">
+                        <img src="${e.target.result}" alt="Preview" class="img-thumbnail" style="max-height: 150px;">
+                    </div>
+                `;
+                statusDiv.insertAdjacentHTML('beforeend', imgHTML);
+            }
+            reader.readAsDataURL(file);
+        });
+        statusDiv.style.display = 'flex';
+        if(btnRemove) btnRemove.style.display = 'inline-block';
+    } else {
+        statusDiv.style.display = 'none';
+        if(btnRemove) btnRemove.style.display = 'none';
     }
 }
 
-function removeAddImage() {
-    document.getElementById('image_file').value = "";
+function removeAddImages() {
+    document.getElementById('image_files').value = "";
+    document.getElementById('add_image_status').innerHTML = '';
     document.getElementById('add_image_status').style.display = 'none';
-}
-
-function removeUploadedImage() {
-    document.getElementById('remove_image').value = "1";
-    document.getElementById('edit_image_status').style.display = 'none';
-    document.getElementById('edit_image_file').value = '';
+    document.getElementById('btn_remove_add_image').style.display = 'none';
 }
 
 function confirmDeleteMenu(event, formElement) {
@@ -1858,15 +1903,20 @@ function bulkGenerateSelected(siteId) {
     if (values.length === 0) return;
     
     const generateList = [];
-    for (let val of values) {
-        const sepIndex = val.indexOf('--');
-        const folder = val.substring(0, sepIndex);
-        const slug = val.substring(sepIndex + 2);
-        
-        const menu = siteMenus.find(m => (m.folder || '') === folder && m.slug === slug);
-        if (menu && (menu.figma_link || menu.image_path)) {
-            generateList.push({ folder, slug, val });
+    function generateAllFiles(siteId, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
+        var generateList = [];
+        siteMenus.forEach(function(menu) {
+            var folder = menu.folder || '';
+            var slug = menu.slug;
+            var val = folder + '--' + slug;
+            if (menu && (menu.figma_link || menu.image_paths || menu.image_path)) {
+                generateList.push({ folder, slug, val });
+            }
+        });
     }
     
     if (generateList.length === 0) {

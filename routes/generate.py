@@ -793,7 +793,7 @@ def apply_structural_templates(html, css, api_key, menu_name, task_id=None, ai_h
         "Ví dụ ĐÚNG: `.class1 { font-size: 20px; color: #333; }`\n"
         "Tuyệt đối KHÔNG ĐƯỢC CÓ XUỐNG DÒNG bên trong dấu ngoặc nhọn {}.\n"
         "2. QUY ĐỊNH VỀ HÌNH ẢNH (IMAGES & ICONS): BẮT BUỘC sử dụng thẻ `<img>` HTML cho các hình ảnh thông thường (banner, ảnh minh họa, sản phẩm, v.v.). TUYỆT ĐỐI KHÔNG dùng `background-image` cho hình ảnh thông thường. TUY NHIÊN, đối với các icon nhỏ (mũi tên, dấu cộng, v.v.) nằm bên trong các nút bấm (button, thẻ `<a>`, `.btn-more`), TUYỆT ĐỐI KHÔNG ĐƯỢC sử dụng thẻ `<img>`. Bạn BẮT BUỘC phải chuyển đổi chúng thành CSS `background-image` hoặc dùng pseudo-element (`::after`, `::before`).\n"
-        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`.\n"
+        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: thẻ `<div class=\"con-box\">` CUỐI CÙNG (nằm dưới cùng) bên trong `.content-box` BẮT BUỘC phải có thêm class `no-pd` (tức là `<div class=\"con-box no-pd\">`).\n"
         "4. ĐỔI TÊN HÌNH ẢNH: Bạn BẮT BUỘC phải phân tích nội dung của từng ảnh (thông qua vị trí và mục đích trong layout) và đổi tên file ảnh trong thuộc tính `src` (ví dụ từ `test-01.png` thành `quick-link-01.png`) cho có ý nghĩa. TUYỆT ĐỐI KHÔNG sử dụng các từ như `icon`, `image`, `img`, `pic` trong tên file mới. Bắt buộc giữ nguyên đuôi file (.png). Trả về thêm mảng `rename_map` ghi nhận việc đổi tên này."
     )
 
@@ -1149,7 +1149,9 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
         folder, menu_slug = parse_folder_slug(menu_param)
         figma_link = menu.get('figma_link', '').strip()
-        image_path = menu.get('image_path', '').strip()
+        image_paths = menu.get('image_paths', [])
+        if not image_paths and menu.get('image_path'):
+            image_paths = [menu.get('image_path').strip()]
         ai_hint = menu.get('ai_hint', '').strip()
         
         html_result = ""
@@ -1222,33 +1224,38 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                     check_cancel_and_update("Applying feedback...")
                     css_result = apply_dynamic_css_feedback(css_result, feedback)
 
-        elif image_path:
-            
-            abs_image_path = image_path
-            if not os.path.isabs(abs_image_path):
-                root_path = os.path.dirname(os.path.dirname(__file__))
-                abs_image_path = os.path.join(root_path, abs_image_path)
-                
-            if not os.path.exists(abs_image_path):
-                raise Exception(f"Image file not found on server at {abs_image_path}.")
+        elif image_paths:
             if not gemini_api_key:
                 raise Exception("Gemini API Key is required for Image-to-HTML generation.")
                 
-            check_cancel_and_update("Processing uploaded image...")
+            check_cancel_and_update("Processing uploaded images...")
             from google import genai
             client = genai.Client(api_key=gemini_api_key)
             
-            # Copy image to output/images/menu_slug/ for reference if needed
+            root_path = os.path.dirname(os.path.dirname(__file__))
             images_dir = os.path.join(target_dir, "images", menu_slug)
             os.makedirs(images_dir, exist_ok=True)
-            ext = os.path.splitext(abs_image_path)[1]
-            dest_image_name = f"source_image{ext}"
-            dest_image_path = os.path.join(images_dir, dest_image_name)
-            shutil.copy(abs_image_path, dest_image_path)
             
-            gemini_file = client.files.upload(file=abs_image_path)
+            gemini_files = []
+            valid_image_paths = []
             
-            GENERATE_TASKS[task_id] = {"status": "running", "message": "Generating HTML/CSS from Image..."}
+            for idx, path in enumerate(image_paths):
+                if not path: continue
+                abs_image_path = path if os.path.isabs(path) else os.path.join(root_path, path)
+                if not os.path.exists(abs_image_path):
+                    continue
+                    
+                valid_image_paths.append(abs_image_path)
+                ext = os.path.splitext(abs_image_path)[1]
+                dest_image_name = f"source_image_{idx}{ext}"
+                dest_image_path = os.path.join(images_dir, dest_image_name)
+                shutil.copy(abs_image_path, dest_image_path)
+                gemini_files.append(client.files.upload(file=abs_image_path))
+                
+            if not gemini_files:
+                raise Exception("No valid image files found on server.")
+            
+            GENERATE_TASKS[task_id] = {"status": "running", "message": "Generating HTML/CSS from Images..."}
             
             structure_template = ''
             try:
@@ -1259,8 +1266,11 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                         structure_template = f.read()
             except Exception: pass
             
+            num_images = len(gemini_files)
+            conbox_hint = f"\nCRITICAL INSTRUCTION: The user provided {num_images} image(s). This EXACTLY MEANS there are {num_images} main sections in the design. You MUST create exactly {num_images} `<div class=\"con-box\">` elements inside `.content-box`, each corresponding chronologically to one of the images provided." if num_images > 0 else ""
+            
             prompt = f"""You are an expert Frontend Developer. 
-Your task is to convert this screenshot into pixel-perfect, responsive HTML and CSS.
+Your task is to convert the provided screenshot(s) into pixel-perfect, responsive HTML and CSS.
 
 To ensure extreme accuracy, you MUST follow this Chain-of-Thought pipeline before writing any code:
 1. Vision analysis: Describe the overall visual theme, colors, and design style.
@@ -1270,7 +1280,7 @@ To ensure extreme accuracy, you MUST follow this Chain-of-Thought pipeline befor
 
 CRITICAL STRUCTURE RULES:
 1. Wrap the entire page content in `<div class="content-box">`. 
-2. Inside `.content-box`, group related sections into `<div class="con-box">`.
+2. Inside `.content-box`, group related sections into `<div class="con-box">`. {conbox_hint} LƯU Ý QUAN TRỌNG: The VERY LAST `<div class="con-box">` inside `.content-box` MUST have the class `no-pd` (e.g., `<div class="con-box no-pd">`).
 3. Use class names from this structure template:
 {structure_template}
 4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
@@ -1287,9 +1297,10 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
   "css": "full CSS content, one rule per line"
 }}
 """
+            contents = gemini_files + [prompt]
             response = client.models.generate_content(
                 model='gemini-3.5-flash',
-                contents=[gemini_file, prompt]
+                contents=contents
             )
             
             text = response.text.strip()
@@ -1301,15 +1312,16 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             html_result = result.get('html', '')
             css_result = result.get('css', '')
 
-            # Create a thumbnail from the image
+            # Create a thumbnail from the first image
             thumb_path = os.path.join(target_dir, "thumb.jpg")
             if not os.path.exists(thumb_path):
-                shutil.copy(abs_image_path, thumb_path)
+                shutil.copy(valid_image_paths[0], thumb_path)
 
             check_cancel_and_update("Refining visuals with AI...")
+            # For compare_and_fix_visuals, we pass the first image to keep it simple, or none
             html_result, css_result = compare_and_fix_visuals(
                 "", "", html_result, css_result,
-                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id, local_image_path=abs_image_path
+                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id, local_image_path=valid_image_paths[0]
             )
 
             if feedback:

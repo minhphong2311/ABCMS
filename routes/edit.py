@@ -13,21 +13,35 @@ from .helpers import load_data, save_data, parse_folder_slug, assign_folders_fro
 
 edit_bp = Blueprint('edit', __name__)
 
-def handle_image_upload(site_id, menu_id, image_file):
-    if image_file and image_file.filename:
-        from flask import current_app
-        import os
-        from werkzeug.utils import secure_filename
+def handle_multiple_image_upload(site_id, menu_id, image_files):
+    paths = []
+    if not image_files:
+        return paths
         
-        upload_dir = os.path.join(current_app.root_path, 'data', 'uploads', site_id)
-        os.makedirs(upload_dir, exist_ok=True)
-        filename = f"{menu_id}_{secure_filename(image_file.filename)}"
-        save_path = os.path.join(upload_dir, filename)
-        image_file.save(save_path)
-        
-        # Return a relative path for JSON storage
-        return f"data/uploads/{site_id}/{filename}"
-    return None
+    from flask import current_app
+    import os
+    from werkzeug.utils import secure_filename
+    
+    upload_dir = os.path.join(current_app.root_path, 'data', 'uploads', site_id)
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    for idx, image_file in enumerate(image_files):
+        if image_file and image_file.filename:
+            # Handle empty filenames just in case
+            if image_file.filename.strip() == '':
+                continue
+            # Generate unique filename for each image to prevent overwriting if same names
+            ext = os.path.splitext(image_file.filename)[1]
+            # Use original filename but prepend menu_id and index to avoid conflicts
+            base_name = secure_filename(os.path.splitext(image_file.filename)[0])
+            if not base_name:
+                base_name = f"image_{idx}"
+            filename = f"{menu_id}_{idx}_{base_name}{ext}"
+            save_path = os.path.join(upload_dir, filename)
+            image_file.save(save_path)
+            paths.append(f"data/uploads/{site_id}/{filename}")
+            
+    return paths
 
 @edit_bp.route('/site/<site_id>/add-menu', methods=['POST'])
 def add_menu(site_id):
@@ -37,7 +51,7 @@ def add_menu(site_id):
     figma_link = request.form.get('figma_link', '').strip()
     ai_hint = request.form.get('ai_hint', '').strip()
     layout = request.form.get('layout', 'sub-template').strip()
-    image_file = request.files.get('image_file')
+    image_files = request.files.getlist('image_files')
 
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
@@ -58,9 +72,11 @@ def add_menu(site_id):
         'order': len(site.get('menus', []))
     }
 
-    image_path = handle_image_upload(site_id, new_menu['id'], image_file)
-    if image_path:
-        new_menu['image_path'] = image_path
+    image_paths = handle_multiple_image_upload(site_id, new_menu['id'], image_files)
+    if image_paths:
+        new_menu['image_paths'] = image_paths
+    else:
+        new_menu['image_paths'] = []
 
     if 'menus' not in site:
         site['menus'] = []
@@ -79,7 +95,7 @@ def edit_menu(site_id, menu_id):
     new_figma = request.form.get('figma_link', '').strip()
     new_ai_hint = request.form.get('ai_hint', '').strip()
     new_layout = request.form.get('layout', 'sub-template').strip()
-    image_file = request.files.get('image_file')
+    image_files = request.files.getlist('image_files')
 
     sites = load_data()
     site = next((s for s in sites if s['id'] == site_id), None)
@@ -103,11 +119,24 @@ def edit_menu(site_id, menu_id):
     menu['layout'] = new_layout
     menu['parent_id'] = new_parent_id if new_parent_id else None
 
-    remove_image = request.form.get('remove_image', '0')
-    if remove_image == '1':
-        if 'image_path' in menu:
+    # Determine existing image paths (backward compatibility)
+    existing_paths = menu.get('image_paths', [])
+    if not existing_paths and menu.get('image_path'):
+        existing_paths = [menu.get('image_path')]
+
+    import json
+    images_to_remove_str = request.form.get('images_to_remove', '[]').strip()
+    try:
+        images_to_remove = json.loads(images_to_remove_str) if images_to_remove_str else []
+    except json.JSONDecodeError:
+        images_to_remove = []
+
+    # Filter out removed paths and delete them from disk
+    new_existing_paths = []
+    for path in existing_paths:
+        if path in images_to_remove or path.split('/')[-1] in images_to_remove or path.split('\\')[-1] in images_to_remove:
             try:
-                abs_path = menu['image_path']
+                abs_path = path
                 if not os.path.isabs(abs_path):
                     from flask import current_app
                     abs_path = os.path.join(current_app.root_path, abs_path)
@@ -115,21 +144,20 @@ def edit_menu(site_id, menu_id):
                     os.remove(abs_path)
             except Exception:
                 pass
-            menu['image_path'] = ''
+        else:
+            new_existing_paths.append(path)
+
+    # Check if there are valid new files uploaded
+    valid_files = [f for f in image_files if f and f.filename and f.filename.strip() != '']
+    if valid_files:
+        # Save new images and append to the remaining existing ones
+        new_uploaded_paths = handle_multiple_image_upload(site_id, menu['id'], image_files)
+        menu['image_paths'] = new_existing_paths + new_uploaded_paths
     else:
-        image_path = handle_image_upload(site_id, menu['id'], image_file)
-        if image_path:
-            if 'image_path' in menu and menu['image_path'] and menu['image_path'] != image_path:
-                try:
-                    old_path = menu['image_path']
-                    if not os.path.isabs(old_path):
-                        from flask import current_app
-                        old_path = os.path.join(current_app.root_path, old_path)
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                except Exception:
-                    pass
-            menu['image_path'] = image_path
+        menu['image_paths'] = new_existing_paths
+
+    if 'image_path' in menu:
+        del menu['image_path']
 
     assign_folders_from_roots(site['menus'])
     save_data(sites)
