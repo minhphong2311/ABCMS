@@ -1809,6 +1809,24 @@ document.addEventListener('DOMContentLoaded', () => {
     populateFolderSelects();
     renderMenuTree();
     
+    // Auto-select the currently active node when opening Add Page modal
+    $('#addMenuModal').on('show.bs.modal', function (e) {
+        const savedNodeId = localStorage.getItem('siteDetailSelectedNodeId');
+        const addSelect = document.getElementById('folder');
+        if (addSelect) {
+            if (savedNodeId && savedNodeId !== "null") {
+                let optionExists = Array.from(addSelect.options).some(opt => opt.value === savedNodeId);
+                if (optionExists) {
+                    addSelect.value = savedNodeId;
+                } else {
+                    addSelect.value = '';
+                }
+            } else {
+                addSelect.value = '';
+            }
+        }
+    });
+    
     // Restore View Preference
     const savedView = localStorage.getItem('siteDetailViewMode') || 'list';
     toggleView(savedView);
@@ -2623,6 +2641,7 @@ function refreshUIData(callback) {
         }
         
         // Re-render components
+        populateFolderSelects();
         renderMenuTree();
         applyFilters();
         
