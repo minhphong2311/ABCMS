@@ -122,6 +122,13 @@ body.dark-mode .form-control:focus {
     border-color: #3f6791 !important;
     color: #f8f9fa !important;
 }
+body.dark-mode .form-control:disabled,
+body.dark-mode .form-control[readonly] {
+    background-color: #2b2f33 !important;
+    opacity: 0.65;
+    color: #88939c !important;
+    cursor: not-allowed;
+}
 body.dark-mode code {
     color: #e83e8c;
     background-color: transparent;
