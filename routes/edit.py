@@ -59,6 +59,14 @@ def add_menu(site_id):
         flash('Site not found!', 'danger')
         return redirect(url_for('index'))
 
+    parent_id_val = parent_id if parent_id else None
+    for m in site.get('menus', []):
+        if m.get('slug') == menu_slug and m.get('parent_id') == parent_id_val:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': f'Slug "{menu_slug}" already exists at this level!'})
+            flash(f'Slug "{menu_slug}" already exists at this level!', 'danger')
+            return redirect(url_for('site_detail', site_id=site_id))
+
     new_menu = {
         'id': str(uuid.uuid4()),
         'name': menu_name,
@@ -84,6 +92,10 @@ def add_menu(site_id):
 
     assign_folders_from_roots(site['menus'])
     save_data(sites)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Successfully added page "{menu_name}"!'})
+        
     flash(f'Successfully added page "{menu_name}"!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
 
@@ -110,6 +122,14 @@ def edit_menu(site_id, menu_id):
     if not menu:
         flash('Page not found!', 'danger')
         return redirect(url_for('site_detail', site_id=site_id))
+
+    new_parent_id_val = new_parent_id if new_parent_id else None
+    for m in site.get('menus', []):
+        if m.get('id') != menu_id and m.get('slug') == new_slug and m.get('parent_id') == new_parent_id_val:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': f'Slug "{new_slug}" already exists at this level!'})
+            flash(f'Slug "{new_slug}" already exists at this level!', 'danger')
+            return redirect(url_for('site_detail', site_id=site_id))
 
     menu['name'] = new_name
     menu['slug'] = new_slug
@@ -164,6 +184,10 @@ def edit_menu(site_id, menu_id):
 
     assign_folders_from_roots(site['menus'])
     save_data(sites)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Successfully updated page "{new_name}"!'})
+        
     flash(f'Successfully updated page "{new_name}"!', 'success')
     return redirect(url_for('site_detail', site_id=site_id))
 

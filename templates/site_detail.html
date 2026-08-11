@@ -576,7 +576,7 @@ Email: phongnguyen@andvina.com
 <!-- Add Page Modal (Add Page) -->
 <div class="modal fade" id="addMenuModal" tabindex="-1" aria-labelledby="addMenuModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <form action="/site/{{ site.id }}/add-menu" method="POST" enctype="multipart/form-data">
+    <form id="addMenuForm" action="/site/{{ site.id }}/add-menu" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitFormAjax(this, 'addMenuModal', 'Successfully added page!');">
       <div class="modal-content">
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title" id="addMenuModalLabel">Add Page</h5>
@@ -665,7 +665,7 @@ Email: phongnguyen@andvina.com
 <!-- Edit Page Modal (Edit Trang) -->
 <div class="modal fade" id="editMenuModal" tabindex="-1" aria-labelledby="editMenuModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <form id="editMenuForm" method="POST" enctype="multipart/form-data">
+    <form id="editMenuForm" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitFormAjax(this, 'editMenuModal', 'Successfully updated page!');">
       <div class="modal-content">
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title" id="editMenuModalLabel">Edit Page</h5>
@@ -1729,7 +1729,7 @@ function confirmDeleteMenu(event, formElement) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            formElement.submit(); // Submit form programmatically
+            submitFormAjax(formElement, null, 'Successfully deleted page!');
         }
     });
 }
@@ -1791,10 +1791,14 @@ function deleteFolder(folder) {
         }
     });
 }
+</script>
 
-
+<script id="siteMenusData" type="application/json">
+{{ site.menus | tojson }}
+</script>
+<script>
 // --- SPLIT VIEW LOGIC ---
-let siteMenus = {{ site.menus | tojson | safe }} || [];
+let siteMenus = JSON.parse(document.getElementById('siteMenusData').textContent) || [];
 let currentTreeFilterIds = null; // null means show all, otherwise array of leaf node ids to show
 
 // Pagination State
@@ -1849,7 +1853,25 @@ function renderMenuTree() {
         </style>
         <div class="p-2">${treeHTML}</div>
     `;
-    setTimeout(() => updateTreeCheckAllState(), 10);
+      setTimeout(() => {
+          updateTreeCheckAllState();
+          const savedNodeId = localStorage.getItem('siteDetailSelectedNodeId');
+          const savedParentId = localStorage.getItem('siteDetailSelectedNodeParentId');
+          if (savedNodeId) {
+              // Only restore if the node actually exists in the tree
+              if (siteMenus.some(m => m.id === savedNodeId)) {
+                  restoreSelectedTreeNode(savedNodeId);
+              } else if (savedParentId && siteMenus.some(m => m.id === savedParentId)) {
+                  localStorage.setItem('siteDetailSelectedNodeId', savedParentId);
+                  restoreSelectedTreeNode(savedParentId);
+              } else {
+                  localStorage.removeItem('siteDetailSelectedNodeId');
+                  localStorage.removeItem('siteDetailSelectedNodeParentId');
+                  currentTreeFilterIds = null;
+                  applyFilters();
+              }
+          }
+      }, 10);
 }
 
 function buildTreeHTML(menus, parentId) {
@@ -1938,6 +1960,16 @@ function updateTreeCheckAllState() {
 
 function filterByLeafNode(nodeId, event) {
     if (event && event.target && event.target.tagName.toLowerCase() === 'input') return;
+    
+    // Save to local storage
+    localStorage.setItem('siteDetailSelectedNodeId', nodeId);
+    const node = siteMenus.find(m => m.id === nodeId);
+    if (node && node.parent_id) {
+        localStorage.setItem('siteDetailSelectedNodeParentId', node.parent_id);
+    } else {
+        localStorage.removeItem('siteDetailSelectedNodeParentId');
+    }
+    
     currentTreeFilterIds = [nodeId];
     highlightTreeNode(nodeId);
     currentPage = 1;
@@ -1950,8 +1982,46 @@ function toggleAllTreeChecks(checked) {
     updateTreeCheckAllState();
 }
 
+function restoreSelectedTreeNode(nodeId) {
+    if (!nodeId) return;
+    
+    // highlight and filter
+    const children = siteMenus.filter(m => m.parent_id === nodeId);
+    if (children.length > 0) {
+        currentTreeFilterIds = getAllDescendantLeafIds(nodeId);
+    } else {
+        currentTreeFilterIds = [nodeId];
+    }
+    highlightTreeNode(nodeId);
+    
+    // expand parents
+    let currentId = nodeId;
+    while (currentId) {
+        let menu = siteMenus.find(m => m.id === currentId);
+        if (!menu) break;
+        let parentId = menu.parent_id;
+        if (parentId) {
+            const childrenDiv = document.getElementById(`tree-children-${parentId}`);
+            const caret = document.getElementById(`tree-caret-${parentId}`);
+            if (childrenDiv && caret) {
+                childrenDiv.style.display = 'block';
+                if (caret.classList.contains('fa-chevron-right')) {
+                    caret.classList.replace('fa-chevron-right', 'fa-chevron-down');
+                }
+            }
+            currentId = parentId;
+        } else {
+            break;
+        }
+    }
+    
+    applyFilters();
+}
+
 function clearTreeFilter() {
     currentTreeFilterIds = null;
+    localStorage.removeItem('siteDetailSelectedNodeId');
+    localStorage.removeItem('siteDetailSelectedNodeParentId');
     highlightTreeNode(null);
     const searchInput = document.getElementById('pageSearchInput');
     if (searchInput) searchInput.value = '';
@@ -2198,15 +2268,38 @@ function bulkDeleteSelected(siteId) {
                             }
                             siteMenus = siteMenus.filter(m => m.id !== item.id);
                         });
-                        Swal.fire('Deleted!', `Successfully deleted ${response.deleted_count} items.`, 'success');
+                        refreshUIData(() => {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: `Successfully deleted ${response.deleted_count} items.`,
+                                timer: 3000,
+                                showConfirmButton: false
+                            });
+                        });
                         applyFilters();
                         updateBulkActionsBtn();
                     } else {
-                        Swal.fire('Error', response.message || 'Could not delete items.', 'error');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: response.message || 'Could not delete items.',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
                     }
                 },
                 error: function() {
-                    Swal.fire('Error', 'Connection error.', 'error');
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Connection error.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
                 }
             });
         }
@@ -2277,6 +2370,10 @@ function toggleAndFilterTreeNode(nodeId, event) {
     const descendantIds = getAllDescendantLeafIds(nodeId);
     currentTreeFilterIds = descendantIds;
     highlightTreeNode(nodeId);
+    
+    // Save to local storage
+    localStorage.setItem('siteDetailSelectedNodeId', nodeId);
+    
     applyFilters();
 }
 
@@ -2499,6 +2596,109 @@ document.addEventListener('paste', function(e) {
         previewImages(targetInput, targetStatusId);
     }
 });
+
+function refreshUIData(callback) {
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Update List View
+        const newListView = doc.getElementById('list-view-container');
+        if (newListView) document.getElementById('list-view-container').innerHTML = newListView.innerHTML;
+        
+        // Update Grid View
+        const newGridView = doc.getElementById('grid-view-container');
+        if (newGridView) document.getElementById('grid-view-container').innerHTML = newGridView.innerHTML;
+        
+        // Update siteMenus variable
+        const newDataScript = doc.getElementById('siteMenusData');
+        if (newDataScript) {
+            siteMenus = JSON.parse(newDataScript.textContent);
+        }
+        
+        // Re-render components
+        renderMenuTree();
+        applyFilters();
+        
+        if (callback) callback();
+    })
+    .catch(err => {
+        console.error('Error refreshing UI:', err);
+        window.location.reload();
+    });
+}
+
+function submitFormAjax(formElement, modalId, successMessage) {
+    const formData = new FormData(formElement);
+    const url = formElement.action || window.location.href;
+    const method = formElement.method || 'POST';
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        title: 'Processing...',
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(url, {
+        method: method,
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (modalId) {
+                $(`#${modalId}`).modal('hide');
+            }
+            formElement.reset();
+            if (formElement.id === 'addMenuForm' && typeof removeAddImages === 'function') {
+                removeAddImages();
+            }
+            refreshUIData(() => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || successMessage || 'Success',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+        } else {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: data.message || 'An error occurred.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Failed to process request.',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    });
+}
 </script>
 
 

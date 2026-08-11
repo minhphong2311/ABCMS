@@ -35,8 +35,15 @@ def delete_menu(site_id, menu_id):
 
         # Delete generated temp files
         delete_menu_files(site_id, menu_param)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': 'Successfully deleted page!'})
+            
         flash('Successfully deleted page!', 'success')
     else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Menu not found!'})
+            
         flash('Menu not found!', 'danger')
         
     return redirect(url_for('site_detail', site_id=site_id))
