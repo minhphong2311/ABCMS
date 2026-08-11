@@ -21,6 +21,7 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
     await asyncio.sleep(3.6)
     
     folders_created = False
+    folders_to_verify = []
     for folder in unique_folders_list:
         if is_cancelled and is_cancelled():
             raise Exception("Deploy cancelled by user")
@@ -88,21 +89,27 @@ async def deploy_folders(page, site_url, site_id, unique_folders_list, progress_
                 raise Exception(f"Không thể tạo thư mục '{folder}' qua UI: {ex}")
             if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
             folders_created = True
+            folders_to_verify.append(folder)
             
-            # Verification Step
-            await page.reload(wait_until="domcontentloaded")
-            await asyncio.sleep(2.4)
-            if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+        current_item += 1
+
+    if folders_created:
+        # Verification Step (Only once for all newly created folders)
+        await page.reload(wait_until="domcontentloaded")
+        await asyncio.sleep(2.4)
+        if is_cancelled and is_cancelled(): raise Exception('Deploy cancelled by user')
+        
+        for folder in folders_to_verify:
             report(f"Folder: verifying {folder}", 0.9)
             print(f"  3.5 Kiểm tra lại Folder '{folder}' trong danh sách...")
+            folder_anchor_id = f'/{site_id}/{folder}_anchor'
             try:
                 await page.wait_for_selector(f'[id="{folder_anchor_id}"]', timeout=5000)
                 print(f"  ✓ 3.5 Kiểm tra lại THÀNH CÔNG: Thư mục '{folder}' đã tồn tại.")
             except Exception as e:
                 if str(e) == 'Deploy cancelled by user': raise
                 raise Exception(f"Kiểm tra lại thất bại: Thư mục '{folder}' chưa được tạo thành công trên CMS.")
-        
-        current_item += 1
+    
     
     print("  ✓ 3.5 Hoàn thành kiểm tra và xác nhận lại toàn bộ Folder theo đúng thứ tự.")
     return current_item
