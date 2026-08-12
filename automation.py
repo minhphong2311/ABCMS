@@ -497,56 +497,62 @@ async def deploy_to_cms_task(site_url, site_id, username, password, folder, slug
                 print(f'[{slug}] HTML inject error: {e}')
 
             # STEP 8: CSS
-            print(f'[{slug}] Switching to CSS tab...')
-            await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
-                if (t) t.click();
-            }''')
-            await asyncio.sleep(1)
-            await editor_page.evaluate('''(css) => {
-                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
-                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
-                Array.from(document.querySelectorAll('*')).some(el => {
-                    const s = window.angular && window.angular.element(el).scope();
-                    if (s && s.editor && s.editor.item) {
-                        s.$apply(() => {
-                            s.editor.item.cssText = css;
-                            if (s.editor.cssTabList && s.editor.cssTabList[0]) {
-                                s.editor.cssTabList[0].text = css;
-                                s.editor.cssTabList[0].modified = true;
-                            }
-                        });
-                        return true;
-                    }
-                });
-            }''', css_content)
-            await asyncio.sleep(1)
+            if css_content and css_content.strip():
+                print(f'[{slug}] Switching to CSS tab...')
+                await editor_page.evaluate('''() => {
+                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'CSS 편집');
+                    if (t) t.click();
+                }''')
+                await asyncio.sleep(1)
+                await editor_page.evaluate('''(css) => {
+                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorCssOpt"] .CodeMirror');
+                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(css); }
+                    Array.from(document.querySelectorAll('*')).some(el => {
+                        const s = window.angular && window.angular.element(el).scope();
+                        if (s && s.editor && s.editor.item) {
+                            s.$apply(() => {
+                                s.editor.item.cssText = css;
+                                if (s.editor.cssTabList && s.editor.cssTabList[0]) {
+                                    s.editor.cssTabList[0].text = css;
+                                    s.editor.cssTabList[0].modified = true;
+                                }
+                            });
+                            return true;
+                        }
+                    });
+                }''', css_content)
+                await asyncio.sleep(1)
+            else:
+                print(f'[{slug}] No CSS content to deploy. Skipping CSS tab.')
 
             # STEP 9: JS
-            print(f'[{slug}] Switching to JS tab...')
-            await editor_page.evaluate('''() => {
-                const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
-                if (t) t.click();
-            }''')
-            await asyncio.sleep(1)
-            await editor_page.evaluate('''(js) => {
-                const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
-                if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
-                Array.from(document.querySelectorAll('*')).some(el => {
-                    const s = window.angular && window.angular.element(el).scope();
-                    if (s && s.editor && s.editor.item) {
-                        s.$apply(() => {
-                            s.editor.item.jsText = js;
-                            if (s.editor.jsTabList && s.editor.jsTabList[0]) {
-                                s.editor.jsTabList[0].text = js;
-                                s.editor.jsTabList[0].modified = true;
-                            }
-                        });
-                        return true;
-                    }
-                });
-            }''', js_content)
-            await asyncio.sleep(1)
+            if js_content and js_content.strip():
+                print(f'[{slug}] Switching to JS tab...')
+                await editor_page.evaluate('''() => {
+                    const t = Array.from(document.querySelectorAll('.nav-tabs li a, uib-tab-heading')).find(x => (x.innerText||x.textContent||'').trim() === 'JS 편집');
+                    if (t) t.click();
+                }''')
+                await asyncio.sleep(1)
+                await editor_page.evaluate('''(js) => {
+                    const cmEl = document.querySelector('[ui-codemirror="editor.codeMirrorJsOpt"] .CodeMirror');
+                    if (cmEl && cmEl.CodeMirror) { cmEl.CodeMirror.setValue(js); }
+                    Array.from(document.querySelectorAll('*')).some(el => {
+                        const s = window.angular && window.angular.element(el).scope();
+                        if (s && s.editor && s.editor.item) {
+                            s.$apply(() => {
+                                s.editor.item.jsText = js;
+                                if (s.editor.jsTabList && s.editor.jsTabList[0]) {
+                                    s.editor.jsTabList[0].text = js;
+                                    s.editor.jsTabList[0].modified = true;
+                                }
+                            });
+                            return true;
+                        }
+                    });
+                }''', js_content)
+                await asyncio.sleep(1)
+            else:
+                print(f'[{slug}] No JS content to deploy. Skipping JS tab.')
 
             # STEP 10: SAVE
             print(f'[{slug}] Saving...')
