@@ -61,8 +61,9 @@ Email: phongnguyen@andvina.com
           </div>
           <div class="w-100 d-flex">
             <div style="width: 18px; margin-right: 0.5rem;"></div>
-            <a href="https://demo.jiniworks.com/{{ site.id }}" target="_blank" class="cms-link text-truncate" title="Visit CMS">
-              https://demo.jiniworks.com/{{ site.id }}
+            {% set base_url = site.url.split('/_fox')[0] if site.url else 'https://demo.jiniworks.com' %}
+            <a href="{{ base_url }}/{{ site.id }}" target="_blank" class="cms-link text-truncate" title="Visit CMS">
+              {{ base_url }}/{{ site.id }}
             </a>
           </div>
         </div>

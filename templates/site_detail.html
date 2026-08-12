@@ -45,7 +45,7 @@ Email: phongnguyen@andvina.com
           </li>
           <li class="mb-3 d-flex align-items-center">
             <span class="text-muted font-weight-bold mr-3" style="min-width: 90px;"><i class="fas fa-globe mr-2 text-secondary"></i>URL CMS:</span> 
-            <a href="{{ site.url }}" target="_blank" class="text-primary font-weight-bold">{{ site.url }} <i class="fas fa-external-link-alt text-xs ml-1"></i></a>
+            <a href="{{ site.url.rstrip('/') }}/index.do?siteId={{ site.id }}" target="_blank" class="text-primary font-weight-bold">{{ site.url.rstrip('/') }}/index.do?siteId={{ site.id }} <i class="fas fa-external-link-alt text-xs ml-1"></i></a>
           </li>
           <li class="mb-1 d-flex align-items-center">
             <span class="text-muted font-weight-bold mr-3" style="min-width: 90px;"><i class="fas fa-user-shield mr-2 text-secondary"></i>Account:</span> 
