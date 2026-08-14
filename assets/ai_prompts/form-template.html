@@ -1,0 +1,421 @@
+<div class="bn-write-common01 type01">
+	<form action="" method="">
+		<fieldset>
+			<legend class="hide">게시글 등록</legend>
+			<div class="b-table-wrap">
+				<div class="b-table-box type01 b-subject-box">
+					<div class="b-row-box">
+						<div class="b-title-box b-required">
+							<label for="wr-tit">제목</label>
+						</div>
+						<div class="b-con-box">
+							<input type="text" id="wr-tit" name="wr-tit-name" class="b-input" value="">
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01 b-notice-box">
+							<div class="b-row-box">
+								<div class="b-title-box b-required">
+									상단고정
+								</div>
+								<div class="b-con-box">
+									<div class="b-period-box">
+										<p>
+											<input type="checkbox" id="topNoticeYn" name="wr-notice-name" checked="checked" class="b-chk">
+											<label for="topNoticeYn">공지여부 선택</label>
+										</p>
+									</div>
+								</div>
+								<div class="b-title-box b-required">
+									상단고정기간
+								</div>
+								<div class="b-con-box">
+									<div class="b-period-box">
+										<div>
+											<label for="noticeStartDt" class="hide">공지시작일</label>
+											<input data-valid-title="공지시작일" title="시작 날짜" class="datepicker b-input" maxlength="10" type="text" id="noticeStartDt" name="noticeStartDt" value="2025-12-22"><span>~</span>
+											<label for="noticeEndDt" class="hide">공지종료일</label>
+											<input data-valid-title="공지종료일" title="마지막 날짜" class="datepicker b-input" maxlength="10" type="text" id="noticeEndDt" name="noticeEndDt" value="2025-12-31">
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box b-required">
+							<label for="wr-writer">작성자</label>
+						</div>
+						<div class="b-con-box">
+							<input type="text" id="wr-writer" name="wr-writer-name" class="b-input" value="">
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box b-required">등록일</div>
+						<div class="b-con-box">
+							<div class="b-period-box">
+								<div>
+									<label class="hide" for="wr-dt">등록일</label>
+									<input type="text" id="wr-dt" name="wr-dt-name" class="b-input datepicker b-input-date" value="">
+								</div>
+								<div>
+									<label class="hide" for="wr-hour">시간</label>
+									<select class="b-select" id="wr-hour" name="wr-cate01-name">
+										<option>전체</option>
+										<option>분류1</option>
+										<option>분류2</option>
+									</select>
+								</div>
+								<div>
+									<label class="hide" for="wr-minute">분</label>
+									<select class="b-select" id="wr-minute" name="wr-cate01-name">
+										<option>전체</option>
+										<option>분류1</option>
+										<option>분류2</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">
+							<label for="wr-cate01">분류</label>
+						</div>
+						<div class="b-con-box">
+							<select class="b-select" id="wr-cate01" name="wr-cate01-name">
+								<option>전체</option>
+								<option>분류1</option>
+								<option>분류2</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box b-required">
+							<label for="wr-email">이메일</label>
+						</div>
+						<div class="b-con-box">
+							<div class="b-email-box">
+								<input type="text" id="wr-email" name="wr-email-name" class="b-input" value=""><span>@</span>
+								<input type="text" id="wr-email-domain" name="wr-email-domain-name" class="b-input" value="admin">
+								<button class="b-btn-small" type="button">이메일 중복확인</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box b-required">
+							<label for="wr-tel">휴대폰</label>
+						</div>
+						<div class="b-con-box">
+							<div class="b-tel-box">
+								<select class="b-select">
+									<option>010</option>
+									<option>010</option>
+									<option>010</option>
+								</select><span>-</span>
+								<input type="text" id="wr-tel" name="wr-tel-name" class="b-input" value=""><span>-</span>
+								<input type="text" id="wr-tel02" name="wr-tel02-name" class="b-input" value="">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type02">
+					<div class="b-row-box">
+						<div>
+							<div>
+								<div class="b-title-box">비밀글</div>
+								<div class="b-con-box">
+										<input type="radio" id="b-lock-open" name="b-lock-name" class="b-radio" checked="" value="on">
+									<label for="b-lock-open">공개</label>
+									
+										<input type="radio" id="b-lock-not-open" name="b-lock-name" class="b-radio" value="on">
+									<label for="b-lock-not-open">비공개</label>
+								</div>
+							</div>
+						</div>
+						<div>
+							<div>
+								<div class="b-title-box">
+									<label for="wr-cate01">비밀번호</label>
+								</div>
+								<div class="b-con-box">
+									<input type="password" id="wr-pw" name="wr-pw-name" class="b-input" value="jj$#@!">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">보안문자</div>
+						<div class="b-con-box">
+							<div class="b-secure-box">
+								<input type="text" id="wr-link" name="wr-link-name" class="b-input type02" value="">
+								<div class="b-secure-img-box">
+									</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">확장필드1</div>
+						<div class="b-con-box">
+							<input type="text" id="wr-extend01" name="wr-extend01-name" class="b-input" value="">
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">확장필드2</div>
+						<div class="b-con-box">
+							<input type="text" id="wr-extend02" name="wr-extend02-name" class="b-input" value="">
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">동영상링크</div>
+						<div class="b-con-box">
+							<input type="text" id="wr-video-url" name="wr-video-url-name" class="b-input" value="">
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">첨부파일</div>
+						<div class="b-con-box02">
+							<div class="b-file-box type04">
+								<div>
+									<div>
+										<p>
+											<input type="checkbox" id="wr-edit-file" name="wr-edit-file-name" class="b-chk" value="on">
+											<label for="wr-edit-file">전담인력 채용 안내.hwp</label>
+										</p><span class="b-file-del-btn">삭제</span></div>
+									<div class="b-guide-box">
+										<label class="hide" for="wr-guide-txt01">대체텍스트</label>
+										<input type="text" id="wr-guide-txt01" name="wr-guide-txt01-name" class="b-input" placeholder="대체텍스트를 입력해주세요." value="">
+									</div>
+								</div>
+								<div>
+									<div>
+										<p>
+											<input type="checkbox" id="wr-edit-file02" name="wr-edit-file-name" class="b-chk" value="on">
+											<label for="wr-edit-file02">전담인력 채용 안내.hwp</label>
+										</p><span class="b-file-del-btn">삭제</span></div>
+									<div class="b-guide-box">
+										<label class="hide" for="wr-guide-txt02">대체텍스트</label>
+										<input type="text" id="wr-guide-txt02" name="wr-guide-txt02-name" class="b-input" placeholder="대체텍스트를 입력해주세요." value="">
+									</div>
+								</div>
+							</div>
+							<div class="b-file-box type01">
+								<div>
+									<select class="b-select">
+										<option>1</option>
+										<option>2</option>
+										<option>3</option>
+									</select>
+									<p class="b-guide-txt">파일 개수를 지정해 주십시오.<br class="pc-hide">[파일1개 당 00MB 이하 업로드]</p>
+								</div>
+							</div>
+							<div class="b-file-box type03">
+								<div>
+									<div>
+										<input type="text" id="wr-file" name="wr-file-name" class="b-input" placeholder="첨부파일을 등록하세요" value="">
+										<input type="file" id="wr-find-file" name="wr-find-file-name" class="hide" value="">
+										<label class="b-file-btn" for="wr-find-file">찾아보기</label>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">SNS 선택</div>
+						<div class="b-con-box">
+							<div class="b-sns-box">
+								<ul>
+									<li>
+										<input type="radio" id="insta4" name="snsInput4Type" class="b-radio" value="insta">
+										<label for="insta4">인스타그램</label>
+									</li>
+									<li>
+										<input type="radio" id="facebook4" name="snsInput4Type" class="b-radio" value="facebook">
+										<label for="facebook4">페이스북</label>
+									</li>
+									<li>
+										<input type="radio" id="youtube4" name="snsInput4Type" class="b-radio" value="youtube">
+										<label for="youtube4">유튜브</label>
+									</li>
+									<li>
+										<input type="radio" id="other4" name="snsInput4Type" class="b-radio" value="other">
+										<label for="other4">기타</label>
+									</li>
+								</ul>
+								<button class="b-sns-btn" onclick="removeSnsInput(4)" type="button">-</button>
+								<button class="b-sns-btn" onclick="addSnsInput()" type="button">+</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">만족도 조사</div>
+						<div class="b-con-box">
+							<table cellpadding="0" cellspacing="0" class="table">
+								<caption class="hide"><strong>만족도 조사</strong><span>번호, 전혀 그렇지 않다, 그렇지 않다, 그렇다, 매우 그렇다 정보표</span></caption>
+								<colgroup>
+									<col width="*">
+									<col width="12%">
+									<col width="12%">
+									<col width="12%">
+									<col width="12%">
+									<col width="12%">
+								</colgroup>
+								<thead>
+									<tr>
+										<th scope="col">내용</th>
+										<th scope="col">전혀 그렇지 않다</th>
+										<th scope="col">그렇지 않다</th>
+										<th scope="col">보통이다</th>
+										<th scope="col">그렇다</th>
+										<th scope="col">매우 그렇다</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="td-left">1.프로그램 내용은 만족하셨나요?</td>
+										<td>
+											<input type="radio" id="notatall1" name="size01" class="b-radio" value="notatall">
+											<label for="notatall1"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="no1" name="size01" class="b-radio" value="no">
+											<label for="no1"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="average1" name="size01" class="b-radio" value="average">
+											<label for="average1"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="yes1" name="size01" class="b-radio" value="yes">
+											<label for="yes1"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="verymuch1" name="size01" class="b-radio" value="verymuch">
+											<label for="verymuch1"><br></label>
+										</td>
+									</tr>
+									<tr>
+										<td class="td-left">2.진로/진학 섥{에 도움이 되었나요?</td>
+										<td>
+											<input type="radio" id="notatall2" name="size02" class="b-radio" value="notatall">
+											<label for="notatall2"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="no2" name="size02" class="b-radio" value="no">
+											<label for="no2"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="average2" name="size02" class="b-radio" value="average">
+											<label for="average2"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="yes2" name="size02" class="b-radio" value="yes">
+											<label for="yes2"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="verymuch2" name="size02" class="b-radio" value="verymuch">
+											<label for="verymuch2"><br></label>
+										</td>
+									</tr>
+									<tr>
+										<td class="td-left">3.프로그램 진행 시간은 적절했나요?</td>
+										<td>
+											<input type="radio" id="notatall3" name="size03" class="b-radio" value="notatall">
+											<label for="notatall3"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="no3" name="size03" class="b-radio" value="no">
+											<label for="no3"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="average3" name="size03" class="b-radio" value="average">
+											<label for="average3"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="yes3" name="size03" class="b-radio" value="yes">
+											<label for="yes3"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="verymuch3" name="size03" class="b-radio" value="verymuch">
+											<label for="verymuch3"><br></label>
+										</td>
+									</tr>
+									<tr>
+										<td class="td-left">4.전주대학교에 지원할 생각이 있나요?</td>
+										<td>
+											<input type="radio" id="notatall4" name="size04" class="b-radio" value="notatall">
+											<label for="notatall4"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="no4" name="size04" class="b-radio" value="no">
+											<label for="no4"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="average4" name="size04" class="b-radio" value="average">
+											<label for="average4"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="yes4" name="size04" class="b-radio" value="yes">
+											<label for="yes4"><br></label>
+										</td>
+										<td>
+											<input type="radio" id="verymuch4" name="size04" class="b-radio" value="verymuch">
+											<label for="verymuch4"><br></label>
+										</td>
+									</tr>
+									<tr>
+										<td class="td-left">5.느낀 점이나 개선 사항을 말씀해 주세요</td>
+										<td colspan="5">
+											<textarea id="feel-con" name="feel-con-name" class="b-input b-textarea" value="">											</textarea>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="b-table-box type01">
+					<div class="b-row-box">
+						<div class="b-title-box">
+							<label for="wr-con">내용</label>
+						</div>
+						<div class="b-con-box">
+							<textarea id="wr-con" name="wr-con-name" class="b-input b-textarea" value="">							</textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="b-btn01 type01">
+			<ul class="b-btn-wrap b-center">
+				<li>
+					<button class="b-btn-type01 b-btn-c-white b-large" type="reset">취소</button>
+				</li>
+				<li>
+					<button class="b-btn-type01 b-btn-c-blue b-large" type="button">등록</button>
+				</li>
+			</ul>
+			</div>
+		</fieldset>
+	</form>
+</div>

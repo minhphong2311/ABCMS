@@ -844,7 +844,19 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 
     try:
         from google import genai as _genai
+        import json
+        import os
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'config.json')
+        api_key_2 = ""
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    api_key_2 = cfg.get('gemini_api_key_2', '').strip()
+            except: pass
+            
         client = _genai.Client(api_key=api_key)
+        client_2 = _genai.Client(api_key=api_key_2) if api_key_2 else None
         
         models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
         text = None
@@ -853,7 +865,16 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             for attempt in range(2): # Try 2 times per model
                 try:
                     print(f"[{menu_name}] Trying Structural Model {model} (Attempt {attempt+1})...")
-                    response = client.models.generate_content(model=model, contents=prompt)
+                    try:
+                        response = client.models.generate_content(model=model, contents=prompt)
+                    except Exception as ce:
+                        if client_2 and ('429' in str(ce) or 'quota' in str(ce).lower() or 'exhausted' in str(ce).lower() or 'limit' in str(ce).lower()):
+                            print(f"[{menu_name}] Primary API Key limit reached! Switching to Fallback Key...")
+                            client = client_2
+                            client_2 = None
+                            response = client.models.generate_content(model=model, contents=prompt)
+                        else:
+                            raise ce
                     
                     if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
                         raise Exception("CANCELLED_BY_USER")
@@ -1019,8 +1040,19 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
     except Exception as e:
         print(f"[{menu_name}] PIL Error: {e}")
 
-    client = genai.Client(api_key=gemini_api_key)
+    import json
+    import os
+    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'config.json')
+    gemini_api_key_2 = ""
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                gemini_api_key_2 = cfg.get('gemini_api_key_2', '').strip()
+        except: pass
 
+    client = genai.Client(api_key=gemini_api_key)
+    client_2 = genai.Client(api_key=gemini_api_key_2) if gemini_api_key_2 else None
     MAX_ITERATIONS = 3
     for iteration in range(1, MAX_ITERATIONS + 1):
         if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
@@ -1151,10 +1183,22 @@ STATUS: PERFECT (or NEEDS_FIX)
                                     contents_to_send.append(target_pil)
                                 contents_to_send.append(render_pil)
                                 
-                                response = client.models.generate_content(
-                                    model=model,
-                                    contents=contents_to_send
-                                )
+                                try:
+                                    response = client.models.generate_content(
+                                        model=model,
+                                        contents=contents_to_send
+                                    )
+                                except Exception as ce:
+                                    if client_2 and ('429' in str(ce) or 'quota' in str(ce).lower() or 'exhausted' in str(ce).lower() or 'limit' in str(ce).lower()):
+                                        print(f"[{menu_name}] Primary API Key limit reached! Switching to Fallback Key...")
+                                        client = client_2
+                                        client_2 = None
+                                        response = client.models.generate_content(
+                                            model=model,
+                                            contents=contents_to_send
+                                        )
+                                    else:
+                                        raise ce
                                 if response and response.text:
                                     text = response.text.strip()
                                     break
@@ -1310,7 +1354,18 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                 
             check_cancel_and_update("Processing uploaded images...")
             from google import genai
+            import json
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'config.json')
+            gemini_api_key_2 = ""
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        cfg = json.load(f)
+                        gemini_api_key_2 = cfg.get('gemini_api_key_2', '').strip()
+                except: pass
+                
             client = genai.Client(api_key=gemini_api_key)
+            client_2 = genai.Client(api_key=gemini_api_key_2) if gemini_api_key_2 else None
             
             root_path = os.path.dirname(os.path.dirname(__file__))
             images_dir = os.path.join(target_dir, "images", menu_slug)
@@ -1379,10 +1434,44 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
 }}
 """
             contents = gemini_files + [prompt]
-            response = client.models.generate_content(
-                model='gemini-3.6-flash',
-                contents=contents
-            )
+            import time
+            import re
+            max_retries = 3
+            response = None
+            for attempt in range(max_retries):
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-3.6-flash',
+                        contents=contents
+                    )
+                    break
+                except Exception as ce:
+                    err_str = str(ce)
+                    if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
+                        print(f"[{menu_slug}] Primary API Key limit reached in Image-to-HTML! Switching to Fallback Key...")
+                        client = client_2
+                        client_2 = None
+                        try:
+                            response = client.models.generate_content(
+                                model='gemini-3.6-flash',
+                                contents=contents
+                            )
+                            break
+                        except Exception as fallback_e:
+                            err_str = str(fallback_e)
+                    
+                    if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str and attempt < max_retries - 1:
+                        match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
+                        wait_time = float(match.group(1)) + 1 if match else 20.0
+                        print(f"[{menu_slug}] Rate limit hit. Waiting {wait_time}s before retry...")
+                        check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
+                        if wait_time > 65:
+                            raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
+                        time.sleep(wait_time)
+                    else:
+                        if attempt == max_retries - 1:
+                            raise Exception(f"AI Error after retries: {err_str}")
+                        raise
             
             text = response.text.strip()
             if '```json' in text: text = text.split('```json')[1].split('```')[0].strip()

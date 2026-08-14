@@ -246,6 +246,7 @@ def api_get_config():
     return jsonify({
         'success': True,
         'gemini_api_key': config.get('gemini_api_key', ''),
+        'gemini_api_key_2': config.get('gemini_api_key_2', ''),
         'figma_token': config.get('figma_token', ''),
         'show_ui': config.get('show_ui', True),
         'slug_method': config.get('slug_method', 'google')
@@ -258,6 +259,8 @@ def api_save_config():
     config = get_config()
     if 'gemini_api_key' in data:
         config['gemini_api_key'] = data['gemini_api_key']
+    if 'gemini_api_key_2' in data:
+        config['gemini_api_key_2'] = data['gemini_api_key_2']
     if 'figma_token' in data:
         config['figma_token'] = data['figma_token']
     if 'show_ui' in data:
@@ -313,8 +316,9 @@ def api_chat():
         with open(js_path, 'r', encoding='utf-8') as f:
             current_js = f.read()
 
-    config = get_config()
-    api_key = config.get('gemini_api_key', '').strip()
+    site_config = get_config()
+    api_key = site_config.get('gemini_api_key', '').strip()
+    api_key_2 = site_config.get('gemini_api_key_2', '').strip()
 
     if not api_key:
         return jsonify({
@@ -337,6 +341,7 @@ def api_chat():
     try:
         from google import genai as _genai
         client = _genai.Client(api_key=api_key)
+        client_2 = _genai.Client(api_key=api_key_2) if api_key_2 else None
 
         sites = load_data()
         site = next((s for s in sites if s['id'] == site_id), {})
@@ -424,7 +429,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             
         contents.append(prompt)
 
-        config = types.GenerateContentConfig(
+        gen_config = types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema={
                 "type": "OBJECT",
@@ -450,11 +455,25 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                 response = client.models.generate_content(
                     model='gemini-3.6-flash', 
                     contents=contents,
-                    config=config
+                    config=gen_config
                 )
                 break
             except Exception as e:
                 err_str = str(e)
+                if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
+                    print("[Chat AI] Rate limit hit. Switching to Fallback API Key...")
+                    client = client_2
+                    client_2 = None
+                    try:
+                        response = client.models.generate_content(
+                            model='gemini-3.6-flash',
+                            contents=contents,
+                            config=gen_config
+                        )
+                        break
+                    except Exception as fallback_e:
+                        err_str = str(fallback_e)
+                
                 if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str and attempt < max_retries - 1:
                     match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
                     wait_time = float(match.group(1)) + 1 if match else 20.0

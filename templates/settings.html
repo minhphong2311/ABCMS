@@ -19,15 +19,27 @@ Email: phongnguyen@andvina.com
         <h5 class="mb-3"><i class="fas fa-brain text-info mr-2"></i>AI Feedback Configuration (Google Gemini)</h5>
         <p class="text-muted text-sm">Gemini API Key is shared across all Sites for the AI to understand user feedback and analyze/change HTML/CSS UI.</p>
         
-        <div class="form-group mb-0">
-          <label for="gemini_key_input">Gemini API Key 
+        <div class="form-group mb-3">
+          <label for="gemini_key_input">Primary Gemini API Key 
             <small class="text-muted ml-2">(<a href="https://aistudio.google.com/app/apikey" target="_blank"><i class="fas fa-external-link-alt"></i> Get API Key here</a>)</small>
           </label>
           <div class="input-group">
             <div class="input-group-prepend">
               <span class="input-group-text"><i class="fas fa-key"></i></span>
             </div>
-            <input type="password" class="form-control" id="gemini_key_input" placeholder="Enter Gemini API Key...">
+            <input type="password" class="form-control" id="gemini_key_input" placeholder="Enter Primary Gemini API Key...">
+          </div>
+        </div>
+        
+        <div class="form-group mb-0">
+          <label for="gemini_key_2_input">Fallback Gemini API Key (Optional)
+            <small class="text-muted ml-2">Automatically switches if primary key hits rate limit</small>
+          </label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-key text-warning"></i></span>
+            </div>
+            <input type="password" class="form-control" id="gemini_key_2_input" placeholder="Enter Secondary Gemini API Key...">
           </div>
         </div>
         
@@ -104,6 +116,9 @@ Email: phongnguyen@andvina.com
           if (data.gemini_api_key) {
               document.getElementById('gemini_key_input').value = data.gemini_api_key;
           }
+          if (data.gemini_api_key_2) {
+              document.getElementById('gemini_key_2_input').value = data.gemini_api_key_2;
+          }
           if (data.figma_token) {
               document.getElementById('figma_token_input').value = data.figma_token;
           }
@@ -124,6 +139,7 @@ Email: phongnguyen@andvina.com
           
           const payload = {
               gemini_api_key: document.getElementById('gemini_key_input').value.trim(),
+              gemini_api_key_2: document.getElementById('gemini_key_2_input').value.trim(),
               figma_token: document.getElementById('figma_token_input').value.trim(),
               show_ui: document.getElementById('show_ui_input').checked,
               slug_method: document.getElementById('slug_method_input').value
