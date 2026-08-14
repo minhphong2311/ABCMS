@@ -13,7 +13,8 @@ import threading
 from flask import Blueprint, request, jsonify
 from .helpers import (
     load_data, save_data, get_config,
-    parse_folder_slug, OUTPUT_DIR
+    parse_folder_slug, OUTPUT_DIR,
+    get_css_guide_instruction
 )
 
 generate_bp = Blueprint('generate', __name__)
@@ -766,7 +767,7 @@ Do not wrap it in markdown block if it causes extra characters, but if you do, I
         return css_content
 
 
-def apply_structural_templates(html, css, api_key, menu_name, task_id=None, ai_hint=""):
+def apply_structural_templates(html, css, js, api_key, menu_name, task_id=None, ai_hint=""):
     print(f"[{menu_name}] --- Structural Refinement Start ---")
     import os
     import json
@@ -787,14 +788,8 @@ def apply_structural_templates(html, css, api_key, menu_name, task_id=None, ai_h
     except Exception as e:
         print(f"Error loading templates: {e}")
 
-    css_guide_instruction = (
-        "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS VÀ HTML:\n"
-        "1. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng duy nhất (Single-line CSS). Phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau.\n"
-        "Ví dụ ĐÚNG: `.class1 { font-size: 20px; color: #333; }`\n"
-        "Tuyệt đối KHÔNG ĐƯỢC CÓ XUỐNG DÒNG bên trong dấu ngoặc nhọn {}.\n"
-        "2. QUY ĐỊNH VỀ HÌNH ẢNH (IMAGES & ICONS): BẮT BUỘC sử dụng thẻ `<img>` HTML cho các hình ảnh thông thường (banner, ảnh minh họa, sản phẩm, v.v.). TUYỆT ĐỐI KHÔNG dùng `background-image` cho hình ảnh thông thường. TUY NHIÊN, đối với các icon nhỏ (mũi tên, dấu cộng, v.v.) nằm bên trong các nút bấm (button, thẻ `<a>`, `.btn-more`), TUYỆT ĐỐI KHÔNG ĐƯỢC sử dụng thẻ `<img>`. Bạn BẮT BUỘC phải chuyển đổi chúng thành CSS `background-image` hoặc dùng pseudo-element (`::after`, `::before`).\n"
-        "3. Tái cấu trúc layout: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: thẻ `<div class=\"con-box\">` CUỐI CÙNG (nằm dưới cùng) bên trong `.content-box` BẮT BUỘC phải có thêm class `no-pd` (tức là `<div class=\"con-box no-pd\">`).\n"
-        "4. ĐỔI TÊN HÌNH ẢNH: Bạn BẮT BUỘC phải phân tích nội dung của từng ảnh (thông qua vị trí và mục đích trong layout) và đổi tên file ảnh trong thuộc tính `src` (ví dụ từ `test-01.png` thành `quick-link-01.png`) cho có ý nghĩa. TUYỆT ĐỐI KHÔNG sử dụng các từ như `icon`, `image`, `img`, `pic` trong tên file mới. Bắt buộc giữ nguyên đuôi file (.png). Trả về thêm mảng `rename_map` ghi nhận việc đổi tên này."
+    css_guide_instruction = get_css_guide_instruction() + (
+        "\n8. TÁI CẤU TRÚC LAYOUT: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: thẻ `<div class=\"con-box\">` CUỐI CÙNG (nằm dưới cùng) bên trong `.content-box` BẮT BUỘC phải có thêm class `no-pd` (tức là `<div class=\"con-box no-pd\">`)."
     )
 
     prompt = f"""Bạn là một chuyên gia Frontend Developer.
@@ -832,6 +827,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 {{
   "html": "toàn bộ nội dung HTML mới",
   "css": "toàn bộ nội dung CSS mới",
+  "js": "toàn bộ nội dung JS mới (không chứa thẻ <script>)",
   "rename_map": [
     {{"old_name": "test-01.png", "new_name": "quick-link-01.png"}}
   ]
@@ -847,6 +843,10 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             try:
                 print(f"[{menu_name}] Trying Structural Model {model}...")
                 response = client.models.generate_content(model=model, contents=prompt)
+                
+                if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
+                    raise Exception("CANCELLED_BY_USER")
+                
                 if response and response.text:
                     text = response.text.strip()
                     break
@@ -865,17 +865,18 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             
             new_html = result.get('html', html)
             new_css = result.get('css', css)
+            new_js = result.get('js', js)
             rename_map = result.get('rename_map', [])
             print(f"[{menu_name}] Structural Refinement SUCCESS!")
-            return new_html, new_css, rename_map
+            return new_html, new_css, new_js, rename_map
 
     except Exception as e:
         print(f"[{menu_name}] Structural Refinement Error: {e}")
         
-    return html, css, []
+    return html, css, js, []
 
 
-def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, gemini_api_key, task_id=None, local_image_path=None):
+def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_name, gemini_api_key, task_id=None, local_image_path=None, local_image_paths=None):
     import urllib.parse
     import requests
     import asyncio
@@ -919,45 +920,83 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
     render_img_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.png')
     temp_html_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.html')
 
-    if local_image_path:
-        import shutil
-        shutil.copy(local_image_path, target_img_path)
+    img_paths_to_stitch = local_image_paths or ([local_image_path] if local_image_path else [])
+    
+    if img_paths_to_stitch:
+        if len(img_paths_to_stitch) == 1:
+            import shutil
+            shutil.copy(img_paths_to_stitch[0], target_img_path)
+        else:
+            import PIL.Image
+            images = []
+            for p in img_paths_to_stitch:
+                try:
+                    images.append(PIL.Image.open(p))
+                except Exception as e:
+                    print(f"[{menu_name}] Error opening image {p}: {e}")
+            
+            if images:
+                widths, heights = zip(*(i.size for i in images))
+                total_width = max(widths)
+                total_height = sum(heights)
+                
+                new_im = PIL.Image.new('RGB', (total_width, total_height), (255, 255, 255))
+                y_offset = 0
+                for im in images:
+                    new_im.paste(im, (0, y_offset))
+                    y_offset += im.size[1]
+                    
+                new_im.save(target_img_path)
+            else:
+                return html, css, js
     else:
         try:
             file_key, node_id = parse_figma_url(figma_link)
             if not file_key or not node_id:
                 print(f"[{menu_name}] Error parsing figma link: {figma_link}")
-                return html, css
+                if task_id and task_id in GENERATE_TASKS:
+                    GENERATE_TASKS[task_id]['message'] = "Cảnh báo: URL Figma không hợp lệ. Vẫn tiếp tục kiểm tra AI."
+            else:
+                url = f'https://api.figma.com/v1/images/{file_key}?ids={node_id}&format=png&scale=1'
+                headers = {'X-Figma-Token': token}
+                r = requests.get(url, headers=headers)
+                if r.status_code != 200:
+                    print(f"[{menu_name}] Error fetching Figma image: {r.status_code}")
+                    if os.path.exists(target_img_path):
+                        print(f"[{menu_name}] Using cached image {target_img_path}")
+                else:
+                    data = r.json()
+                    if 'err' in data and data['err']:
+                        print(f"[{menu_name}] Figma Image Error: {data['err']}")
+                        if os.path.exists(target_img_path):
+                            print(f"[{menu_name}] Using cached image {target_img_path}")
+                    else:
+                        img_url = data['images'].get(node_id)
+                        if not img_url:
+                            print(f"[{menu_name}] No image returned from Figma.")
+                            if os.path.exists(target_img_path):
+                                print(f"[{menu_name}] Using cached image {target_img_path}")
+                        else:
+                            with open(target_img_path, 'wb') as f:
+                                f.write(requests.get(img_url).content)
         except Exception as e:
-            print(f"[{menu_name}] Error parsing figma link: {e}")
-            return html, css
+            print(f"[{menu_name}] Error fetching/parsing Figma image: {e}")
+            if os.path.exists(target_img_path):
+                print(f"[{menu_name}] Using cached image {target_img_path} after exception")
 
-        url = f'https://api.figma.com/v1/images/{file_key}?ids={node_id}&format=png&scale=1'
-        headers = {'X-Figma-Token': token}
-        r = requests.get(url, headers=headers)
-        data = r.json()
-        if 'err' in data and data['err']:
-            print(f"[{menu_name}] Figma Image Error: {data['err']}")
-            return html, css
-
-        img_url = data['images'].get(node_id)
-        if not img_url:
-            print(f"[{menu_name}] No image returned from Figma.")
-            return html, css
-
-        with open(target_img_path, 'wb') as f:
-            f.write(requests.get(img_url).content)
-
+    target_pil = None
     try:
-        target_pil = PIL.Image.open(target_img_path)
+        if os.path.exists(target_img_path):
+            target_pil = PIL.Image.open(target_img_path)
     except Exception as e:
         print(f"[{menu_name}] PIL Error: {e}")
-        return html, css
 
     client = genai.Client(api_key=gemini_api_key)
 
     MAX_ITERATIONS = 3
     for iteration in range(1, MAX_ITERATIONS + 1):
+        if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
+            raise Exception("CANCELLED_BY_USER")
         if task_id and task_id in GENERATE_TASKS:
             GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/{MAX_ITERATIONS})..."
 
@@ -975,6 +1014,9 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
 </head>
 <body>
     {html}
+    <script>
+        {js}
+    </script>
 </body>
 </html>"""
         with open(temp_html_path, 'w', encoding='utf-8') as f:
@@ -1002,20 +1044,21 @@ def compare_and_fix_visuals(token, figma_link, html, css, css_links, menu_name, 
             loop.close()
         except Exception as e:
             print(f"[{menu_name}] Playwright Error: {e}")
-            return html, css
+            return html, css, js
 
         try:
             render_pil = PIL.Image.open(render_img_path)
         except Exception as e:
             print(f"[{menu_name}] PIL Error: {e}")
-            return html, css
+            return html, css, js
 
         print(f"[{menu_name}] Sending visual comparison to Gemini (Iteration {iteration})...")
-        prompt = f"""You are an expert Frontend Developer. Perform a strict quality verification comparing the 2 images:
-- Image 1: Figma design.
-- Image 2: Current HTML/CSS render.
+        if target_pil:
+            prompt_header = "Perform a strict quality verification comparing the 2 images:\n- Image 1: Figma design.\n- Image 2: Current HTML/CSS render.\n\nGoal: Ensure 100% visual match between HTML/CSS render and Figma design!"
+        else:
+            prompt_header = "Perform a strict quality verification of the current HTML/CSS render image.\n\nGoal: Ensure 100% compliance with structural rules!"
 
-Goal: Ensure 100% visual match between HTML/CSS render and Figma design!
+        prompt = f"""You are an expert Frontend Developer. {prompt_header}
 
 Checklist to strictly enforce:
 {quality_checklist}
@@ -1071,9 +1114,14 @@ STATUS: PERFECT (or NEEDS_FIX)
                         for attempt in range(2):
                             try:
                                 print(f"[{menu_name}] Trying Gemini model {model} (Attempt {attempt+1})...")
+                                contents_to_send = [prompt]
+                                if target_pil:
+                                    contents_to_send.append(target_pil)
+                                contents_to_send.append(render_pil)
+                                
                                 response = client.models.generate_content(
                                     model=model,
-                                    contents=[prompt, target_pil, render_pil]
+                                    contents=contents_to_send
                                 )
                                 if response and response.text:
                                     text = response.text.strip()
@@ -1130,7 +1178,7 @@ STATUS: PERFECT (or NEEDS_FIX)
             except Exception:
                 pass
 
-    return html, css
+    return html, css, js
 
 
 # ---------------------------------------------------------------------------
@@ -1190,8 +1238,8 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
 
             if gemini_api_key:
                 check_cancel_and_update("Applying structural templates...")
-                html_result, css_result, rename_map = apply_structural_templates(
-                    html_result, css_result, gemini_api_key, menu_slug, task_id, ai_hint
+                html_result, css_result, js_result, rename_map = apply_structural_templates(
+                    html_result, css_result, "", gemini_api_key, menu_slug, task_id, ai_hint
                 )
                 
                 # Physically rename image files if AI requested it
@@ -1215,8 +1263,8 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                                             print(f"[{menu_slug}] Failed to rename image {old_name}: {rename_err}")
 
                 check_cancel_and_update("Refining visuals with AI...")
-                html_result, css_result = compare_and_fix_visuals(
-                    figma_token, figma_link, html_result, css_result,
+                html_result, css_result, js_result = compare_and_fix_visuals(
+                    figma_token, figma_link, html_result, css_result, js_result,
                     [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id
                 )
 
@@ -1283,9 +1331,9 @@ CRITICAL STRUCTURE RULES:
 2. Inside `.content-box`, group related sections into `<div class="con-box">`. {conbox_hint} LƯU Ý QUAN TRỌNG: The VERY LAST `<div class="con-box">` inside `.content-box` MUST have the class `no-pd` (e.g., `<div class="con-box no-pd">`).
 3. Use class names from this structure template:
 {structure_template}
-4. CRITICAL CSS FORMATTING: Each CSS rule MUST be on a single continuous line (Single-line CSS). Do NOT use newlines inside `{{}}`. Example: `.class {{ padding: 10px; margin: 0; }}`
-5. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags in HTML. Do NOT use `background-image` in CSS for regular images. Icons or small decorations may use CSS background or pseudo-elements.
-{f"\n6. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint. IF the hint requires dynamic components (like Swiper, sliders, progress bars), you ARE FULLY ALLOWED to append `<script src='...'>`, `<link>` CDN tags, and inline Javascript initialization code at the very end of the `html` string." if ai_hint else ""}
+
+{get_css_guide_instruction()}
+{f"\n8. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint. IF the hint requires dynamic components (like Swiper, sliders, progress bars), you ARE FULLY ALLOWED to append `<script src='...'>` or `<link>` CDN tags directly in the `html` string. HOWEVER, ALL inline custom Javascript initialization code MUST be placed exclusively in the `js` field, NOT inside `<script>` tags in the HTML." if ai_hint else ""}
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
@@ -1294,7 +1342,8 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
   "ocr_text": "...",
   "components": ["...", "..."],
   "html": "full HTML content inside body",
-  "css": "full CSS content, one rule per line"
+  "css": "full CSS content, one rule per line",
+  "js": "any custom Javascript code without <script> tags, or empty string"
 }}
 """
             contents = gemini_files + [prompt]
@@ -1311,6 +1360,7 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             result = json.loads(text)
             html_result = result.get('html', '')
             css_result = result.get('css', '')
+            js_result = result.get('js', '')
 
             # Create a thumbnail from the first image
             thumb_path = os.path.join(target_dir, "thumb.jpg")
@@ -1318,10 +1368,10 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                 shutil.copy(valid_image_paths[0], thumb_path)
 
             check_cancel_and_update("Refining visuals with AI...")
-            # For compare_and_fix_visuals, we pass the first image to keep it simple, or none
-            html_result, css_result = compare_and_fix_visuals(
-                "", "", html_result, css_result,
-                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id, local_image_path=valid_image_paths[0]
+            # For compare_and_fix_visuals, we pass all valid image paths to be stitched vertically
+            html_result, css_result, js_result = compare_and_fix_visuals(
+                "", "", html_result, css_result, js_result,
+                [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id, local_image_paths=valid_image_paths
             )
 
             if feedback:
@@ -1330,9 +1380,11 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
         else:
             raise Exception("No Figma link or uploaded image found for this page.")
 
+        check_cancel_and_update("Saving generated files...")
         # Write files
         html_path = os.path.join(target_dir, f"{menu_slug}.html")
         css_path = os.path.join(target_dir, f"{menu_slug}.css")
+        js_path = os.path.join(target_dir, f"{menu_slug}.js")
 
         base_style_src = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'layout', 'style.css')
         if os.path.exists(base_style_src):
@@ -1341,6 +1393,7 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             shutil.copy(base_style_src, os.path.join(site_root_dir, "style.css"))
 
         style_href = "../style.css" if folder else "style.css"
+        js_script = f'    <script src="{menu_slug}.js"></script>\n' if js_result else ""
 
         final_html = (
             f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
@@ -1349,13 +1402,20 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             f'    <title>{menu.get("name", menu_slug)}</title>\n'
             f'    <link rel="stylesheet" href="{style_href}">\n'
             f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
-            f'</head>\n<body>\n    {html_result}\n</body>\n</html>'
+            f'</head>\n<body>\n    {html_result}\n'
+            f'{js_script}'
+            f'</body>\n</html>'
         )
 
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(final_html)
         with open(css_path, "w", encoding="utf-8") as f:
             f.write(css_result)
+        if js_result:
+            with open(js_path, "w", encoding="utf-8") as f:
+                f.write(js_result)
+        elif os.path.exists(js_path):
+            os.remove(js_path)
 
         sites = load_data()
         updated_site = next((s for s in sites if s['id'] == site_id), None)
@@ -1430,6 +1490,8 @@ def generate_files(site_id, menu_param):
         
     if deploy_task_id in DEPLOY_TASKS:
         del DEPLOY_TASKS[deploy_task_id]
+
+    GENERATE_TASKS[task_id] = {"status": "running", "message": "Starting generation..."}
 
     thread = threading.Thread(
         target=run_generate_async,

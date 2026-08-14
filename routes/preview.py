@@ -8,10 +8,99 @@ Blueprint xử lý chức năng Preview trang đã generate.
 import os
 import time
 
-from flask import Blueprint, render_template, make_response, send_from_directory
+from flask import Blueprint, render_template, make_response, send_from_directory, request, jsonify
 from .helpers import load_data, parse_folder_slug, OUTPUT_DIR
 
 preview_bp = Blueprint('preview', __name__)
+
+@preview_bp.route('/api/get-code', methods=['GET'])
+def get_code():
+    site_id = request.args.get('site_id')
+    folder = request.args.get('folder', '')
+    slug = request.args.get('slug')
+    
+    if folder:
+        dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
+    else:
+        dir_path = os.path.join(OUTPUT_DIR, site_id)
+        
+    html_path = os.path.join(dir_path, f'{slug}.html')
+    css_path = os.path.join(dir_path, f'{slug}.css')
+    js_path = os.path.join(dir_path, f'{slug}.js')
+
+    html = ""
+    css = ""
+    js = ""
+
+    if os.path.exists(html_path):
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+            import re
+            match = re.search(r'<body[^>]*>(.*)</body>', html, re.IGNORECASE | re.DOTALL)
+            if match:
+                html = match.group(1).strip()
+                html = re.sub(r'\n?\s*<script\s+src=["\'](?!http)[^"\']*\.js["\']\s*></script>', '', html, flags=re.IGNORECASE).strip()
+    if os.path.exists(css_path):
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+    if os.path.exists(js_path):
+        with open(js_path, 'r', encoding='utf-8') as f:
+            js = f.read()
+
+    return jsonify({"success": True, "html": html, "css": css, "js": js})
+
+@preview_bp.route('/api/save-code', methods=['POST'])
+def save_code():
+    data = request.json
+    site_id = data.get('site_id')
+    folder = data.get('folder', '')
+    slug = data.get('slug')
+    
+    if folder:
+        dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
+    else:
+        dir_path = os.path.join(OUTPUT_DIR, site_id)
+        
+    html_path = os.path.join(dir_path, f'{slug}.html')
+    css_path = os.path.join(dir_path, f'{slug}.css')
+    js_path = os.path.join(dir_path, f'{slug}.js')
+
+    if 'html' in data:
+        new_html = data['html']
+        if '<html' not in new_html.lower() and '<!doctype html>' not in new_html.lower():
+            style_href = "../style.css" if folder else "style.css"
+            new_html = (
+                f'<!DOCTYPE html>\n<html lang="vi">\n<head>\n'
+                f'    <meta charset="UTF-8">\n'
+                f'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+                f'    <title>{slug}</title>\n'
+                f'    <link rel="stylesheet" href="{style_href}">\n'
+                f'    <link rel="stylesheet" href="{slug}.css">\n'
+                f'</head>\n<body>\n{new_html}\n'
+                f'    <script src="{slug}.js"></script>\n'
+                f'</body>\n</html>'
+            )
+        if os.path.exists(html_path):
+            import shutil
+            shutil.copyfile(html_path, html_path + '.bak')
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(new_html)
+            
+    if 'css' in data:
+        if os.path.exists(css_path):
+            import shutil
+            shutil.copyfile(css_path, css_path + '.bak')
+        with open(css_path, 'w', encoding='utf-8') as f:
+            f.write(data['css'])
+            
+    if 'js' in data:
+        if os.path.exists(js_path):
+            import shutil
+            shutil.copyfile(js_path, js_path + '.bak')
+        with open(js_path, 'w', encoding='utf-8') as f:
+            f.write(data['js'])
+            
+    return jsonify({"success": True})
 
 def render_preview_index(site_id, folder, menu_slug):
     sites = load_data()

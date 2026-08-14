@@ -21,6 +21,7 @@ from routes.helpers import (
     generate_slug_for_text,
     assign_folders_from_roots,
     parse_folder_slug,
+    get_css_guide_instruction,
     OUTPUT_DIR
 )
 
@@ -262,9 +263,11 @@ def api_chat():
 
     css_path = os.path.join(base_dir, f'{menu_slug}.css')
     html_path = os.path.join(base_dir, f'{menu_slug}.html')
+    js_path = os.path.join(base_dir, f'{menu_slug}.js')
 
     current_css = ''
     current_html = ''
+    current_js = ''
 
     if os.path.exists(css_path):
         with open(css_path, 'r', encoding='utf-8') as f:
@@ -272,6 +275,9 @@ def api_chat():
     if os.path.exists(html_path):
         with open(html_path, 'r', encoding='utf-8') as f:
             current_html = f.read()
+    if os.path.exists(js_path):
+        with open(js_path, 'r', encoding='utf-8') as f:
+            current_js = f.read()
 
     config = get_config()
     api_key = config.get('gemini_api_key', '').strip()
@@ -302,25 +308,7 @@ def api_chat():
         site = next((s for s in sites if s['id'] == site_id), {})
         css_guide_raw = site.get('css_guide', '').strip()
         css_links = [link.strip() for link in css_guide_raw.split('\n') if link.strip()]
-        if css_links:
-            css_guide_instruction = (
-                f"\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC CSS:\n1. Dự án sử dụng CSS chuẩn tại: "
-                + ", ".join(css_links) +
-                ".\nTUYỆT ĐỐI TUÂN THỦ khoảng cách (margin, padding) đã định nghĩa trong guide. Không thêm margin/padding dư thừa làm sai lệch giao diện gốc (ví dụ: nếu guide dùng padding-bottom, đừng thêm margin-bottom).\n"
-                "2. BẮT BUỘC FORMAT CSS: Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng riêng biệt và phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau. (VD:\n.class1 {{ font-size: 20px; color: #333; }}\n.class2 {{ margin-bottom: 15px; }}\n)\n"
-                "Tuyệt đối không gộp toàn bộ file thành 1 dòng duy nhất, và tuyệt đối KHÔNG xuống dòng bên trong dấu ngoặc nhọn {{}}.\n"
-                f"3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/{menu_slug}/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon.\n"
-                "4. RESPONSIVE DESIGN LÀ BẮT BUỘC: Mọi giao diện sinh ra phải hỗ trợ Responsive (co giãn tốt trên Mobile, Tablet, PC).\n"
-                "5. ĐƯỜNG NỐI SƠ ĐỒ TỔ CHỨC: Đối với sơ đồ cây/tổ chức (có đường nối ngang/dọc), BẮT BUỘC dùng CSS pseudo-elements (::before, ::after) để vẽ đường kẻ. Không dùng <div> trống làm đường kẻ."
-            )
-        else:
-            css_guide_instruction = (
-                "\n\nĐẶC BIỆT LƯU Ý FORMAT CSS:\nBẮT BUỘC FORMAT CSS: Mỗi rule CSS phải nằm trên 1 dòng riêng biệt và có XUỐNG DÒNG (\\n) giữa các rule. (VD:\n.class1 {{ font-size: 20px; }}\n.class2 {{ margin: 0; }}\n)\n"
-                "Tuyệt đối không gộp toàn bộ file thành 1 dòng, và tuyệt đối KHÔNG xuống dòng bên trong ngoặc nhọn {{}}.\n"
-                "3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> định dạng PNG cho tất cả icon.\n"
-                "4. RESPONSIVE DESIGN LÀ BẮT BUỘC: Mọi giao diện sinh ra phải hỗ trợ Responsive.\n"
-                "5. ĐƯỜNG NỐI SƠ ĐỒ TỔ CHỨC: Đối với sơ đồ cây/tổ chức, BẮT BUỘC dùng CSS pseudo-elements (::before, ::after) để vẽ đường kẻ."
-            )
+        css_guide_instruction = get_css_guide_instruction(css_links)
 
         prompt = f"""Bạn là một chuyên gia Frontend Developer.
 Người dùng đang xem preview một trang web và muốn điều chỉnh giao diện.
@@ -336,6 +324,11 @@ Nội dung HTML hiện tại của trang:
 Nội dung CSS hiện tại:
 ```css
 {current_css[:5000]}
+```
+
+Nội dung JS hiện tại:
+```javascript
+{current_js[:5000]}
 ```{css_guide_instruction}
 
 TÀI LIỆU THAM KHẢO VỀ CẤU TRÚC VÀ SUB-TEMPLATE MÀ BẠN NÊN ÁP DỤNG NẾU NGƯỜI DÙNG YÊU CẦU:
@@ -355,7 +348,8 @@ Nhiệm vụ:
 2. NẾU ĐÃ RÕ YÊU CẦU:
    a. "thinking": Phân tích logic (VD: "Người dùng muốn header width 100%. HTML gốc có class '.header-box'. Vậy tôi cần update class đó..."). QUAN SÁT KỸ HÌNH ẢNH GỐC để đảm bảo tỷ lệ đúng.
    b. TUYỆT ĐỐI KHÔNG SỬ DỤNG INLINE STYLE.
-   c. Cung cấp TOÀN BỘ nội dung HTML (giữ nguyên cấu trúc <!DOCTYPE html> nếu có) và CSS mới. LƯU Ý CÚ PHÁP nháy đơn.
+   c. FORMAT JAVASCRIPT: Code JS BẮT BUỘC phải được format bình thường với đầy đủ xuống dòng (newline) và thụt lề (indentation). TUYỆT ĐỐI KHÔNG được ép Javascript thành 1 dòng (minify). Trả về mã trong trường "js" (KHÔNG viết thẻ <script> bên trong HTML trừ khi nhúng CDN).
+   d. Cung cấp TOÀN BỘ nội dung HTML (giữ nguyên cấu trúc <!DOCTYPE html> nếu có), CSS và JS mới. LƯU Ý CÚ PHÁP nháy đơn.
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc markdown):
 {{
@@ -364,7 +358,8 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
   "thinking": "Phân tích logic từng bước",
   "explanation": "Giải thích RẤT NGẮN GỌN thay đổi",
   "html": "toàn bộ nội dung HTML mới",
-  "css": "toàn bộ nội dung CSS mới"
+  "css": "toàn bộ nội dung CSS mới",
+  "js": "toàn bộ nội dung JS mới (nếu có, không chứa thẻ <script>)"
 }}"""
 
         import base64
@@ -405,9 +400,10 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                     "thinking": {"type": "STRING"},
                     "explanation": {"type": "STRING"},
                     "html": {"type": "STRING"},
-                    "css": {"type": "STRING"}
+                    "css": {"type": "STRING"},
+                    "js": {"type": "STRING"}
                 },
-                "required": ["needs_clarification", "question", "thinking", "explanation", "html", "css"]
+                "required": ["needs_clarification", "question", "thinking", "explanation", "html", "css", "js"]
             }
         )
         
@@ -454,6 +450,7 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
 
         new_html = result.get('html', '').strip()
         new_css = result.get('css', '').strip()
+        new_js = result.get('js', '').strip()
         explanation = result.get('explanation', 'Đã cập nhật.')
 
         updated = False
@@ -469,7 +466,9 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                     f'    <title>{menu_slug}</title>\n'
                     f'    <link rel="stylesheet" href="{style_href}">\n'
                     f'    <link rel="stylesheet" href="{menu_slug}.css">\n'
-                    f'</head>\n<body>\n    {new_html}\n</body>\n</html>'
+                    f'</head>\n<body>\n    {new_html}\n'
+                    f'    <script src="{menu_slug}.js"></script>\n'
+                    f'</body>\n</html>'
                 )
             else:
                 css_links = f'\n    <link rel="stylesheet" href="{style_href}">\n    <link rel="stylesheet" href="{menu_slug}.css">\n'
@@ -478,6 +477,12 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                         new_html = new_html.replace('</head>', css_links + '</head>')
                     elif '</HEAD>' in new_html:
                         new_html = new_html.replace('</HEAD>', css_links + '</HEAD>')
+                js_script = f'\n    <script src="{menu_slug}.js"></script>\n'
+                if f'{menu_slug}.js' not in new_html:
+                    if '</body>' in new_html:
+                        new_html = new_html.replace('</body>', js_script + '</body>')
+                    elif '</BODY>' in new_html:
+                        new_html = new_html.replace('</BODY>', js_script + '</BODY>')
             if os.path.exists(html_path):
                 import shutil
                 shutil.copyfile(html_path, html_path + '.bak')
@@ -490,6 +495,14 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
             shutil.copyfile(css_path, css_path + '.bak')
             with open(css_path, 'w', encoding='utf-8') as f:
                 f.write(new_css)
+            updated = True
+
+        if new_js or os.path.exists(js_path):
+            import shutil
+            if os.path.exists(js_path):
+                shutil.copyfile(js_path, js_path + '.bak')
+            with open(js_path, 'w', encoding='utf-8') as f:
+                f.write(new_js)
             updated = True
 
         return jsonify({
@@ -523,11 +536,14 @@ def api_rollback():
 
     html_path = os.path.join(target_dir, f"{menu_slug}.html")
     css_path = os.path.join(target_dir, f"{menu_slug}.css")
+    js_path = os.path.join(target_dir, f"{menu_slug}.js")
     html_bak = html_path + '.bak'
     css_bak = css_path + '.bak'
+    js_bak = js_path + '.bak'
 
     restored_html = False
     restored_css = False
+    restored_js = False
     import shutil
 
     if os.path.exists(html_bak):
@@ -546,7 +562,17 @@ def api_rollback():
         os.remove(temp_path)
         restored_css = True
 
-    if restored_html or restored_css:
+    if os.path.exists(js_bak):
+        temp_path = js_path + '.temp'
+        if os.path.exists(js_path):
+            shutil.copyfile(js_path, temp_path)
+        shutil.copyfile(js_bak, js_path)
+        if os.path.exists(temp_path):
+            shutil.copyfile(temp_path, js_bak)
+            os.remove(temp_path)
+        restored_js = True
+
+    if restored_html or restored_css or restored_js:
         return jsonify({'success': True, 'message': 'Undo successful!'})
     else:
         return jsonify({'success': False, 'message': 'No backup found to undo.'})

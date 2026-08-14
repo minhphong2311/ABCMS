@@ -249,3 +249,47 @@ def assign_folders_from_roots(menus):
 
     for m in menus:
         m['folder'] = get_root_slug(m['id'])
+
+
+# ---------------------------------------------------------------------------
+# CSS Guide helpers
+# ---------------------------------------------------------------------------
+def get_css_guide_instruction(css_links=None):
+    css_links_str = ""
+    if css_links:
+        css_links_str = (
+            f"0. Dự án sử dụng CSS chuẩn tại: " + ", ".join(css_links) +
+            ".\nTUYỆT ĐỐI TUÂN THỦ khoảng cách (margin, padding) đã định nghĩa trong guide. Không thêm margin/padding dư thừa làm sai lệch giao diện gốc (ví dụ: nếu guide dùng padding-bottom, đừng thêm margin-bottom).\n"
+        )
+    
+    return (
+        "\n\nĐẶC BIỆT LƯU Ý VỀ CẤU TRÚC VÀ FORMAT CSS:\n"
+        + css_links_str +
+        "1. BẮT BUỘC FORMAT CSS (RẤT QUAN TRỌNG): Mỗi rule CSS (selector + thuộc tính) phải nằm trọn trên 1 dòng riêng biệt (Single-line CSS) và phải có XUỐNG DÒNG (\\n) giữa các rule khác nhau.\n"
+        "Tuyệt đối KHÔNG gộp toàn bộ file thành 1 dòng, KHÔNG xuống dòng bên trong dấu ngoặc nhọn {}. KHÔNG TẠO DẤU CÁCH (space) dư thừa giữa các thuộc tính. Viết `.class{prop:val;}` thay vì `.class { prop: val; }`.\n"
+        "Trong thẻ @media, mỗi rule CSS cũng phải nằm trọn trên 1 dòng duy nhất và THỤT LỀ (indent) 4 spaces so với thẻ @media. Thẻ @media và dấu ngoặc nhọn {} của nó BẮT BUỘC phải được XUỐNG DÒNG.\n"
+        "TUYỆT ĐỐI KHÔNG VIẾT GỘP CÁC RULE TRÊN CÙNG 1 DÒNG VỚI THẺ @media. NẾU BẠN VIẾT GỘP (ví dụ: `@media(...) { .class{...} }`), HỆ THỐNG SẼ LỖI.\n"
+        "VD mẫu chuẩn mực (áp dụng cho toàn bộ file và responsive):\n"
+        ".area-box{}\n"
+        ".area-box .area-inner{}\n"
+        ".area-box .area-inner > ul > li{}\n"
+        "TUYỆT ĐỐI KHÔNG VIẾT GỘP CÁC RULE TRÊN CÙNG 1 DÒNG VỚI THẺ @media. NẾU BẠN VIẾT GỘP (ví dụ: `@media(...) { .class{...} }`), HỆ THỐNG SẼ LỖI.\n"
+        "VD mẫu chuẩn mực (áp dụng cho toàn bộ file và responsive):\n"
+        ".area-box{}\n"
+        ".area-box .area-inner{}\n"
+        ".area-box .area-inner > ul > li{}\n"
+        "@media(max-width: 1024px){\n"
+        "    .area-box{}\n"
+        "    .area-box .area-inner{}\n"
+        "    .area-box .area-inner > ul > li{}\n"
+        "    .area-box .area-inner .txt01{font-family: 'Pretendard';font-weight: 700;font-size: 32px;line-height: 120%;color: #262626;}\n"
+        "}\n"
+        "2. THỨ TỰ THUỘC TÍNH TEXT (NHƯ FIGMA): BẮT BUỘC sắp xếp các thuộc tính text theo đúng thứ tự sau: font-family, font-weight, font-size, line-height, color.\n"
+        "VD: `.txt01{font-family: 'Pretendard';font-weight: 700;font-size: 32px;line-height: 120%;color: #262626;}`\n"
+        "3. SỬ DỤNG ẢNH PNG CHO ICON: BẮT BUỘC sử dụng thẻ <img> với định dạng PNG (vd: <img src=\"./images/menu_slug/icon_name.png\" alt=\"icon\">) cho tất cả các icon thay vì sử dụng thẻ span hay font icon. Đối với các icon nhỏ nằm trong các thẻ a, button, KHÔNG dùng thẻ img mà dùng css background-image hoặc pseudo-element (::before, ::after).\n"
+        "4. RESPONSIVE DESIGN LÀ BẮT BUỘC: Mọi giao diện sinh ra phải hỗ trợ Responsive (co giãn tốt trên Mobile, Tablet, PC).\n"
+        "5. ĐƯỜNG NỐI SƠ ĐỒ TỔ CHỨC: Đối với sơ đồ cây/tổ chức (có đường nối ngang/dọc), BẮT BUỘC dùng CSS pseudo-elements (::before, ::after) để vẽ đường kẻ. Không dùng <div> trống làm đường kẻ.\n"
+        "6. JAVASCRIPT: Code Javascript (nếu có) BẮT BUỘC phải được format bình thường với đầy đủ xuống dòng (newline) và thụt lề (indentation). TUYỆT ĐỐI KHÔNG được ép Javascript thành 1 dòng (minify).\n"
+        "7. ĐỔI TÊN HÌNH ẢNH: Đặt tên file ảnh có ý nghĩa (ví dụ `quick-link-01.png`), không dùng `icon`, `img`, `pic`. Trả về `rename_map` nếu có.\n"
+        "8. QUY TẮC CSS SCOPING (KẾ THỪA CLASS CHA): BẮT BUỘC phải gắn kèm class cha (parent scoping) khi viết CSS cho các phần tử con để tránh xung đột CSS toàn cục. Ngoại trừ các thẻ chung của hệ thống như `.content-box` và `.con-box` (không được dùng làm class cha kế thừa), với các component cụ thể (ví dụ: khối cha ngoài cùng là `.org-chart`), thì các class con bên trong BẮT BUỘC phải viết là `.org-chart .org-top{}` thay vì chỉ viết `.org-top{}`.\n"
+    )

@@ -518,6 +518,27 @@ Email: phongnguyen@andvina.com
     .icon-version-toggle { font-size: 10px; }
     .chat-img-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end; }
 
+    #btn-save-code {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    #btn-save-code.btn-hidden {
+      opacity: 0;
+      max-width: 0;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      margin-right: 0 !important;
+      border-width: 0;
+      pointer-events: none;
+    }
+    #btn-save-code.btn-visible {
+      opacity: 1;
+      max-width: 100px;
+      pointer-events: auto;
+      margin-right: 0.5rem !important; /* mr-2 */
+    }
+
     /* Dark Mode Overrides */
     body.dark-mode {
       background-color: #343a40 !important;
@@ -666,17 +687,51 @@ Email: phongnguyen@andvina.com
     
     <!-- Left: Page View Iframe -->
     <div class="preview-pane">
-      <div class="browser-frame">
+      <div class="browser-frame h-100 w-100">
         <div class="browser-toolbar">
           <div class="browser-dot red"></div>
           <div class="browser-dot yellow"></div>
           <div class="browser-dot green"></div>
-          <div class="browser-address">http://127.0.0.1:5000/preview/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.do</div>
-          <button class="btn btn-sm btn-light border" onclick="reloadPreview()" title="Reload page">
+          <div class="browser-address mr-2">http://127.0.0.1:5000/preview/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.do</div>
+          
+          <ul class="nav nav-pills border-0 mr-2" id="previewTabs" role="tablist" style="font-size: 13px;">
+            <li class="nav-item">
+              <a class="nav-link active py-1 px-2" id="tab-preview" data-toggle="tab" href="#pane-preview" role="tab">Preview</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link py-1 px-2" id="tab-html" data-toggle="tab" href="#pane-html" role="tab" onclick="loadCode()">HTML</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link py-1 px-2" id="tab-css" data-toggle="tab" href="#pane-css" role="tab" onclick="loadCode()">CSS</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link py-1 px-2" id="tab-js" data-toggle="tab" href="#pane-js" role="tab" onclick="loadCode()">JS</a>
+            </li>
+          </ul>
+          
+          <button class="btn btn-primary btn-sm py-1 px-2 btn-hidden" id="btn-save-code" onclick="saveCode()" style="font-size: 13px;">
+            <i class="fas fa-save mr-1"></i> Save
+          </button>
+
+          <button class="btn btn-sm btn-light border py-1 px-2" onclick="reloadPreview()" title="Reload page">
             <i class="fas fa-sync-alt"></i>
           </button>
         </div>
-        <iframe id="previewIframe" class="preview-iframe" src="/preview/raw/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.html"></iframe>
+        
+        <div class="tab-content flex-grow-1 d-flex flex-column" style="overflow: hidden; flex: 1;">
+          <div class="tab-pane fade show active h-100 w-100" id="pane-preview" role="tabpanel">
+            <iframe id="previewIframe" class="preview-iframe h-100 w-100" src="/preview/raw/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.html"></iframe>
+          </div>
+          <div class="tab-pane fade h-100 w-100" id="pane-html" role="tabpanel">
+            <div id="editor-html" class="h-100 w-100"></div>
+          </div>
+          <div class="tab-pane fade h-100 w-100" id="pane-css" role="tabpanel">
+            <div id="editor-css" class="h-100 w-100"></div>
+          </div>
+          <div class="tab-pane fade h-100 w-100" id="pane-js" role="tabpanel">
+            <div id="editor-js" class="h-100 w-100"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -796,8 +851,14 @@ Email: phongnguyen@andvina.com
     });
 
     function reloadPreview() {
-      const iframe = document.getElementById('previewIframe');
-      iframe.src = iframe.src.split('?')[0] + '?t=' + Date.now();
+      codeLoaded = false;
+      const activeTab = $('#previewTabs .nav-link.active').attr('id');
+      if (activeTab === 'tab-preview') {
+        const iframe = document.getElementById('previewIframe');
+        iframe.src = iframe.src.split('?')[0] + '?t=' + Date.now();
+      } else {
+        loadCode();
+      }
     }
 
     // Image Viewer Modal Functions
@@ -1193,6 +1254,140 @@ Email: phongnguyen@andvina.com
           appendMessage(msg.text, msg.sender, true, imgs);
         });
       }
+    });
+
+    let codeLoaded = false;
+    let pendingHTML = '', pendingCSS = '', pendingJS = '';
+    let monacoHTML, monacoCSS, monacoJS;
+
+    function loadCode() {
+      if (codeLoaded) return;
+      $.ajax({
+        url: '/api/get-code',
+        type: 'GET',
+        data: {
+          site_id: '{{ site_id }}',
+          folder: '{{ folder }}',
+          slug: '{{ menu_slug }}'
+        },
+        success: function(res) {
+          if (res.success) {
+            pendingHTML = res.html || '';
+            pendingCSS = res.css || '';
+            pendingJS = res.js || '';
+            
+            if (typeof monaco !== 'undefined' && monacoHTML) {
+                monacoHTML.setValue(pendingHTML);
+                monacoCSS.setValue(pendingCSS);
+                monacoJS.setValue(pendingJS);
+            }
+            codeLoaded = true;
+          }
+        }
+      });
+    }
+
+    function saveCode() {
+      const btn = document.getElementById('btn-save-code');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+
+      const data = {
+        site_id: '{{ site_id }}',
+        folder: '{{ folder }}',
+        slug: '{{ menu_slug }}',
+        html: typeof monaco !== 'undefined' && monacoHTML ? monacoHTML.getValue() : pendingHTML,
+        css: typeof monaco !== 'undefined' && monacoCSS ? monacoCSS.getValue() : pendingCSS,
+        js: typeof monaco !== 'undefined' && monacoJS ? monacoJS.getValue() : pendingJS
+      };
+
+      $.ajax({
+        url: '/api/save-code',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(res) {
+          btn.disabled = false;
+          if (res.success) {
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
+            setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            reloadPreview();
+          } else {
+            btn.innerHTML = originalHtml;
+            alert('Failed to save code');
+          }
+        },
+        error: function() {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          alert('Error saving code');
+        }
+      });
+    }
+
+    $('#previewTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      if (e.target.id === 'tab-preview') {
+        $('#btn-save-code').addClass('btn-hidden').removeClass('btn-visible');
+      } else {
+        $('#btn-save-code').addClass('btn-visible').removeClass('btn-hidden');
+      }
+      
+      if (typeof monaco !== 'undefined') {
+        if (e.target.id === 'tab-html' && monacoHTML) {
+            monacoHTML.layout();
+        } else if (e.target.id === 'tab-css' && monacoCSS) {
+            monacoCSS.layout();
+        } else if (e.target.id === 'tab-js' && monacoJS) {
+            monacoJS.layout();
+        }
+      }
+    });
+
+    // Global Ctrl+S handler
+    window.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        const activeTab = $('#previewTabs .nav-link.active').attr('id');
+        if (activeTab !== 'tab-preview') {
+          e.preventDefault();
+          saveCode();
+        }
+      }
+    });
+
+  </script>
+  <!-- Monaco Editor -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+  <script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        monacoHTML = monaco.editor.create(document.getElementById('editor-html'), {
+            value: pendingHTML,
+            language: 'html',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false }
+        });
+        monacoCSS = monaco.editor.create(document.getElementById('editor-css'), {
+            value: pendingCSS,
+            language: 'css',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false }
+        });
+        monacoJS = monaco.editor.create(document.getElementById('editor-js'), {
+            value: pendingJS,
+            language: 'javascript',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false }
+        });
+        
+        // Add Ctrl+S binding to all Monaco instances
+        const saveAction = function() { saveCode(); };
+        monacoHTML.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAction);
+        monacoCSS.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAction);
+        monacoJS.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAction);
     });
   </script>
   <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
