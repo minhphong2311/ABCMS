@@ -1058,6 +1058,9 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
         else:
             prompt_header = "Perform a strict quality verification of the current HTML/CSS render image.\n\nGoal: Ensure 100% compliance with structural rules!"
 
+        from routes.helpers import get_css_guide_instruction
+        css_rules = get_css_guide_instruction(css_links)
+
         prompt = f"""You are an expert Frontend Developer. {prompt_header}
 
 Checklist to strictly enforce:
@@ -1069,13 +1072,13 @@ Template Rules to follow:
    Structure template: {structure_template}
    Table template: {table_template}
 3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags. However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
-4. CRITICAL CSS FORMATTING: Each CSS rule (selector and all its properties) MUST be written on a single continuous line (Single-line CSS). Do NOT use newlines inside curly braces `{{}}`. Example: `.class {{ color: red; margin: 0; }}`
-5. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
-6. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
-7. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
-8. CRITICAL RESPONSIVE RULE: Ensure layout is 100% responsive for Desktop, Tablet, and Mobile. Include media queries in CSS. Never leave fixed pixel widths.
+4. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
+5. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
+6. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
 
-CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL 7 checklist steps pixel-by-pixel. 
+{css_rules}
+
+CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL checklist steps pixel-by-pixel. 
 SPECIAL ATTENTION FOR DIAGRAMS/CHARTS: If the Figma design contains connecting lines, grid boxes, flowcharts, or complex box structures:
 1. For connecting lines and arrows between boxes, you ONLY need to use CSS pseudo-elements (::before and ::after) on the boxes to draw them. Do not overcomplicate it with unnecessary HTML tags.
 2. The background colors of the boxes MUST match EXACTLY.
