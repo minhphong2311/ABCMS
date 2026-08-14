@@ -75,7 +75,60 @@ Email: phongnguyen@andvina.com
       flex-direction: column;
       overflow: hidden;
       border: 1px solid #dcdcdc;
+      margin: 0 auto;
     }
+    .browser-frame-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1920px;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .resizer-right {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      right: -14px;
+      width: 28px;
+      height: 60px;
+      cursor: col-resize;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .resizer-right::after {
+      content: "";
+      width: 4px;
+      height: 24px;
+      background-color: #adb5bd;
+      border-radius: 2px;
+      transition: background-color 0.2s;
+    }
+    .resizer-right:hover, .resizer-right.dragging {
+      background-color: #f8f9fa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .resizer-right:hover::after, .resizer-right.dragging::after {
+      background-color: #007bff;
+    }
+    body.dark-mode .resizer-right {
+      background: #343a40;
+      border-color: #4b545c;
+    }
+    body.dark-mode .resizer-right:hover, body.dark-mode .resizer-right.dragging {
+      background: #454d55;
+    }
+    body.dark-mode .resizer-right::after {
+      background-color: #6c757d;
+    }
+    
     .browser-toolbar {
       height: 40px;
       background: #f1f3f4;
@@ -536,7 +589,6 @@ Email: phongnguyen@andvina.com
       opacity: 1;
       max-width: 100px;
       pointer-events: auto;
-      margin-right: 0.5rem !important; /* mr-2 */
     }
 
     /* Dark Mode Overrides */
@@ -692,14 +744,15 @@ Email: phongnguyen@andvina.com
     
     <!-- Left: Page View Iframe -->
     <div class="preview-pane">
-      <div class="browser-frame h-100 w-100">
-        <div class="browser-toolbar">
+      <div class="browser-frame-wrapper" id="browserFrameWrapper">
+        <div class="browser-frame h-100" id="browserFrame" style="width: 100%;">
+          <div class="browser-toolbar">
           <div class="browser-dot red"></div>
           <div class="browser-dot yellow"></div>
           <div class="browser-dot green"></div>
           <div class="browser-address mr-2">http://127.0.0.1:5000/preview/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.do</div>
           
-          <ul class="nav nav-pills border-0 mr-2" id="previewTabs" role="tablist" style="font-size: 13px;">
+          <ul class="nav nav-pills border-0" id="previewTabs" role="tablist" style="font-size: 13px;">
             <li class="nav-item">
               <a class="nav-link active py-1 px-2" id="tab-preview" data-toggle="tab" href="#pane-preview" role="tab">Preview</a>
             </li>
@@ -718,12 +771,15 @@ Email: phongnguyen@andvina.com
             <i class="fas fa-save mr-1"></i> Save
           </button>
 
-          <button class="btn btn-sm btn-light border py-1 px-2" onclick="reloadPreview()" title="Reload page">
-            <i class="fas fa-sync-alt"></i>
-          </button>
+          <div class="device-toggles d-flex align-items-center" style="gap: 6px;">
+            <button class="btn btn-sm btn-light border" style="width: 28px; height: 28px; padding: 0; display: inline-flex; justify-content: center; align-items: center;" onclick="setViewportSize('mobile')" title="Mobile (375x667)"><i class="fas fa-mobile-alt"></i></button>
+            <button class="btn btn-sm btn-light border" style="width: 28px; height: 28px; padding: 0; display: inline-flex; justify-content: center; align-items: center;" onclick="setViewportSize('tablet')" title="Tablet (1024x768)"><i class="fas fa-tablet-alt"></i></button>
+            <button class="btn btn-sm btn-light border" style="width: 28px; height: 28px; padding: 0; display: inline-flex; justify-content: center; align-items: center;" onclick="setViewportSize('desktop')" title="Desktop (1920)"><i class="fas fa-desktop"></i></button>
+            <button class="btn btn-sm btn-light border" style="width: 28px; height: 28px; padding: 0; display: inline-flex; justify-content: center; align-items: center;" onclick="reloadPreview()" title="Reload page"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         
-        <div class="tab-content flex-grow-1 d-flex flex-column" style="overflow: hidden; flex: 1;">
+        <div class="tab-content flex-grow-1 d-flex flex-column" id="mainViewport" style="overflow: hidden; flex: 1; transition: all 0.3s ease;">
           <div class="tab-pane fade show active h-100 w-100" id="pane-preview" role="tabpanel">
             <iframe id="previewIframe" class="preview-iframe h-100 w-100" src="/preview/raw/{{ site_id }}/{% if folder %}{{ folder }}/{% endif %}{{ menu_slug }}.html"></iframe>
           </div>
@@ -738,6 +794,8 @@ Email: phongnguyen@andvina.com
           </div>
         </div>
       </div>
+      <div class="resizer-right" id="dragResizer" title="Drag to resize (Responsive Test)"></div>
+    </div>
     </div>
 
     <!-- Right: Chat Box -->
@@ -1394,6 +1452,103 @@ Email: phongnguyen@andvina.com
         monacoCSS.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAction);
         monacoJS.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAction);
     });
+  </script>
+  <script>
+    // Responsive Drag Resizer
+    const resizer = document.getElementById('dragResizer');
+    const browserFrame = document.getElementById('browserFrame');
+    const wrapper = document.getElementById('browserFrameWrapper');
+    const iframe = document.getElementById('previewIframe');
+    
+    let isResizing = false;
+    
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizer.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      // Prevent iframe from capturing mouse events during drag
+      if (iframe) iframe.style.pointerEvents = 'none';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const centerX = wrapperRect.left + wrapperRect.width / 2;
+      
+      // Distance from center to mouse X
+      let dist = e.clientX - centerX;
+      
+      // Width is double the distance to center (symmetric resize)
+      let newWidth = dist * 2;
+      
+      // Constraints
+      if (newWidth < 320) newWidth = 320;
+      if (newWidth > wrapperRect.width) newWidth = wrapperRect.width;
+      
+      browserFrame.style.width = newWidth + 'px';
+      
+      // Also update the position of the drag handle to attach to the right edge of the frame
+      resizer.style.right = `calc(50% - ${newWidth/2}px - 14px)`;
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor = 'default';
+        if (iframe) iframe.style.pointerEvents = 'auto';
+      }
+    });
+    
+    // Initial position for resizer
+    window.addEventListener('DOMContentLoaded', () => {
+       resizer.style.right = `-14px`;
+    });
+
+    // Device Size Toggle
+    function setViewportSize(type) {
+      const viewport = document.getElementById('mainViewport');
+      const frame = document.getElementById('browserFrame');
+      const resizer = document.getElementById('dragResizer');
+      
+      // Reset drag resizer to full width when using device toggles
+      frame.style.width = '100%';
+      resizer.style.right = '-14px';
+      
+      if (type === 'mobile') {
+        viewport.classList.remove('flex-grow-1');
+        viewport.style.flex = 'none';
+        viewport.style.width = '375px';
+        viewport.style.height = '667px';
+        viewport.style.margin = '20px auto';
+        viewport.style.boxShadow = '0 0 20px rgba(0,0,0,0.15)';
+        viewport.style.borderRadius = '8px';
+        viewport.style.backgroundColor = '#ffffff';
+        frame.style.backgroundColor = document.body.classList.contains('dark-mode') ? '#343a40' : '#e9ecef';
+      } else if (type === 'tablet') {
+        viewport.classList.remove('flex-grow-1');
+        viewport.style.flex = 'none';
+        viewport.style.width = '1024px';
+        viewport.style.height = '100%';
+        viewport.style.margin = '0 auto';
+        viewport.style.boxShadow = '0 0 20px rgba(0,0,0,0.15)';
+        viewport.style.borderRadius = '0';
+        viewport.style.backgroundColor = '#ffffff';
+        frame.style.backgroundColor = document.body.classList.contains('dark-mode') ? '#343a40' : '#e9ecef';
+      } else {
+        viewport.classList.add('flex-grow-1');
+        viewport.style.flex = '1';
+        viewport.style.width = '100%';
+        viewport.style.height = '100%';
+        viewport.style.margin = '0';
+        viewport.style.boxShadow = 'none';
+        viewport.style.borderRadius = '0';
+        viewport.style.backgroundColor = 'transparent';
+        frame.style.backgroundColor = document.body.classList.contains('dark-mode') ? '#454d55' : '#ffffff';
+      }
+    }
   </script>
   <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
