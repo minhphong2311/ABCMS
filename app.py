@@ -25,6 +25,28 @@ from routes.helpers import (
     OUTPUT_DIR
 )
 
+def get_app_version():
+    import subprocess
+    import os
+    base_version = "1.0"
+    try:
+        version_file = os.path.join(os.path.dirname(__file__), 'VERSION.txt')
+        if os.path.exists(version_file):
+            with open(version_file, 'r', encoding='utf-8') as f:
+                base_version = f.read().strip()
+    except Exception:
+        pass
+        
+    try:
+        commit_count = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], stderr=subprocess.STDOUT).decode('utf-8').strip()
+        return f"{base_version}.{commit_count}"
+    except Exception:
+        return f"{base_version}.0"
+
+@app.context_processor
+def inject_version():
+    return dict(APP_VERSION=get_app_version())
+
 # ---------------------------------------------------------------------------
 # Register Blueprints
 # ---------------------------------------------------------------------------
