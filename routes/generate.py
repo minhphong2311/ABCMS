@@ -774,10 +774,12 @@ def apply_structural_templates(html, css, js, api_key, menu_name, task_id=None, 
 
     structure_template = ''
     table_template = ''
+    form_template = ''
     try:
         base = os.path.dirname(os.path.dirname(__file__))
         structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
         table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
+        form_path = os.path.join(base, 'assets', 'ai_prompts', 'form-template.html')
         
         if os.path.exists(structure_path):
             with open(structure_path, 'r', encoding='utf-8') as f:
@@ -785,11 +787,14 @@ def apply_structural_templates(html, css, js, api_key, menu_name, task_id=None, 
         if os.path.exists(table_path):
             with open(table_path, 'r', encoding='utf-8') as f:
                 table_template = f.read()
+        if os.path.exists(form_path):
+            with open(form_path, 'r', encoding='utf-8') as f:
+                form_template = f.read()
     except Exception as e:
         print(f"Error loading templates: {e}")
 
     css_guide_instruction = get_css_guide_instruction() + (
-        "\n8. TÁI CẤU TRÚC LAYOUT: Dùng Flexbox/Grid thay cho absolute positioning. Bọc toàn bộ nội dung trong `<div class=\"content-box\">`. Các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: thẻ `<div class=\"con-box\">` CUỐI CÙNG (nằm dưới cùng) bên trong `.content-box` BẮT BUỘC phải có thêm class `no-pd` (tức là `<div class=\"con-box no-pd\">`)."
+        "\n8. TÁI CẤU TRÚC LAYOUT: Dùng Flexbox/Grid thay cho absolute positioning. Đối với giao diện bình thường, bọc toàn bộ nội dung trong `<div class=\"content-box\">` và các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: NẾU GIAO DIỆN LÀ BIỂU MẪU (FORM - tức là trang có chứa các trường nhập liệu như input, select, textarea, đăng ký, liên hệ), bạn BẮT BUỘC tuân thủ cấu trúc của form-template.html và TUYỆT ĐỐI KHÔNG DÙNG `.content-box` hay `.con-box`."
     )
 
     prompt = f"""Bạn là một chuyên gia Frontend Developer.
@@ -816,9 +821,13 @@ Mẫu bảng (table-template.html):
 ```html
 {table_template}
 ```
+Mẫu biểu mẫu (form-template.html):
+```html
+{form_template}
+```
 
 Nhiệm vụ:
-1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng (phần tử cha bọc các con, dùng `.content-box`, `.con-box`).
+1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng. CHÚ Ý: Trang thường dùng `.content-box`, `.con-box`. Nhưng BIỂU MẪU (FORM) phải bọc bằng `<div class="bn-write-common01 type01">`, bên trong là `<div class="b-table-wrap">`, tiếp đến là `<div class="b-table-box type01">`, `<div class="b-row-box">`, `.b-title-box`, `.b-con-box` v.v.. đúng chính xác y hệt file form-template.html! Tuyệt đối không dùng content-box, con-box cho form. BẮT BUỘC dùng đúng class cho các thẻ form: input type="text" -> class="b-input", select -> class="b-select", textarea -> class="b-input b-textarea", radio -> class="b-radio", checkbox -> class="b-chk".
 2. Xóa các class `fg-*` mang tính position absolute và đổi thành layout semantic với margin, padding, flex, grid.
 3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`.
 4. Trả về JSON chứa HTML và CSS mới.
@@ -839,29 +848,43 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
         
         models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
         text = None
+        result = None
         for model in models_to_try:
-            try:
-                print(f"[{menu_name}] Trying Structural Model {model}...")
-                response = client.models.generate_content(model=model, contents=prompt)
+            for attempt in range(2): # Try 2 times per model
+                try:
+                    print(f"[{menu_name}] Trying Structural Model {model} (Attempt {attempt+1})...")
+                    response = client.models.generate_content(model=model, contents=prompt)
+                    
+                    if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
+                        raise Exception("CANCELLED_BY_USER")
+                    
+                    if response and response.text:
+                        raw_text = response.text.strip()
+                        if '```json' in raw_text:
+                            raw_text = raw_text.split('```json')[1].split('```')[0].strip()
+                        elif raw_text.startswith('```'):
+                            raw_text = raw_text.split('```')[1].split('```')[0].strip()
+                        
+                        try:
+                            result = json.loads(raw_text)
+                            text = raw_text
+                            break # Valid JSON, break attempt loop
+                        except json.JSONDecodeError as je:
+                            print(f"[{menu_name}] JSON Decode Error on {model}: {je}")
+                            import time
+                            time.sleep(1)
+                            continue # Try again
+                except Exception as e:
+                    if str(e) == "CANCELLED_BY_USER":
+                        raise e
+                    print(f"[{menu_name}] Model {model} error: {e}")
+                    import time
+                    time.sleep(1)
+            
+            if result:
+                break # Valid result found, break model loop
                 
-                if task_id and GENERATE_TASKS.get(task_id, {}).get('status') == 'cancelled':
-                    raise Exception("CANCELLED_BY_USER")
-                
-                if response and response.text:
-                    text = response.text.strip()
-                    break
-            except Exception as e:
-                print(f"[{menu_name}] Model {model} error: {e}")
-                import time
-                time.sleep(1)
-                
-        if text:
-            if '```json' in text:
-                text = text.split('```json')[1].split('```')[0].strip()
-            elif text.startswith('```'):
-                text = text.split('```')[1].split('```')[0].strip()
-                
-            result = json.loads(text)
+        if result:
             
             new_html = result.get('html', html)
             new_css = result.get('css', css)
@@ -892,11 +915,13 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
     # Load templates
     structure_template = ''
     table_template = ''
+    form_template = ''
     quality_checklist = ''
     try:
         base = os.path.dirname(os.path.dirname(__file__))
         structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
         table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
+        form_path = os.path.join(base, 'assets', 'ai_prompts', 'form-template.html')
         checklist_path = os.path.join(base, 'assets', 'ai_prompts', 'quality_checklist.txt')
         
         if os.path.exists(structure_path):
@@ -905,6 +930,9 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
         if os.path.exists(table_path):
             with open(table_path, 'r', encoding='utf-8') as f:
                 table_template = f.read()
+        if os.path.exists(form_path):
+            with open(form_path, 'r', encoding='utf-8') as f:
+                form_template = f.read()
         if os.path.exists(checklist_path):
             with open(checklist_path, 'r', encoding='utf-8') as f:
                 quality_checklist = f.read()
@@ -1071,10 +1099,11 @@ Template Rules to follow:
 2. Follow the structure provided in these templates:
    Structure template: {structure_template}
    Table template: {table_template}
+   Form template: {form_template}
 3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags. However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
-4. CRITICAL STRUCTURE RULE: You MUST wrap the entire page content in `<div class="content-box">`. 
-5. Inside `.content-box`, group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
-6. CRITICAL CLASS NAMING: You MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). DO NOT invent new classes.
+4. CRITICAL STRUCTURE RULE: For normal pages, you MUST wrap the entire page content in `<div class="content-box">`. BUT for Form interfaces (any UI containing text inputs, textareas, selects, checkboxes, or registration fields), you MUST strictly follow `form-template.html` and NEVER use `.content-box` or `.con-box`.
+5. For normal pages (inside `.content-box`), group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
+6. CRITICAL CLASS NAMING: For normal pages, you MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). For Forms, you MUST strictly use the exact class names from form-template.html (e.g. `bn-write-common01`, `b-table-wrap`, `b-table-box`, `b-row-box`, `b-title-box`, `b-con-box`). For form elements, MUST use `b-input` (text), `b-select` (select), `b-input b-textarea` (textarea), `b-radio` (radio), `b-chk` (checkbox). DO NOT invent new classes.
 
 {css_rules}
 
