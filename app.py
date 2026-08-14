@@ -28,20 +28,32 @@ from routes.helpers import (
 def get_app_version():
     import subprocess
     import os
-    base_version = "1.0"
+    
+    # Mặc định Major version là 1
+    major = "1"
     try:
         version_file = os.path.join(os.path.dirname(__file__), 'VERSION.txt')
         if os.path.exists(version_file):
             with open(version_file, 'r', encoding='utf-8') as f:
-                base_version = f.read().strip()
+                content = f.read().strip()
+                if '.' in content:
+                    major = content.split('.')[0]
+                else:
+                    major = content
     except Exception:
         pass
         
     try:
-        commit_count = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], stderr=subprocess.STDOUT).decode('utf-8').strip()
-        return f"{base_version}.{commit_count}"
+        commit_count_str = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], stderr=subprocess.STDOUT).decode('utf-8').strip()
+        commit_count = int(commit_count_str)
+        
+        # Cứ 100 commits thì tăng Minor, phần dư là Patch
+        minor = commit_count // 100
+        patch = commit_count % 100
+        
+        return f"{major}.{minor}.{patch}"
     except Exception:
-        return f"{base_version}.0"
+        return f"{major}.0.0"
 
 @app.context_processor
 def inject_version():
