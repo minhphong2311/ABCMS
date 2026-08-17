@@ -1469,42 +1469,55 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             contents = gemini_files + [prompt]
             import time
             import re
+            models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
             max_retries = 3
             response = None
-            for attempt in range(max_retries):
-                try:
-                    response = client.models.generate_content(
-                        model='gemini-3.6-flash',
-                        contents=contents
-                    )
+            
+            for model in models_to_try:
+                for attempt in range(max_retries):
+                    try:
+                        print(f"[{menu_slug}] Generating Image-to-HTML using {model} (Attempt {attempt+1})...")
+                        response = client.models.generate_content(
+                            model=model,
+                            contents=contents
+                        )
+                        break
+                    except Exception as ce:
+                        err_str = str(ce)
+                        if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
+                            print(f"[{menu_slug}] Primary API Key limit reached in Image-to-HTML! Switching to Fallback Key...")
+                            client = client_2
+                            client_2 = None
+                            try:
+                                response = client.models.generate_content(
+                                    model=model,
+                                    contents=contents
+                                )
+                                break
+                            except Exception as fallback_e:
+                                err_str = str(fallback_e)
+                        
+                        if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str:
+                            if attempt < max_retries - 1:
+                                match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
+                                wait_time = float(match.group(1)) + 1 if match else 20.0
+                                if wait_time > 65:
+                                    print(f"[{menu_slug}] API limit wait too long ({wait_time}s). Trying next model...")
+                                    break # Bỏ qua retry, thử model tiếp theo
+                                print(f"[{menu_slug}] Rate limit hit on {model}. Waiting {wait_time}s before retry...")
+                                check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
+                                time.sleep(wait_time)
+                            else:
+                                print(f"[{menu_slug}] AI Error on {model} after retries: {err_str}")
+                                break # Thử model tiếp theo
+                        else:
+                            print(f"[{menu_slug}] Other API Error on {model}: {err_str}")
+                            break # Nếu lỗi khác (không phải 429), chuyển sang model tiếp theo
+                if response and response.text:
                     break
-                except Exception as ce:
-                    err_str = str(ce)
-                    if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
-                        print(f"[{menu_slug}] Primary API Key limit reached in Image-to-HTML! Switching to Fallback Key...")
-                        client = client_2
-                        client_2 = None
-                        try:
-                            response = client.models.generate_content(
-                                model='gemini-3.6-flash',
-                                contents=contents
-                            )
-                            break
-                        except Exception as fallback_e:
-                            err_str = str(fallback_e)
-                    
-                    if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str and attempt < max_retries - 1:
-                        match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
-                        wait_time = float(match.group(1)) + 1 if match else 20.0
-                        print(f"[{menu_slug}] Rate limit hit. Waiting {wait_time}s before retry...")
-                        check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
-                        if wait_time > 65:
-                            raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
-                        time.sleep(wait_time)
-                    else:
-                        if attempt == max_retries - 1:
-                            raise Exception(f"AI Error after retries: {err_str}")
-                        raise
+            
+            if not response or not response.text:
+                raise Exception("Tất cả các AI Model đều báo lỗi hoặc hết hạn mức. Vui lòng kiểm tra lại API Key.")
             
             text = response.text.strip()
             if '```json' in text: text = text.split('```json')[1].split('```')[0].strip()
