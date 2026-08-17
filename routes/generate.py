@@ -1411,7 +1411,7 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                             wait_time = float(match.group(1)) + 1 if match else 20.0
                             print(f"[{menu_slug}] Upload Rate limit hit. Waiting {wait_time}s before retry...")
                             if wait_time > 65:
-                                raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
+                                raise Exception("API limit exceeded. Please try again later or use a different API Key.")
                             for remaining in range(int(wait_time), 0, -1):
                                 check_cancel_and_update(f"Rate limit hit. Waiting {remaining}s...")
                                 time.sleep(1)
@@ -1521,7 +1521,7 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                     break
             
             if not response or not response.text:
-                raise Exception("Tất cả các AI Model đều báo lỗi hoặc hết hạn mức. Vui lòng kiểm tra lại API Key.")
+                raise Exception("All AI models failed or exceeded quota. Please check your API Keys.")
             
             text = response.text.strip()
             if '```json' in text: text = text.split('```json')[1].split('```')[0].strip()
