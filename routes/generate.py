@@ -970,69 +970,55 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
     render_img_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.png')
     temp_html_path = os.path.join(scratch_dir, f'temp_render_{menu_name}.html')
 
-    img_paths_to_stitch = local_image_paths or ([local_image_path] if local_image_path else [])
-    
-    if img_paths_to_stitch:
-        if len(img_paths_to_stitch) == 1:
-            import shutil
-            shutil.copy(img_paths_to_stitch[0], target_img_path)
-        else:
-            import PIL.Image
-            images = []
-            for p in img_paths_to_stitch:
-                try:
-                    images.append(PIL.Image.open(p))
-                except Exception as e:
-                    print(f"[{menu_name}] Error opening image {p}: {e}")
-            
-            if images:
-                widths, heights = zip(*(i.size for i in images))
-                total_width = max(widths)
-                total_height = sum(heights)
-                
-                new_im = PIL.Image.new('RGB', (total_width, total_height), (255, 255, 255))
-                y_offset = 0
-                for im in images:
-                    new_im.paste(im, (0, y_offset))
-                    y_offset += im.size[1]
-                    
-                new_im.save(target_img_path)
-            else:
-                return html, css, js
-    else:
+    figma_pil = None
+    if figma_link:
         try:
             file_key, node_id = parse_figma_url(figma_link)
-            if not file_key or not node_id:
-                print(f"[{menu_name}] Error parsing figma link: {figma_link}")
-                if task_id and task_id in GENERATE_TASKS:
-                    GENERATE_TASKS[task_id]['message'] = "Cảnh báo: URL Figma không hợp lệ. Vẫn tiếp tục kiểm tra AI."
-            else:
+            if file_key and node_id:
                 url = f'https://api.figma.com/v1/images/{file_key}?ids={node_id}&format=png&scale=1'
                 headers = {'X-Figma-Token': token}
                 r = requests.get(url, headers=headers)
-                if r.status_code != 200:
-                    print(f"[{menu_name}] Error fetching Figma image: {r.status_code}")
-                    if os.path.exists(target_img_path):
-                        print(f"[{menu_name}] Using cached image {target_img_path}")
-                else:
+                if r.status_code == 200:
                     data = r.json()
-                    if 'err' in data and data['err']:
-                        print(f"[{menu_name}] Figma Image Error: {data['err']}")
-                        if os.path.exists(target_img_path):
-                            print(f"[{menu_name}] Using cached image {target_img_path}")
-                    else:
+                    if 'err' not in data or not data['err']:
                         img_url = data['images'].get(node_id)
-                        if not img_url:
-                            print(f"[{menu_name}] No image returned from Figma.")
-                            if os.path.exists(target_img_path):
-                                print(f"[{menu_name}] Using cached image {target_img_path}")
-                        else:
-                            with open(target_img_path, 'wb') as f:
-                                f.write(requests.get(img_url).content)
+                        if img_url:
+                            import io
+                            figma_pil = PIL.Image.open(io.BytesIO(requests.get(img_url).content))
+            if not figma_pil and task_id and task_id in GENERATE_TASKS:
+                GENERATE_TASKS[task_id]['message'] = "Cảnh báo: URL Figma không hợp lệ hoặc lỗi API. Vẫn tiếp tục kiểm tra AI."
         except Exception as e:
-            print(f"[{menu_name}] Error fetching/parsing Figma image: {e}")
-            if os.path.exists(target_img_path):
-                print(f"[{menu_name}] Using cached image {target_img_path} after exception")
+            print(f"[{menu_name}] Error fetching Figma image for stitching: {e}")
+
+    img_paths_to_stitch = local_image_paths or ([local_image_path] if local_image_path else [])
+    
+    images = []
+    if figma_pil:
+        images.append(figma_pil)
+        
+    for p in img_paths_to_stitch:
+        try:
+            images.append(PIL.Image.open(p))
+        except Exception as e:
+            print(f"[{menu_name}] Error opening image {p}: {e}")
+            
+    if images:
+        if len(images) == 1:
+            images[0].save(target_img_path)
+        else:
+            widths, heights = zip(*(i.size for i in images))
+            total_width = max(widths)
+            total_height = sum(heights)
+            
+            new_im = PIL.Image.new('RGB', (total_width, total_height), (255, 255, 255))
+            y_offset = 0
+            for im in images:
+                new_im.paste(im, (0, y_offset))
+                y_offset += im.size[1]
+                
+            new_im.save(target_img_path)
+    else:
+        return html, css, js
 
     target_pil = None
     try:
@@ -1278,6 +1264,15 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
         image_paths = menu.get('image_paths', [])
         if not image_paths and menu.get('image_path'):
             image_paths = [menu.get('image_path').strip()]
+            
+        root_path = os.path.dirname(os.path.dirname(__file__))
+        valid_image_paths = []
+        for p in image_paths:
+            if not p: continue
+            abs_p = p if os.path.isabs(p) else os.path.join(root_path, p)
+            if os.path.exists(abs_p):
+                valid_image_paths.append(abs_p)
+
         ai_hint = menu.get('ai_hint', '').strip()
         
         html_result = ""
@@ -1343,7 +1338,8 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                 check_cancel_and_update("Refining visuals with AI...")
                 html_result, css_result, js_result = compare_and_fix_visuals(
                     figma_token, figma_link, html_result, css_result, js_result,
-                    [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id
+                    [f"{menu_slug}.css"], menu_slug, gemini_api_key, task_id,
+                    local_image_paths=valid_image_paths
                 )
 
                 if feedback:
