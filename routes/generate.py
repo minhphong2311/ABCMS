@@ -1410,10 +1410,11 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                             match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
                             wait_time = float(match.group(1)) + 1 if match else 20.0
                             print(f"[{menu_slug}] Upload Rate limit hit. Waiting {wait_time}s before retry...")
-                            check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
                             if wait_time > 65:
                                 raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
-                            time.sleep(wait_time)
+                            for remaining in range(int(wait_time), 0, -1):
+                                check_cancel_and_update(f"Rate limit hit. Waiting {remaining}s...")
+                                time.sleep(1)
                         else:
                             if up_attempt == max_up_retries - 1:
                                 raise Exception(f"Upload API Error after retries: {err_str}")
@@ -1505,8 +1506,9 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                                     print(f"[{menu_slug}] API limit wait too long ({wait_time}s). Trying next model...")
                                     break # Bỏ qua retry, thử model tiếp theo
                                 print(f"[{menu_slug}] Rate limit hit on {model}. Waiting {wait_time}s before retry...")
-                                check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
-                                time.sleep(wait_time)
+                                for remaining in range(int(wait_time), 0, -1):
+                                    check_cancel_and_update(f"Rate limit hit. Waiting {remaining}s...")
+                                    time.sleep(1)
                             else:
                                 print(f"[{menu_slug}] AI Error on {model} after retries: {err_str}")
                                 break # Thử model tiếp theo
