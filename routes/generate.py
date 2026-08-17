@@ -887,10 +887,11 @@ Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không b
                             raw_text = raw_text.split('```')[1].split('```')[0].strip()
                         
                         try:
-                            result = json.loads(raw_text)
+                            import json_repair
+                            result = json_repair.loads(raw_text)
                             text = raw_text
                             break # Valid JSON, break attempt loop
-                        except json.JSONDecodeError as je:
+                        except Exception as je:
                             print(f"[{menu_name}] JSON Decode Error on {model}: {je}")
                             import time
                             time.sleep(1)
@@ -1548,8 +1549,8 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             if '```json' in text: text = text.split('```json')[1].split('```')[0].strip()
             elif text.startswith('```'): text = text.split('```')[1].split('```')[0].strip()
             
-            import json
-            result = json.loads(text)
+            import json_repair
+            result = json_repair.loads(text)
             html_result = result.get('html', '')
             css_result = result.get('css', '')
             js_result = result.get('js', '')
