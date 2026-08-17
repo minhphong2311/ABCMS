@@ -27,6 +27,74 @@ GENERATE_TASKS = {}
 # Figma utilities
 # ---------------------------------------------------------------------------
 
+def load_ai_templates():
+    structure_template = ''
+    table_template = ''
+    form_template = ''
+    try:
+        import os
+        base = os.path.dirname(os.path.dirname(__file__))
+        structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
+        table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
+        form_path = os.path.join(base, 'assets', 'ai_prompts', 'form-template.html')
+        
+        if os.path.exists(structure_path):
+            with open(structure_path, 'r', encoding='utf-8') as f:
+                structure_template = f.read()
+        if os.path.exists(table_path):
+            with open(table_path, 'r', encoding='utf-8') as f:
+                table_template = f.read()
+        if os.path.exists(form_path):
+            with open(form_path, 'r', encoding='utf-8') as f:
+                form_template = f.read()
+    except Exception as e:
+        print(f"Error loading templates: {e}")
+    return structure_template, table_template, form_template
+
+
+
+def get_unified_ai_rules(ai_hint="", css_links=None, conbox_hint=""):
+    structure_template, table_template, form_template = load_ai_templates()
+    if css_links is not None:
+        css_rules = get_css_guide_instruction(css_links)
+    else:
+        css_rules = get_css_guide_instruction()
+        
+    rules = f'''
+CRITICAL STRUCTURE RULES TO STRICTLY ENFORCE:
+1. Do not use absolute positioning classes like `fg-*`. Use semantic Flex/Grid layout with margins and paddings.
+2. CRITICAL STRUCTURE RULE: For normal pages, you MUST wrap the entire page content in `<div class="content-box">`. BUT for Form interfaces (any UI containing text inputs, textareas, selects, checkboxes, or registration fields), you MUST strictly follow `form-template.html` and NEVER use `.content-box` or `.con-box`.
+3. For normal pages (inside `.content-box`), group related content into `<div class="con-box">` sections. The VERY LAST `<div class="con-box">` inside `.content-box` MUST have the class `no-pd`. {conbox_hint}
+4. HEADING HIERARCHY RULE: Headings MUST strictly follow their wrappers: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, and `.con-box03 > h6.h6-tit01`. Do not use them outside of their corresponding wrapper.
+5. CRITICAL CLASS NAMING: For normal pages, you MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01`, `con-p`). For Forms, you MUST strictly use the exact class names from form-template.html (e.g. `bn-write-common01`, `b-table-wrap`, `b-table-box`, `b-row-box`, `b-title-box`, `b-con-box`). For form elements, MUST use `b-input` (text), `b-select` (select), `b-input b-textarea` (textarea), `b-radio` (radio), `b-chk` (checkbox). DO NOT invent new classes.
+6. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags (do NOT remove or truncate repeating elements in lists/cards). However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
+7. CRITICAL IMAGE PATH RULE: ALL image `src` paths MUST start with EXACTLY `./images/{menu_slug}/`. Do NOT invent folder names like `faculty` or `common`. For example, all images must be `./images/{menu_slug}/filename.png`.
+
+TEMPLATE RULES TO FOLLOW:
+Structure template: 
+```html
+{structure_template}
+```
+Table template: 
+```html
+{table_template}
+```
+Form template: 
+```html
+{form_template}
+```
+
+CSS RULES:
+{css_rules}
+'''
+    if ai_hint:
+        rules += f'''
+USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}
+You MUST strictly follow this hint. IF the hint requires dynamic components (like Swiper, sliders, progress bars), you ARE FULLY ALLOWED to append `<script src='cdn...'>` or `<link>` CDN tags directly in the `html` string. HOWEVER, ALL inline custom Javascript initialization code MUST be placed exclusively in the `js` field, NOT inside `<script>` tags in the HTML.'''
+        
+    return rules
+
+
 def parse_figma_url(url):
     try:
         import urllib.parse as urlparse
@@ -721,12 +789,16 @@ def apply_dynamic_css_feedback(css_content, feedback, figma_json=None):
                 json_str = json_str[:50000] + "...(truncated)"
             figma_context = f"\nHere is the original Figma JSON structure (simplified layout tree):\n```json\n{json_str}\n```\n"
 
+        unified_rules = get_unified_ai_rules(feedback)
         prompt = f"""
 You are an expert frontend developer.
 The user has provided a natural language request to modify some CSS.
 User Request: {feedback}
 
 {figma_context}
+
+{unified_rules}
+
 Here is the current CSS:
 ```css
 {css_content}
@@ -772,31 +844,9 @@ def apply_structural_templates(html, css, js, api_key, menu_name, task_id=None, 
     import os
     import json
 
-    structure_template = ''
-    table_template = ''
-    form_template = ''
-    try:
-        base = os.path.dirname(os.path.dirname(__file__))
-        structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
-        table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
-        form_path = os.path.join(base, 'assets', 'ai_prompts', 'form-template.html')
-        
-        if os.path.exists(structure_path):
-            with open(structure_path, 'r', encoding='utf-8') as f:
-                structure_template = f.read()
-        if os.path.exists(table_path):
-            with open(table_path, 'r', encoding='utf-8') as f:
-                table_template = f.read()
-        if os.path.exists(form_path):
-            with open(form_path, 'r', encoding='utf-8') as f:
-                form_template = f.read()
-    except Exception as e:
-        print(f"Error loading templates: {e}")
+    structure_template, table_template, form_template = load_ai_templates()
 
-    css_guide_instruction = get_css_guide_instruction() + (
-        "\n8. TÁI CẤU TRÚC LAYOUT: Dùng Flexbox/Grid thay cho absolute positioning. Đối với giao diện bình thường, bọc toàn bộ nội dung trong `<div class=\"content-box\">` và các phần tử cha bọc bằng `<div class=\"con-box\">`. LƯU Ý QUAN TRỌNG: NẾU GIAO DIỆN LÀ BIỂU MẪU (FORM - tức là trang có chứa các trường nhập liệu như input, select, textarea, đăng ký, liên hệ), bạn BẮT BUỘC tuân thủ cấu trúc của form-template.html và TUYỆT ĐỐI KHÔNG DÙNG `.content-box` hay `.con-box`."
-    )
-
+    unified_rules = get_unified_ai_rules(ai_hint, menu_slug=menu_name)
     prompt = f"""Bạn là một chuyên gia Frontend Developer.
 Nhiệm vụ của bạn là tái cấu trúc lại đoạn HTML/CSS thô được sinh ra từ Figma (tọa độ absolute) thành một layout chuẩn semantic, responsive, sử dụng Flexbox/Grid, và phải TUYỆT ĐỐI tuân thủ cấu trúc của dự án.
 
@@ -809,29 +859,14 @@ Nội dung CSS thô hiện tại:
 ```css
 {css}
 ```
-{css_guide_instruction}
-{f"\n\nGỢI Ý TỪ NGƯỜI DÙNG (CRITICAL INSTRUCTION): {ai_hint}\nBạn BẮT BUỘC phải tuân thủ nghiêm ngặt gợi ý này. NẾU người dùng yêu cầu tạo các component động (như Swiper, Slider, Carousel...), bạn ĐƯỢC PHÉP chèn trực tiếp các thẻ `<script src='cdn...'>`, `<link>` và mã Javascript khởi tạo vào cuối chuỗi `html`." if ai_hint else ""}
 
-TÀI LIỆU THAM KHẢO VỀ CẤU TRÚC VÀ SUB-TEMPLATE:
-Mẫu cấu trúc giao diện chung (structure-template.html):
-```html
-{structure_template}
-```
-Mẫu bảng (table-template.html):
-```html
-{table_template}
-```
-Mẫu biểu mẫu (form-template.html):
-```html
-{form_template}
-```
+{unified_rules}
 
 Nhiệm vụ:
-1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng. CHÚ Ý: Trang thường dùng `.content-box`, `.con-box`. Nhưng BIỂU MẪU (FORM) phải bọc bằng `<div class="bn-write-common01 type01">`, bên trong là `<div class="b-table-wrap">`, tiếp đến là `<div class="b-table-box type01">`, `<div class="b-row-box">`, `.b-title-box`, `.b-con-box` v.v.. đúng chính xác y hệt file form-template.html! Tuyệt đối không dùng content-box, con-box cho form. BẮT BUỘC dùng đúng class cho các thẻ form: input type="text" -> class="b-input", select -> class="b-select", textarea -> class="b-input b-textarea", radio -> class="b-radio", checkbox -> class="b-chk".
-2. Xóa các class `fg-*` mang tính position absolute và đổi thành layout semantic với margin, padding, flex, grid.
-3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`. LƯU Ý QUAN TRỌNG: Các thẻ heading chỉ được phép nằm ngay sau thẻ wrapper tương ứng theo cấu trúc: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, và `.con-box03 > h6.h6-tit01`.
-4. BẮT BUỘC phải giữ lại đầy đủ TẤT CẢ các thẻ `<img>` từ HTML gốc (đặc biệt là icon và ảnh đại diện) và KHÔNG ĐƯỢC tự ý xóa bớt hay gộp bất kỳ một phần tử lặp lại nào. Nếu danh sách có nhiều thẻ (như nhiều thẻ giáo sư, thẻ bài viết, thẻ sản phẩm...), bạn phải code lại đầy đủ số lượng bản ghi tương ứng như bản gốc, tuyệt đối không được viết tắt hay rút gọn.
-5. Trả về JSON chứa HTML và CSS mới.
+1. Áp dụng tất cả các quy tắc cấu trúc và CSS (CRITICAL STRUCTURE RULES) ở trên vào code thô hiện tại.
+2. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng.
+3. Xóa bỏ tuyệt đối các class `fg-*` mang tính position absolute, và thay bằng Flexbox/Grid chuẩn.
+4. Trả về JSON chứa HTML và CSS mới.
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
 {{
@@ -935,27 +970,13 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
     if not hasattr(compare_and_fix_visuals, 'api_lock'):
         compare_and_fix_visuals.api_lock = threading.Semaphore(1)
 
-    # Load templates
-    structure_template = ''
-    table_template = ''
-    form_template = ''
+    structure_template, table_template, form_template = load_ai_templates()
     quality_checklist = ''
     try:
         base = os.path.dirname(os.path.dirname(__file__))
-        structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
-        table_path = os.path.join(base, 'assets', 'ai_prompts', 'table-template.html')
-        form_path = os.path.join(base, 'assets', 'ai_prompts', 'form-template.html')
         checklist_path = os.path.join(base, 'assets', 'ai_prompts', 'quality_checklist.txt')
         
-        if os.path.exists(structure_path):
-            with open(structure_path, 'r', encoding='utf-8') as f:
-                structure_template = f.read()
-        if os.path.exists(table_path):
-            with open(table_path, 'r', encoding='utf-8') as f:
-                table_template = f.read()
-        if os.path.exists(form_path):
-            with open(form_path, 'r', encoding='utf-8') as f:
-                form_template = f.read()
+
         if os.path.exists(checklist_path):
             with open(checklist_path, 'r', encoding='utf-8') as f:
                 quality_checklist = f.read()
@@ -1118,27 +1139,14 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
         else:
             prompt_header = "Perform a strict quality verification of the current HTML/CSS render image.\n\nGoal: Ensure 100% compliance with structural rules!"
 
-        from routes.helpers import get_css_guide_instruction
-        css_rules = get_css_guide_instruction(css_links)
-
+        unified_rules = get_unified_ai_rules("", css_links, menu_slug=menu_name)
+        
         prompt = f"""You are an expert Frontend Developer. {prompt_header}
 
 Checklist to strictly enforce:
 {quality_checklist}
 
-Template Rules to follow:
-1. Do not use absolute positioning classes like `fg-*`.
-2. Follow the structure provided in these templates:
-   Structure template: {structure_template}
-   Table template: {table_template}
-   Form template: {form_template}
-3. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags. However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
-4. CRITICAL STRUCTURE RULE: For normal pages, you MUST wrap the entire page content in `<div class="content-box">`. BUT for Form interfaces (any UI containing text inputs, textareas, selects, checkboxes, or registration fields), you MUST strictly follow `form-template.html` and NEVER use `.content-box` or `.con-box`.
-5. For normal pages (inside `.content-box`), group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
-6. CRITICAL CLASS NAMING: For normal pages, you MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). For Forms, you MUST strictly use the exact class names from form-template.html (e.g. `bn-write-common01`, `b-table-wrap`, `b-table-box`, `b-row-box`, `b-title-box`, `b-con-box`). For form elements, MUST use `b-input` (text), `b-select` (select), `b-input b-textarea` (textarea), `b-radio` (radio), `b-chk` (checkbox). DO NOT invent new classes.
-7. HEADING HIERARCHY RULE: Headings MUST strictly follow their wrappers: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, and `.con-box03 > h6.h6-tit01`. Do not use them outside of their corresponding wrapper.
-
-{css_rules}
+{unified_rules}
 
 CRITICAL INSTRUCTION: Do NOT return "PERFECT" unless you have thoroughly checked ALL checklist steps pixel-by-pixel. 
 SPECIAL ATTENTION FOR DIAGRAMS/CHARTS: If the Figma design contains connecting lines, grid boxes, flowcharts, or complex box structures:
@@ -1439,17 +1447,12 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
             
             GENERATE_TASKS[task_id] = {"status": "running", "message": "Generating HTML/CSS from Images..."}
             
-            structure_template = ''
-            try:
-                base = os.path.dirname(os.path.dirname(__file__))
-                structure_path = os.path.join(base, 'assets', 'ai_prompts', 'structure-template.html')
-                if os.path.exists(structure_path):
-                    with open(structure_path, 'r', encoding='utf-8') as f:
-                        structure_template = f.read()
-            except Exception: pass
+            structure_template, _, _ = load_ai_templates()
             
             num_images = len(gemini_files)
-            conbox_hint = f"\nCRITICAL INSTRUCTION: The user provided {num_images} image(s). This EXACTLY MEANS there are {num_images} main sections in the design. You MUST create exactly {num_images} `<div class=\"con-box\">` elements inside `.content-box`, each corresponding chronologically to one of the images provided." if num_images > 0 else ""
+            conbox_hint = f"The user provided {num_images} image(s). This EXACTLY MEANS there are {num_images} main sections in the design. You MUST create exactly {num_images} `<div class=\"con-box\">` elements inside `.content-box`, each corresponding chronologically to one of the images provided." if num_images > 0 else ""
+            
+            unified_rules = get_unified_ai_rules(ai_hint, None, conbox_hint, menu_slug=menu_slug)
             
             prompt = f"""You are an expert Frontend Developer. 
 Your task is to convert the provided screenshot(s) into pixel-perfect, responsive HTML and CSS.
@@ -1461,14 +1464,7 @@ To ensure extreme accuracy, you MUST follow this Chain-of-Thought pipeline befor
 4. OCR / read text: Extract ALL text exactly as it appears in the image, ensuring you don't miss small details.
 5. Component identification: Identify all specific UI components like buttons, connecting arrows, lines, and boxes.
 
-CRITICAL STRUCTURE RULES:
-1. Wrap the entire page content in `<div class="content-box">`. 
-2. Inside `.content-box`, group related sections into `<div class="con-box">`. {conbox_hint} LƯU Ý QUAN TRỌNG: The VERY LAST `<div class="con-box">` inside `.content-box` MUST have the class `no-pd` (e.g., `<div class="con-box no-pd">`).
-3. Use class names from this structure template:
-{structure_template}
-
-{get_css_guide_instruction()}
-{f"\n8. USER AI HINT (CRITICAL INSTRUCTION): {ai_hint}\nYou MUST strictly follow this hint. IF the hint requires dynamic components (like Swiper, sliders, progress bars), you ARE FULLY ALLOWED to append `<script src='...'>` or `<link>` CDN tags directly in the `html` string. HOWEVER, ALL inline custom Javascript initialization code MUST be placed exclusively in the `js` field, NOT inside `<script>` tags in the HTML." if ai_hint else ""}
+{unified_rules}
 
 Return ONLY a valid JSON object matching this schema without markdown formatting:
 {{
