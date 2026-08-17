@@ -1178,6 +1178,8 @@ STATUS: PERFECT (or NEEDS_FIX)
                         for attempt in range(2):
                             try:
                                 print(f"[{menu_name}] Trying Gemini model {model} (Attempt {attempt+1})...")
+                                if task_id and task_id in GENERATE_TASKS:
+                                    GENERATE_TASKS[task_id]['message'] = f"AI Quality Check ({iteration}/{MAX_ITERATIONS}) - Analyzing..."
                                 contents_to_send = [prompt]
                                 if target_pil:
                                     contents_to_send.append(target_pil)
@@ -1485,11 +1487,13 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
             models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
             max_retries = 3
             response = None
+            current_key_name = "Primary Key"
             
             for model in models_to_try:
                 for attempt in range(max_retries):
                     try:
                         print(f"[{menu_slug}] Generating Image-to-HTML using {model} (Attempt {attempt+1})...")
+                        check_cancel_and_update(f"Generating Image-to-HTML ({current_key_name})...")
                         response = client.models.generate_content(
                             model=model,
                             contents=contents
@@ -1513,7 +1517,9 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                             if gemini_files:
                                 contents = gemini_files + [prompt]
                                 
+                            current_key_name = "Fallback Key"
                             try:
+                                check_cancel_and_update(f"Generating Image-to-HTML ({current_key_name})...")
                                 response = client.models.generate_content(
                                     model=model,
                                     contents=contents
