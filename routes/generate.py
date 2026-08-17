@@ -1398,8 +1398,17 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                         err_str = str(up_e)
                         if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
                             print(f"[{menu_slug}] Primary API Key limit reached during Image Upload! Switching to Fallback Key...")
+                            check_cancel_and_update("Upload quota reached. Switching to Fallback API Key...")
                             client = client_2
                             client_2 = None
+                            
+                            # Re-upload previously successful images with the new key
+                            gemini_files = []
+                            for prev_path in valid_image_paths[:-1]:
+                                try:
+                                    gemini_files.append(client.files.upload(file=prev_path))
+                                except: pass
+                                
                             try:
                                 uploaded_file = client.files.upload(file=abs_image_path)
                                 break
@@ -1489,8 +1498,20 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
                         err_str = str(ce)
                         if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
                             print(f"[{menu_slug}] Primary API Key limit reached in Image-to-HTML! Switching to Fallback Key...")
+                            check_cancel_and_update("Rate limit hit! Switching to Fallback API Key...")
                             client = client_2
                             client_2 = None
+                            
+                            gemini_files = []
+                            for path in valid_image_paths:
+                                try:
+                                    uploaded = client.files.upload(file=path)
+                                    gemini_files.append(uploaded)
+                                except Exception as up_err:
+                                    print(f"[{menu_slug}] Fallback upload error: {up_err}")
+                            if gemini_files:
+                                contents = gemini_files + [prompt]
+                                
                             try:
                                 response = client.models.generate_content(
                                     model=model,
