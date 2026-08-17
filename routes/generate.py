@@ -829,7 +829,7 @@ Mẫu biểu mẫu (form-template.html):
 Nhiệm vụ:
 1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng. CHÚ Ý: Trang thường dùng `.content-box`, `.con-box`. Nhưng BIỂU MẪU (FORM) phải bọc bằng `<div class="bn-write-common01 type01">`, bên trong là `<div class="b-table-wrap">`, tiếp đến là `<div class="b-table-box type01">`, `<div class="b-row-box">`, `.b-title-box`, `.b-con-box` v.v.. đúng chính xác y hệt file form-template.html! Tuyệt đối không dùng content-box, con-box cho form. BẮT BUỘC dùng đúng class cho các thẻ form: input type="text" -> class="b-input", select -> class="b-select", textarea -> class="b-input b-textarea", radio -> class="b-radio", checkbox -> class="b-chk".
 2. Xóa các class `fg-*` mang tính position absolute và đổi thành layout semantic với margin, padding, flex, grid.
-3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`.
+3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`. LƯU Ý QUAN TRỌNG: Các thẻ heading chỉ được phép nằm ngay sau thẻ wrapper tương ứng theo cấu trúc: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, và `.con-box03 > h6.h6-tit01`.
 4. Trả về JSON chứa HTML và CSS mới.
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
@@ -1134,6 +1134,7 @@ Template Rules to follow:
 4. CRITICAL STRUCTURE RULE: For normal pages, you MUST wrap the entire page content in `<div class="content-box">`. BUT for Form interfaces (any UI containing text inputs, textareas, selects, checkboxes, or registration fields), you MUST strictly follow `form-template.html` and NEVER use `.content-box` or `.con-box`.
 5. For normal pages (inside `.content-box`), group related content into `<div class="con-box">` sections. Headings (`h4`, `h5`, `h6`) and paragraphs (`p`) MUST be placed inside `.con-box` wrappers.
 6. CRITICAL CLASS NAMING: For normal pages, you MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01 no-pd`, `con-p`). For Forms, you MUST strictly use the exact class names from form-template.html (e.g. `bn-write-common01`, `b-table-wrap`, `b-table-box`, `b-row-box`, `b-title-box`, `b-con-box`). For form elements, MUST use `b-input` (text), `b-select` (select), `b-input b-textarea` (textarea), `b-radio` (radio), `b-chk` (checkbox). DO NOT invent new classes.
+7. HEADING HIERARCHY RULE: Headings MUST strictly follow their wrappers: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, and `.con-box03 > h6.h6-tit01`. Do not use them outside of their corresponding wrapper.
 
 {css_rules}
 
