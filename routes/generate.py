@@ -1444,8 +1444,9 @@ Your task is to convert the provided screenshot(s) into pixel-perfect, responsiv
 To ensure extreme accuracy, you MUST follow this Chain-of-Thought pipeline before writing any code:
 1. Vision analysis: Describe the overall visual theme, colors, and design style.
 2. Layout analysis: Break down the structural layout (e.g., headers, 3-column grids, complex flowcharts, nested boxes).
-3. OCR / read text: Extract ALL text exactly as it appears in the image, ensuring you don't miss small details.
-4. Component identification: Identify all specific UI components like buttons, connecting arrows, lines, and boxes.
+3. UI Fidelity & Metrics: Explicitly state the exact background colors (Hex codes), font weights, border radius, and estimate paddings/margins. DO NOT use generic colors.
+4. OCR / read text: Extract ALL text exactly as it appears in the image, ensuring you don't miss small details.
+5. Component identification: Identify all specific UI components like buttons, connecting arrows, lines, and boxes.
 
 CRITICAL STRUCTURE RULES:
 1. Wrap the entire page content in `<div class="content-box">`. 
@@ -1460,6 +1461,7 @@ Return ONLY a valid JSON object matching this schema without markdown formatting
 {{
   "vision_analysis": "...",
   "layout_analysis": "...",
+  "ui_metrics": "...",
   "ocr_text": "...",
   "components": ["...", "..."],
   "html": "full HTML content inside body",
