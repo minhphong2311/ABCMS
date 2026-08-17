@@ -802,12 +802,12 @@ Nhiệm vụ của bạn là tái cấu trúc lại đoạn HTML/CSS thô đư�
 
 Nội dung HTML thô hiện tại:
 ```html
-{html[:10000]}
+{html}
 ```
 
 Nội dung CSS thô hiện tại:
 ```css
-{css[:10000]}
+{css}
 ```
 {css_guide_instruction}
 {f"\n\nGỢI Ý TỪ NGƯỜI DÙNG (CRITICAL INSTRUCTION): {ai_hint}\nBạn BẮT BUỘC phải tuân thủ nghiêm ngặt gợi ý này. NẾU người dùng yêu cầu tạo các component động (như Swiper, Slider, Carousel...), bạn ĐƯỢC PHÉP chèn trực tiếp các thẻ `<script src='cdn...'>`, `<link>` và mã Javascript khởi tạo vào cuối chuỗi `html`." if ai_hint else ""}
@@ -830,7 +830,8 @@ Nhiệm vụ:
 1. Sắp xếp lại các phần tử HTML sao cho có hệ thống phân cấp rõ ràng. CHÚ Ý: Trang thường dùng `.content-box`, `.con-box`. Nhưng BIỂU MẪU (FORM) phải bọc bằng `<div class="bn-write-common01 type01">`, bên trong là `<div class="b-table-wrap">`, tiếp đến là `<div class="b-table-box type01">`, `<div class="b-row-box">`, `.b-title-box`, `.b-con-box` v.v.. đúng chính xác y hệt file form-template.html! Tuyệt đối không dùng content-box, con-box cho form. BẮT BUỘC dùng đúng class cho các thẻ form: input type="text" -> class="b-input", select -> class="b-select", textarea -> class="b-input b-textarea", radio -> class="b-radio", checkbox -> class="b-chk".
 2. Xóa các class `fg-*` mang tính position absolute và đổi thành layout semantic với margin, padding, flex, grid.
 3. Chuyển đổi typography thành các class chuẩn: `.h4-tit01`, `.h5-tit01`, `.h6-tit01`, `.con-p`. LƯU Ý QUAN TRỌNG: Các thẻ heading chỉ được phép nằm ngay sau thẻ wrapper tương ứng theo cấu trúc: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, và `.con-box03 > h6.h6-tit01`.
-4. Trả về JSON chứa HTML và CSS mới.
+4. BẮT BUỘC phải giữ lại đầy đủ TẤT CẢ các thẻ `<img>` từ HTML gốc (đặc biệt là icon và ảnh đại diện) và KHÔNG ĐƯỢC tự ý xóa bớt hay gộp bất kỳ một phần tử lặp lại nào. Nếu danh sách có nhiều thẻ (như nhiều thẻ giáo sư, thẻ bài viết, thẻ sản phẩm...), bạn phải code lại đầy đủ số lượng bản ghi tương ứng như bản gốc, tuyệt đối không được viết tắt hay rút gọn.
+5. Trả về JSON chứa HTML và CSS mới.
 
 Trả lời theo định dạng JSON sau (không thêm gì ngoài JSON, không bọc trong markdown):
 {{
