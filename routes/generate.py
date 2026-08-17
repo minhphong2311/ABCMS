@@ -1040,8 +1040,6 @@ def compare_and_fix_visuals(token, figma_link, html, css, js, css_links, menu_na
     except Exception as e:
         print(f"[{menu_name}] PIL Error: {e}")
 
-    import json
-    import os
     config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'config.json')
     gemini_api_key_2 = ""
     if os.path.exists(config_path):
@@ -1385,7 +1383,41 @@ def run_generate_async(task_id, site_id, menu_param, target_dir, figma_token, co
                 dest_image_name = f"source_image_{idx}{ext}"
                 dest_image_path = os.path.join(images_dir, dest_image_name)
                 shutil.copy(abs_image_path, dest_image_path)
-                gemini_files.append(client.files.upload(file=abs_image_path))
+                
+                # Robust upload with fallback and retry
+                import time
+                import re
+                max_up_retries = 3
+                uploaded_file = None
+                for up_attempt in range(max_up_retries):
+                    try:
+                        uploaded_file = client.files.upload(file=abs_image_path)
+                        break
+                    except Exception as up_e:
+                        err_str = str(up_e)
+                        if client_2 and ('429' in err_str or 'quota' in err_str.lower() or 'exhausted' in err_str.lower() or 'limit' in err_str.lower()):
+                            print(f"[{menu_slug}] Primary API Key limit reached during Image Upload! Switching to Fallback Key...")
+                            client = client_2
+                            client_2 = None
+                            try:
+                                uploaded_file = client.files.upload(file=abs_image_path)
+                                break
+                            except Exception as fallback_e:
+                                err_str = str(fallback_e)
+                        
+                        if '429' in err_str and 'RESOURCE_EXHAUSTED' in err_str and up_attempt < max_up_retries - 1:
+                            match = re.search(r'retry in (\d+\.\d+|\d+)s', err_str)
+                            wait_time = float(match.group(1)) + 1 if match else 20.0
+                            print(f"[{menu_slug}] Upload Rate limit hit. Waiting {wait_time}s before retry...")
+                            check_cancel_and_update(f"Rate limit hit. Waiting {wait_time:.0f}s...")
+                            if wait_time > 65:
+                                raise Exception("Đã vượt quá giới hạn API. Vui lòng thử lại sau vài phút hoặc dùng Key khác.")
+                            time.sleep(wait_time)
+                        else:
+                            if up_attempt == max_up_retries - 1:
+                                raise Exception(f"Upload API Error after retries: {err_str}")
+                            raise
+                gemini_files.append(uploaded_file)
                 
             if not gemini_files:
                 raise Exception("No valid image files found on server.")
