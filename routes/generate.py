@@ -53,13 +53,14 @@ def load_ai_templates():
 
 
 
-def get_unified_ai_rules(ai_hint="", css_links=None, conbox_hint=""):
+def get_unified_ai_rules(ai_hint="", css_links=None, conbox_hint="", menu_slug=""):
     structure_template, table_template, form_template = load_ai_templates()
     if css_links is not None:
         css_rules = get_css_guide_instruction(css_links)
     else:
         css_rules = get_css_guide_instruction()
         
+    slug_placeholder = menu_slug if menu_slug else "{menu_slug}"
     rules = f'''
 CRITICAL STRUCTURE RULES TO STRICTLY ENFORCE:
 1. Do not use absolute positioning classes like `fg-*`. Use semantic Flex/Grid layout with margins and paddings.
@@ -68,7 +69,7 @@ CRITICAL STRUCTURE RULES TO STRICTLY ENFORCE:
 4. HEADING HIERARCHY RULE: Headings MUST strictly follow their wrappers: `.con-box > h4.h4-tit01`, `.con-box02 > h5.h5-tit01`, and `.con-box03 > h6.h6-tit01`. Do not use them outside of their corresponding wrapper.
 5. CRITICAL CLASS NAMING: For normal pages, you MUST strictly use the exact class names from the structure template (e.g. `h4-tit01`, `h5-tit01`, `h6-tit01`, `con-p`). For Forms, you MUST strictly use the exact class names from form-template.html (e.g. `bn-write-common01`, `b-table-wrap`, `b-table-box`, `b-row-box`, `b-title-box`, `b-con-box`). For form elements, MUST use `b-input` (text), `b-select` (select), `b-input b-textarea` (textarea), `b-radio` (radio), `b-chk` (checkbox). DO NOT invent new classes.
 6. CRITICAL IMAGE RULE: Regular images MUST be standard `<img>` tags (do NOT remove or truncate repeating elements in lists/cards). However, if an image is a small icon (like an arrow, plus, or more icon) inside a button (`<a>` or `<button>`), you MUST remove the `<img>` tag from HTML and implement it entirely via CSS (e.g., using `background-image` on the button or its `::after` pseudo-element). DO NOT leave button icons as `<img>` tags!
-7. CRITICAL IMAGE PATH RULE: ALL image `src` paths MUST start with EXACTLY `./images/{menu_slug}/`. Do NOT invent folder names like `faculty` or `common`. For example, all images must be `./images/{menu_slug}/filename.png`.
+7. CRITICAL IMAGE PATH RULE: ALL image `src` paths MUST start with EXACTLY `./images/{slug_placeholder}/`. Do NOT invent folder names like `faculty` or `common`. For example, all images must be `./images/{slug_placeholder}/filename.png`.
 
 TEMPLATE RULES TO FOLLOW:
 Structure template: 
