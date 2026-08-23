@@ -1,6 +1,6 @@
-# ABCMS - Jiniworks CMS Page Deployer & Builder
+# AI Jiniworks - CMS Page Deployer & Builder
 
-**ABCMS** is a web application and automation tool specifically designed to support and streamline the deployment of frontend code (HTML, CSS, JS) directly into the **Jiniworks CMS**.
+**AI Jiniworks** is a web application and automation tool specifically designed to support and streamline the deployment of frontend code (HTML, CSS, JS) directly into the **Jiniworks CMS**.
 
 It helps developers preview designs and automatically push source code from their local environment to the target Jiniworks CMS, eliminating the need for manual copy-pasting through complex CMS admin interfaces.
 
