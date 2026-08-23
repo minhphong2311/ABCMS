@@ -60,6 +60,7 @@ def save_code():
         dir_path = os.path.join(OUTPUT_DIR, site_id, folder)
     else:
         dir_path = os.path.join(OUTPUT_DIR, site_id)
+    os.makedirs(dir_path, exist_ok=True)
         
     html_path = os.path.join(dir_path, f'{slug}.html')
     css_path = os.path.join(dir_path, f'{slug}.css')

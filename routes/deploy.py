@@ -131,7 +131,7 @@ def api_deploy():
         target=run_deploy_async,
         args=(
             task_id,
-            site['url'],
+            site.get('cms_url') or site.get('url', ''),
             site_id,
             site.get('username', ''),
             site.get('password', ''),
@@ -245,7 +245,7 @@ def api_deploy_menus():
         target=run_deploy_menus_async,
         args=(
             task_id,
-            site['url'],
+            site.get('cms_url') or site.get('url', ''),
             site_id,
             site.get('name', site_id),
             site.get('username', ''),
